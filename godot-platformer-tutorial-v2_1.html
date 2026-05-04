@@ -1,0 +1,1421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unlock the Hidden Powers — A Godot Modding Tutorial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=VT323&family=JetBrains+Mono:wght@400;500;700&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #1a1625;
+    --bg-soft: #221d33;
+    --bg-deeper: #14111e;
+    --ink: #f4ecd8;
+    --ink-dim: #b3a98f;
+    --ink-faint: #6b6478;
+    --accent: #ffb454;
+    --accent-hot: #ff6b6b;
+    --accent-cool: #5ec3a8;
+    --accent-cool-bright: #7eddc2;
+    --code-bg: #0f0c17;
+    --highlight: #ffb45422;
+    --line: #3a3349;
+    --shadow: 0 12px 40px rgba(0,0,0,0.4);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Fraunces', Georgia, serif;
+    line-height: 1.6;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 20% 0%, rgba(255, 180, 84, 0.08), transparent 50%),
+      radial-gradient(ellipse at 80% 100%, rgba(94, 195, 168, 0.06), transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background-image:
+      repeating-linear-gradient(
+        0deg,
+        rgba(255,255,255,0.012) 0px,
+        rgba(255,255,255,0.012) 1px,
+        transparent 1px,
+        transparent 3px
+      );
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .layout {
+    position: relative;
+    z-index: 2;
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 48px 32px 120px;
+  }
+
+  /* === HEADER === */
+  header {
+    margin-bottom: 56px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 32px;
+  }
+
+  .eyebrow {
+    font-family: 'VT323', monospace;
+    font-size: 22px;
+    color: var(--accent-cool);
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .eyebrow::before {
+    content: "▶";
+    color: var(--accent);
+    animation: pulse 1.4s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 800;
+    font-size: clamp(40px, 7vw, 72px);
+    line-height: 1.0;
+    letter-spacing: -0.02em;
+    margin-bottom: 20px;
+  }
+
+  h1 .accent {
+    color: var(--accent);
+    font-style: italic;
+    font-weight: 600;
+  }
+
+  .lede {
+    font-size: 19px;
+    color: var(--ink-dim);
+    max-width: 640px;
+    line-height: 1.5;
+  }
+
+  /* === PROGRESS NAVIGATION === */
+  .progress-nav {
+    position: sticky;
+    top: 0;
+    background: linear-gradient(to bottom, var(--bg) 70%, transparent);
+    z-index: 10;
+    padding: 16px 0 24px;
+    margin: 0 -32px 32px;
+    padding-left: 32px;
+    padding-right: 32px;
+  }
+
+  .progress-track {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+
+  .progress-segment {
+    flex: 1;
+    height: 4px;
+    background: var(--line);
+    border-radius: 2px;
+    transition: background 0.4s;
+    cursor: pointer;
+  }
+
+  .progress-segment.complete {
+    background: var(--accent-cool);
+  }
+
+  .progress-segment.current {
+    background: var(--accent);
+    box-shadow: 0 0 12px var(--accent);
+  }
+
+  .step-label {
+    font-family: 'VT323', monospace;
+    font-size: 18px;
+    color: var(--ink-faint);
+    letter-spacing: 0.05em;
+  }
+
+  .step-label .current-name {
+    color: var(--ink);
+  }
+
+  /* === STEP CONTAINERS === */
+  .step {
+    display: none;
+    animation: stepIn 0.5s ease-out;
+  }
+
+  .step.active {
+    display: block;
+  }
+
+  @keyframes stepIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .step-number {
+    font-family: 'VT323', monospace;
+    font-size: 28px;
+    color: var(--accent);
+    margin-bottom: 4px;
+    letter-spacing: 0.05em;
+  }
+
+  h2 {
+    font-family: 'Fraunces', serif;
+    font-weight: 800;
+    font-size: clamp(30px, 4.5vw, 44px);
+    letter-spacing: -0.015em;
+    margin-bottom: 16px;
+    line-height: 1.1;
+  }
+
+  h3 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 22px;
+    margin: 32px 0 12px;
+    color: var(--accent-cool-bright);
+  }
+
+  p {
+    margin-bottom: 18px;
+    font-size: 18px;
+    color: var(--ink);
+  }
+
+  p.note {
+    font-size: 16px;
+    color: var(--ink-dim);
+    font-style: italic;
+  }
+
+  strong {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  em.kw {
+    font-family: 'JetBrains Mono', monospace;
+    font-style: normal;
+    color: var(--accent-cool);
+    font-size: 0.92em;
+  }
+
+  /* === CODE BLOCKS === */
+  .code-block {
+    background: var(--code-bg);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    line-height: 1.7;
+    overflow-x: auto;
+    position: relative;
+  }
+
+  .code-block::before {
+    content: "GDSCRIPT";
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    font-family: 'VT323', monospace;
+    font-size: 14px;
+    color: var(--ink-faint);
+    letter-spacing: 0.1em;
+  }
+
+  .code-line {
+    display: block;
+    white-space: pre;
+  }
+
+  .ln { color: var(--ink-faint); user-select: none; padding-right: 12px; display: inline-block; width: 36px; }
+  .cm { color: #6b8a7a; }
+  .kw { color: #c39bd3; }
+  .fn { color: var(--accent); }
+  .str { color: var(--accent-cool); }
+  .hash { color: var(--accent-hot); font-weight: 700; }
+
+  .code-block .highlight-line {
+    background: var(--highlight);
+    margin: 0 -24px;
+    padding: 0 24px;
+    border-left: 3px solid var(--accent);
+  }
+
+  /* === COMMENT TOGGLE === */
+  .comment-toggle-demo {
+    background: var(--bg-soft);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 28px;
+    margin: 28px 0;
+  }
+
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .toggle-status {
+    font-family: 'VT323', monospace;
+    font-size: 24px;
+    letter-spacing: 0.05em;
+  }
+
+  .toggle-status .status-off { color: var(--accent-hot); }
+  .toggle-status .status-on { color: var(--accent-cool-bright); }
+
+  .toggle-btn {
+    background: var(--code-bg);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.04em;
+  }
+
+  .toggle-btn:hover {
+    background: var(--accent);
+    color: var(--code-bg);
+    box-shadow: 0 0 16px rgba(255,180,84,0.4);
+  }
+
+  /* === KEY → ACTION → CODE INTERACTIVE FLOW === */
+  .input-flow {
+    background: var(--bg-soft);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 28px 24px;
+    margin: 28px 0;
+  }
+
+  .flow-instruction {
+    text-align: center;
+    font-family: 'VT323', monospace;
+    font-size: 20px;
+    color: var(--ink-dim);
+    letter-spacing: 0.04em;
+    margin-bottom: 20px;
+  }
+
+  .flow-keys {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 24px;
+  }
+
+  .flow-key {
+    background: var(--code-bg);
+    border: 2px solid var(--line);
+    color: var(--ink);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    padding: 10px 18px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 3px 0 var(--bg-deeper);
+  }
+
+  .flow-key:hover {
+    border-color: var(--accent);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 0 var(--bg-deeper);
+  }
+
+  .flow-key.active {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--code-bg);
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 var(--bg-deeper);
+  }
+
+  .flow-pipeline {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    align-items: stretch;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .flow-stage {
+    background: var(--code-bg);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 14px 18px;
+    transition: all 0.3s;
+    opacity: 0.4;
+  }
+
+  .flow-stage.lit {
+    opacity: 1;
+    border-color: var(--accent-cool);
+    box-shadow: 0 0 16px rgba(94,195,168,0.2);
+  }
+
+  .flow-stage-label {
+    font-family: 'VT323', monospace;
+    font-size: 14px;
+    color: var(--ink-faint);
+    letter-spacing: 0.08em;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+  }
+
+  .flow-stage.lit .flow-stage-label {
+    color: var(--accent-cool);
+  }
+
+  .flow-stage-content {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    color: var(--ink);
+    word-break: break-word;
+  }
+
+  .flow-arrow {
+    text-align: center;
+    color: var(--ink-faint);
+    font-family: 'VT323', monospace;
+    font-size: 22px;
+    margin: -4px 0;
+    transition: color 0.3s;
+  }
+
+  .flow-arrow.lit {
+    color: var(--accent);
+  }
+
+  .flow-result {
+    text-align: center;
+    margin-top: 20px;
+    font-family: 'VT323', monospace;
+    font-size: 22px;
+    color: var(--ink-dim);
+    min-height: 32px;
+    letter-spacing: 0.04em;
+  }
+
+  .flow-result.lit {
+    color: var(--accent-cool-bright);
+  }
+
+  /* === INPUT MAP SIMULATOR === */
+  .input-map-sim {
+    background: var(--bg-deeper);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    margin: 28px 0;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+
+  .input-map-titlebar {
+    background: var(--bg-soft);
+    border-bottom: 1px solid var(--line);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-dim);
+  }
+
+  .traffic-light {
+    width: 11px; height: 11px; border-radius: 50%;
+  }
+  .tl-r { background: #ff6058; }
+  .tl-y { background: #ffbd2e; }
+  .tl-g { background: #28ca41; }
+
+  .input-map-search {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .input-map-search-input {
+    flex: 1;
+    background: var(--code-bg);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    padding: 8px 12px;
+    border-radius: 4px;
+    outline: none;
+  }
+
+  .input-map-search-input:focus {
+    border-color: var(--accent);
+  }
+
+  .input-map-search-label {
+    font-family: 'VT323', monospace;
+    font-size: 18px;
+    color: var(--ink-dim);
+    letter-spacing: 0.05em;
+  }
+
+  .input-map-list {
+    padding: 8px 0;
+    max-height: 360px;
+    overflow-y: auto;
+  }
+
+  .action-row {
+    padding: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .action-row:last-child { border-bottom: none; }
+
+  .action-header {
+    padding: 10px 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    user-select: none;
+    transition: background 0.15s;
+  }
+
+  .action-header:hover {
+    background: rgba(255,180,84,0.05);
+  }
+
+  .action-arrow {
+    color: var(--ink-faint);
+    transition: transform 0.2s;
+    font-size: 10px;
+    width: 12px;
+  }
+
+  .action-row.expanded .action-arrow {
+    transform: rotate(90deg);
+    color: var(--accent);
+  }
+
+  .action-name {
+    color: var(--ink);
+    flex: 1;
+  }
+
+  .action-row.expanded .action-name {
+    color: var(--accent);
+  }
+
+  .action-deadzone {
+    color: var(--ink-faint);
+    font-size: 11px;
+  }
+
+  .action-events {
+    display: none;
+    padding: 4px 16px 12px 44px;
+    background: rgba(0,0,0,0.2);
+  }
+
+  .action-row.expanded .action-events {
+    display: block;
+  }
+
+  .event-item {
+    padding: 4px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-dim);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .event-icon {
+    font-size: 10px;
+    color: var(--accent-cool);
+  }
+
+  /* === ABILITY CARDS === */
+  .ability-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    margin: 24px 0;
+  }
+
+  .ability-card {
+    background: var(--bg-soft);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 20px;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+  }
+
+  .ability-card.unlocked {
+    border-color: var(--accent-cool);
+    background: linear-gradient(135deg, var(--bg-soft), rgba(94,195,168,0.08));
+  }
+
+  .ability-card.unlocked::before {
+    content: "✓";
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    color: var(--accent-cool);
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .ability-card:not([data-clickable]) { cursor: default; }
+
+  .ability-icon {
+    font-family: 'VT323', monospace;
+    font-size: 32px;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+
+  .ability-name {
+    font-family: 'Fraunces', serif;
+    font-weight: 800;
+    font-size: 20px;
+    margin-bottom: 6px;
+  }
+
+  .ability-keys {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--accent-cool);
+    margin-bottom: 8px;
+    letter-spacing: 0.05em;
+  }
+
+  .ability-desc {
+    font-size: 14px;
+    color: var(--ink-dim);
+    line-height: 1.5;
+  }
+
+  /* === RECIPE === */
+  .recipe {
+    background: var(--bg-soft);
+    border-left: 3px solid var(--accent);
+    padding: 24px 28px;
+    margin: 28px 0;
+    border-radius: 0 8px 8px 0;
+  }
+
+  .recipe ol {
+    list-style: none;
+    counter-reset: recipe-step;
+  }
+
+  .recipe li {
+    counter-increment: recipe-step;
+    padding-left: 50px;
+    position: relative;
+    margin-bottom: 16px;
+    font-size: 17px;
+    line-height: 1.55;
+  }
+
+  .recipe li::before {
+    content: counter(recipe-step);
+    position: absolute;
+    left: 0;
+    top: 0;
+    background: var(--accent);
+    color: var(--code-bg);
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .recipe li:last-child { margin-bottom: 0; }
+
+  /* === CALLOUTS === */
+  .callout {
+    background: rgba(94,195,168,0.06);
+    border: 1px solid rgba(94,195,168,0.3);
+    border-radius: 6px;
+    padding: 16px 20px;
+    margin: 20px 0;
+    font-size: 16px;
+    color: var(--ink-dim);
+  }
+
+  .callout strong { color: var(--accent-cool-bright); }
+
+  .callout.warn {
+    background: rgba(255,107,107,0.06);
+    border-color: rgba(255,107,107,0.3);
+  }
+
+  .callout.warn strong { color: var(--accent-hot); }
+
+  .callout-title {
+    font-family: 'VT323', monospace;
+    font-size: 18px;
+    letter-spacing: 0.06em;
+    color: var(--accent-cool);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+
+  .callout.warn .callout-title { color: var(--accent-hot); }
+
+  /* === SIDE QUEST (collapsible) === */
+  .side-quest {
+    margin: 28px 0;
+    border: 1px dashed var(--accent-cool);
+    border-radius: 8px;
+    background: rgba(94,195,168,0.03);
+    overflow: hidden;
+  }
+
+  .side-quest-toggle {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: var(--ink);
+    padding: 16px 22px;
+    cursor: pointer;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: inherit;
+    font-size: 17px;
+    transition: background 0.2s;
+  }
+
+  .side-quest-toggle:hover {
+    background: rgba(94,195,168,0.06);
+  }
+
+  .side-quest-toggle .sq-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .side-quest-tag {
+    font-family: 'VT323', monospace;
+    font-size: 14px;
+    color: var(--accent-cool);
+    letter-spacing: 0.08em;
+    background: rgba(94,195,168,0.1);
+    padding: 3px 10px;
+    border-radius: 3px;
+  }
+
+  .side-quest-arrow {
+    transition: transform 0.25s;
+    color: var(--accent-cool);
+  }
+
+  .side-quest.expanded .side-quest-arrow {
+    transform: rotate(90deg);
+  }
+
+  .side-quest-body {
+    display: none;
+    padding: 0 22px 22px;
+    border-top: 1px dashed rgba(94,195,168,0.4);
+    padding-top: 18px;
+  }
+
+  .side-quest.expanded .side-quest-body {
+    display: block;
+    animation: stepIn 0.3s ease-out;
+  }
+
+  /* === STEP NAVIGATION BUTTONS === */
+  .step-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 56px;
+    padding-top: 28px;
+    border-top: 1px solid var(--line);
+  }
+
+  .nav-btn {
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--ink);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    padding: 12px 22px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.04em;
+  }
+
+  .nav-btn:hover:not(:disabled) {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .nav-btn.primary {
+    background: var(--accent);
+    color: var(--code-bg);
+    border-color: var(--accent);
+    font-weight: 700;
+  }
+
+  .nav-btn.primary:hover {
+    background: var(--accent-cool);
+    border-color: var(--accent-cool);
+    box-shadow: 0 0 20px rgba(94,195,168,0.4);
+  }
+
+  .nav-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  /* === FINALE === */
+  .finale {
+    text-align: center;
+    padding: 32px 0;
+  }
+
+  .finale-icon {
+    font-family: 'VT323', monospace;
+    font-size: 64px;
+    color: var(--accent);
+    margin-bottom: 16px;
+    letter-spacing: 0.1em;
+  }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 600px) {
+    .layout { padding: 24px 16px 80px; }
+    .progress-nav { padding-left: 16px; padding-right: 16px; margin: 0 -16px 24px; }
+    .recipe { padding: 20px; }
+    .recipe li { padding-left: 42px; font-size: 16px; }
+    .step-nav { flex-direction: column; gap: 12px; }
+    .nav-btn { width: 100%; }
+    .toggle-row { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <header>
+    <div class="eyebrow">A GODOT MODDING TUTORIAL · NO PRIOR CODE EXPERIENCE NEEDED</div>
+    <h1>Unlock the <span class="accent">hidden powers</span> of your platformer hero.</h1>
+    <p class="lede">Your character has four secret abilities — already written into the code, just switched off. In about ten minutes, you'll switch them back on. No memorizing required, just one tiny edit at a time.</p>
+  </header>
+
+  <nav class="progress-nav">
+    <div class="progress-track" id="progressTrack"></div>
+    <div class="step-label">
+      STEP <span id="currentStepNum">1</span> / 6 · <span class="current-name" id="currentStepName">Meet the Powers</span>
+    </div>
+  </nav>
+
+  <!-- ============ STEP 1: MEET THE POWERS ============ -->
+  <section class="step active" data-step="1" data-name="Meet the Powers">
+    <div class="step-number">// STEP_01</div>
+    <h2>Four powers, one tiny edit each</h2>
+
+    <p>Each of the four abilities below is fully written and ready in your game's code. Each one is currently switched off by a single character — and switching it on means deleting that one character. That's it.</p>
+
+    <div class="ability-grid">
+      <div class="ability-card">
+        <div class="ability-icon">~~</div>
+        <div class="ability-name">Glide</div>
+        <div class="ability-desc">Fall slowly when holding jump in mid-air. Great for reaching distant platforms.</div>
+      </div>
+      <div class="ability-card">
+        <div class="ability-icon">◇</div>
+        <div class="ability-name">Phase</div>
+        <div class="ability-desc">Become invulnerable while a key is held. The catch: you can't collect coins while phased.</div>
+      </div>
+      <div class="ability-card">
+        <div class="ability-icon">▾</div>
+        <div class="ability-name">Shrink</div>
+        <div class="ability-desc">Toggle to half-size to fit through narrow gaps — but jumps don't go as high.</div>
+      </div>
+      <div class="ability-card">
+        <div class="ability-icon">⟶</div>
+        <div class="ability-name">Teleport</div>
+        <div class="ability-desc">Zip 512 pixels horizontally in the direction you're already moving.</div>
+      </div>
+    </div>
+
+    <p>Let's look at the trick that switches them on.</p>
+
+    <div class="step-nav">
+      <button class="nav-btn" disabled>← Back</button>
+      <button class="nav-btn primary" data-action="next">The # trick →</button>
+    </div>
+  </section>
+
+  <!-- ============ STEP 2: THE # TRICK ============ -->
+  <section class="step" data-step="2" data-name="The # Trick">
+    <div class="step-number">// STEP_02</div>
+    <h2>The hashtag that switches code off</h2>
+
+    <p>In your game's code, a line with <em class="kw">#</em> at the start gets <strong>ignored by Godot</strong>. The computer reads right past it. That's how each of your hidden abilities is currently switched off.</p>
+
+    <p>Try the toggle below. Click the button to remove the <em class="kw">#</em> and watch what changes:</p>
+
+    <div class="comment-toggle-demo">
+      <div class="toggle-row">
+        <div class="toggle-status">
+          GLIDE ABILITY: <span id="toggleStatus" class="status-off">DISABLED</span>
+        </div>
+        <button class="toggle-btn" id="toggleCommentBtn">REMOVE THE #</button>
+      </div>
+      <div class="code-block" id="toggleCodeBlock">
+<span class="code-line"><span class="ln">289</span><span class="cm"># Remove the '#' below to enable the glide special ability</span></span>
+<span class="code-line" id="toggleLine"><span class="ln">290</span><span class="hash">#</span><span class="fn">_glide</span>()</span>
+      </div>
+      <p class="note" id="toggleExplain">With the <em class="kw">#</em> in front, Godot skips this line entirely. The glide ability never runs.</p>
+    </div>
+
+    <p>That's the whole concept. Each ability has one line just like this. To turn it on, you delete <strong>one character</strong> — the <em class="kw">#</em>.</p>
+
+    <div class="callout warn">
+      <div class="callout-title">One thing to watch</div>
+      Your code uses spaces at the start of each line to keep its structure. <strong>Only delete the <em class="kw">#</em>.</strong> Leave the spaces in front of it alone. Removing the <em class="kw">#</em> alone is correct; removing the <em class="kw">#</em> plus a space will cause an error.
+    </div>
+
+    <div class="step-nav">
+      <button class="nav-btn" data-action="prev">← Back</button>
+      <button class="nav-btn primary" data-action="next">Do it for real →</button>
+    </div>
+  </section>
+
+  <!-- ============ STEP 3: DO IT FOR REAL ============ -->
+  <section class="step" data-step="3" data-name="Unlock Glide">
+    <div class="step-number">// STEP_03</div>
+    <h2>Unlock Glide in your real project</h2>
+
+    <p>Now do the same edit in Godot itself.</p>
+
+    <div class="recipe">
+      <ol>
+        <li>Open your project in the Godot editor.</li>
+        <li>In the FileSystem panel (usually bottom-left), find <em class="kw">player.gd</em> and double-click to open it.</li>
+        <li>Press <em class="kw">Ctrl+G</em> (or <em class="kw">Cmd+G</em> on Mac) and type <strong>290</strong> to jump to line 290.</li>
+        <li>Delete the <em class="kw">#</em> in front of <em class="kw">_glide()</em>. (Just the <em class="kw">#</em> — leave the spaces.)</li>
+        <li>Save with <em class="kw">Ctrl+S</em> / <em class="kw">Cmd+S</em>.</li>
+        <li>Press <em class="kw">F5</em> to run the game. Jump, then <strong>hold the jump key in mid-air</strong>. You should fall slowly with a glide sound.</li>
+      </ol>
+    </div>
+
+    <h3>Before</h3>
+    <div class="code-block">
+<span class="code-line"><span class="ln">289</span><span class="cm"># Remove the '#' below to enable the glide special ability</span></span>
+<span class="code-line highlight-line"><span class="ln">290</span><span class="hash">#</span><span class="fn">_glide</span>()</span>
+    </div>
+
+    <h3>After</h3>
+    <div class="code-block">
+<span class="code-line"><span class="ln">289</span><span class="cm"># Remove the '#' below to enable the glide special ability</span></span>
+<span class="code-line highlight-line"><span class="ln">290</span><span class="fn">_glide</span>()</span>
+    </div>
+
+    <p>Got it working? You just modded a game. The other three abilities work the same way — but first, a small puzzle: <strong>which key do you press to test them?</strong></p>
+
+    <div class="step-nav">
+      <button class="nav-btn" data-action="prev">← Back</button>
+      <button class="nav-btn primary" data-action="next">Find the keys →</button>
+    </div>
+  </section>
+
+  <!-- ============ STEP 4: FIND THE KEYS ============ -->
+  <section class="step" data-step="4" data-name="Find the Keys">
+    <div class="step-number">// STEP_04</div>
+    <h2>Which key triggers what?</h2>
+
+    <p>Glide was easy because it uses the jump key, which you already knew. But what key is wired to <strong>phase</strong>? Or <strong>teleport</strong>? In Godot, this is set in one place: the <strong>Input Map</strong>.</p>
+
+    <p>Here's how to find it in your real project:</p>
+
+    <div class="recipe">
+      <ol>
+        <li>In Godot, click <strong>Project → Project Settings…</strong> from the top menu.</li>
+        <li>Click the <strong>Input Map</strong> tab.</li>
+        <li>Use the search box at the top to filter — try typing <em class="kw">phase</em> or <em class="kw">teleport</em>.</li>
+        <li>Click the arrow next to an action to expand it and see what keys are bound.</li>
+      </ol>
+    </div>
+
+    <p>Below is a working simulation of the Input Map, populated with your platformer's bindings. Try searching, and click any action to expand it:</p>
+
+    <div class="input-map-sim">
+      <div class="input-map-titlebar">
+        <span class="traffic-light tl-r"></span>
+        <span class="traffic-light tl-y"></span>
+        <span class="traffic-light tl-g"></span>
+        <span style="margin-left:10px;">Project Settings — Input Map</span>
+      </div>
+      <div class="input-map-search">
+        <span class="input-map-search-label">FILTER:</span>
+        <input class="input-map-search-input" id="inputMapSearch" placeholder="try: phase, teleport, shrink, player_1…" />
+      </div>
+      <div class="input-map-list" id="inputMapList"></div>
+    </div>
+
+    <div class="callout">
+      <div class="callout-title">Quick reference</div>
+      For Player 1, the abilities use: <strong>Right Ctrl</strong> for phase, <strong>Right Shift</strong> for teleport, <strong>Down arrow</strong> for shrink.
+    </div>
+
+    <!-- SIDE QUEST: Why named actions instead of direct keys? -->
+    <div class="side-quest" id="sideQuest1">
+      <button class="side-quest-toggle">
+        <span class="sq-label">
+          <span class="side-quest-tag">SIDE QUEST</span>
+          <span>Why does Godot use action names instead of just listening for keys?</span>
+        </span>
+        <span class="side-quest-arrow">▶</span>
+      </button>
+      <div class="side-quest-body">
+        <p>You might have noticed something curious. The Input Map doesn't say "the up arrow makes the player jump." Instead, it says "the up arrow triggers an action called <em class="kw">player_1_jump</em>." Why the extra step?</p>
+
+        <p>Because that middle step — the named action — gives you flexibility you'd never get otherwise. <strong>Click any key below</strong> to see what happens:</p>
+
+        <div class="input-flow">
+          <div class="flow-instruction">CLICK A KEY OR BUTTON</div>
+          <div class="flow-keys">
+            <button class="flow-key" data-key="up" data-action="player_1_jump" data-result="Player 1 jumps!">↑ Up arrow</button>
+            <button class="flow-key" data-key="space" data-action="player_1_jump" data-result="Player 1 jumps!">Spacebar</button>
+            <button class="flow-key" data-key="gamepad-a" data-action="player_1_jump" data-result="Player 1 jumps!">🎮 Gamepad A</button>
+            <button class="flow-key" data-key="w" data-action="player_2_jump" data-result="Player 2 jumps!">W key</button>
+          </div>
+          <div class="flow-pipeline">
+            <div class="flow-stage" id="flowStage1">
+              <div class="flow-stage-label">1. PHYSICAL INPUT</div>
+              <div class="flow-stage-content" id="flowStage1Content">— waiting —</div>
+            </div>
+            <div class="flow-arrow" id="flowArrow1">↓</div>
+            <div class="flow-stage" id="flowStage2">
+              <div class="flow-stage-label">2. NAMED ACTION</div>
+              <div class="flow-stage-content" id="flowStage2Content">— waiting —</div>
+            </div>
+            <div class="flow-arrow" id="flowArrow2">↓</div>
+            <div class="flow-stage" id="flowStage3">
+              <div class="flow-stage-label">3. CODE THAT REACTS</div>
+              <div class="flow-stage-content" id="flowStage3Content">— waiting —</div>
+            </div>
+          </div>
+          <div class="flow-result" id="flowResult">&nbsp;</div>
+        </div>
+
+        <p>Three keys all trigger the same <em class="kw">player_1_jump</em> action — keyboard, spacebar, gamepad. The code only ever asks "did <em class="kw">player_1_jump</em> fire?" It doesn't care which key was pressed. That's why Player 2 can use <em class="kw">W</em> while Player 1 uses Up: the code is identical, only the action name differs.</p>
+
+        <p>Bottom line: <strong>this design lets one piece of code work for any key, any controller, any player.</strong> You'll see it everywhere in Godot.</p>
+      </div>
+    </div>
+
+    <div class="step-nav">
+      <button class="nav-btn" data-action="prev">← Back</button>
+      <button class="nav-btn primary" data-action="next">Unlock the rest →</button>
+    </div>
+  </section>
+
+  <!-- ============ STEP 5: UNLOCK THE REST ============ -->
+  <section class="step" data-step="5" data-name="The Other Three">
+    <div class="step-number">// STEP_05</div>
+    <h2>Unlock the other three</h2>
+
+    <p>Same trick as glide — just different line numbers. Click each card below as you unlock it in your real project to track your progress:</p>
+
+    <div class="ability-grid" id="abilityGrid"></div>
+
+    <h3>The full reference</h3>
+    <p>All four switches live in <em class="kw">player.gd</em>:</p>
+
+    <div class="code-block">
+<span class="code-line"><span class="ln">253</span>    <span class="cm"># Remove the '#' below to enable the phase special ability</span></span>
+<span class="code-line"><span class="ln">254</span>    <span class="hash">#</span><span class="fn">_phase</span>()</span>
+<span class="code-line"></span>
+<span class="code-line"><span class="ln">275</span>    <span class="cm"># Remove the '#' below to enable the shrink special ability</span></span>
+<span class="code-line"><span class="ln">276</span>    <span class="hash">#</span><span class="fn">_shrink</span>()</span>
+<span class="code-line"></span>
+<span class="code-line"><span class="ln">289</span>    <span class="cm"># Remove the '#' below to enable the glide special ability</span></span>
+<span class="code-line"><span class="ln">290</span>    <span class="hash">#</span><span class="fn">_glide</span>()</span>
+<span class="code-line"></span>
+<span class="code-line"><span class="ln">306</span>    <span class="cm"># Remove the '#' below to enable the teleport special ability</span></span>
+<span class="code-line"><span class="ln">307</span>    <span class="hash">#</span><span class="fn">_teleport</span>(direction)</span>
+    </div>
+
+    <div class="callout">
+      <div class="callout-title">Try them one at a time</div>
+      Enable just one, save, run the game, see how it feels. Then come back for the next. <strong>One change, one test</strong> — the way real game designers iterate. If something breaks, you instantly know which change caused it.
+    </div>
+
+    <div class="step-nav">
+      <button class="nav-btn" data-action="prev">← Back</button>
+      <button class="nav-btn primary" data-action="next">Wrap up →</button>
+    </div>
+  </section>
+
+  <!-- ============ STEP 6: WHAT'S NEXT ============ -->
+  <section class="step" data-step="6" data-name="What's Next">
+    <div class="step-number">// STEP_06</div>
+    <h2>You just learned three real things</h2>
+
+    <p>These aren't ability-specific tricks. You'll use them every time you mod a Godot game:</p>
+
+    <div class="recipe">
+      <ol>
+        <li><strong>The <em class="kw">#</em> switches code on and off.</strong> Adding it disables a line; removing it enables one. Indentation matters.</li>
+        <li><strong>The Input Map shows you which keys do what.</strong> Project Settings → Input Map, search and expand.</li>
+        <li><strong>One change at a time.</strong> Edit, save, test, repeat. Always know which change caused which result.</li>
+      </ol>
+    </div>
+
+    <h3>Where to go next</h3>
+
+    <div class="ability-grid">
+      <div class="ability-card">
+        <div class="ability-icon">▲▲</div>
+        <div class="ability-name">Try Double Jump</div>
+        <div class="ability-desc">This one's enabled differently — through the <strong>Inspector panel</strong> on the Player node. A great intro to "exported variables."</div>
+      </div>
+      <div class="ability-card">
+        <div class="ability-icon">★</div>
+        <div class="ability-name">Tweak the numbers</div>
+        <div class="ability-desc">At the top of <em class="kw">player.gd</em>, look for <em class="kw">GLIDE_TERMINAL_VELOCITY</em>, <em class="kw">TELEPORT_DISTANCE</em>. Change them, see what happens.</div>
+      </div>
+      <div class="ability-card">
+        <div class="ability-icon">⌘</div>
+        <div class="ability-name">Add a new key</div>
+        <div class="ability-desc">In the Input Map, bind a different keyboard key to <em class="kw">player_1_phase</em>. Both keys should trigger the ability.</div>
+      </div>
+      <div class="ability-card">
+        <div class="ability-icon">✦</div>
+        <div class="ability-name">Combine abilities</div>
+        <div class="ability-desc">Glide <em>and</em> shrink? Phase <em>and</em> teleport? Some combos make for surprising new gameplay.</div>
+      </div>
+    </div>
+
+    <div class="finale">
+      <div class="finale-icon">► ► ►</div>
+      <p style="font-size: 22px; font-weight: 600;">Your character has new powers.<br>What will you build next?</p>
+    </div>
+
+    <div class="step-nav">
+      <button class="nav-btn" data-action="prev">← Back</button>
+      <button class="nav-btn" data-action="restart">↻ Restart tutorial</button>
+    </div>
+  </section>
+
+</div>
+
+<script>
+  // ===== STATE =====
+  const TOTAL_STEPS = 6;
+  let currentStep = 1;
+
+  // ===== INPUT MAP DATA =====
+  const inputMap = [
+    { name: 'player_1_jump', deadzone: 0.5, events: [
+      { icon: '⌨', text: 'Up' },
+      { icon: '🎮', text: 'Joypad Button 11 (D-pad Up) - Device 0' },
+      { icon: '🎮', text: 'Joypad Button 0 (Bottom Action) - Device 0' }
+    ]},
+    { name: 'player_1_left', deadzone: 0.5, events: [
+      { icon: '⌨', text: 'Left arrow' },
+      { icon: '🎮', text: 'Joypad Button 13 (D-pad Left) - Device 0' }
+    ]},
+    { name: 'player_1_right', deadzone: 0.5, events: [
+      { icon: '⌨', text: 'Right arrow' },
+      { icon: '🎮', text: 'Joypad Button 14 (D-pad Right) - Device 0' }
+    ]},
+    { name: 'player_1_teleport', deadzone: 0.5, events: [{ icon: '⌨', text: 'Right Shift' }] },
+    { name: 'player_1_phase', deadzone: 0.5, events: [{ icon: '⌨', text: 'Right Ctrl' }] },
+    { name: 'player_1_shrink', deadzone: 0.5, events: [{ icon: '⌨', text: 'Down arrow' }] },
+    { name: 'player_2_jump', deadzone: 0.5, events: [
+      { icon: '⌨', text: 'W' },
+      { icon: '🎮', text: 'Joypad Button 0 - Device 1' }
+    ]},
+    { name: 'player_2_left', deadzone: 0.5, events: [{ icon: '⌨', text: 'A' }] },
+    { name: 'player_2_right', deadzone: 0.5, events: [{ icon: '⌨', text: 'D' }] },
+    { name: 'player_2_teleport', deadzone: 0.5, events: [{ icon: '⌨', text: 'Tab' }] },
+    { name: 'player_2_phase', deadzone: 0.5, events: [{ icon: '⌨', text: 'Q' }] },
+    { name: 'player_2_shrink', deadzone: 0.5, events: [{ icon: '⌨', text: 'S' }] }
+  ];
+
+  // ===== ABILITY DATA =====
+  const abilities = [
+    { name: 'Glide', icon: '~~', line: 290, func: '_glide()', keys: 'HOLD JUMP IN MID-AIR',
+      desc: 'Already done in Step 3! Falls slowly when jump is held while airborne.' },
+    { name: 'Phase', icon: '◇', line: 254, func: '_phase()', keys: 'HOLD RIGHT CTRL (P1) / Q (P2)',
+      desc: 'Become invulnerable while held. You cannot collect coins while phased.' },
+    { name: 'Shrink', icon: '▾', line: 276, func: '_shrink()', keys: 'PRESS DOWN ARROW (P1) / S (P2)',
+      desc: 'Toggle to half-size. Fits through narrow gaps but jumps lower.' },
+    { name: 'Teleport', icon: '⟶', line: 307, func: '_teleport(direction)', keys: 'TAP RIGHT SHIFT (P1) / TAB (P2) WHILE MOVING',
+      desc: 'Zip 512 pixels in the direction you are moving.' }
+  ];
+
+  // ===== STEP NAVIGATION =====
+  function showStep(n) {
+    currentStep = n;
+    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+    const target = document.querySelector(`.step[data-step="${n}"]`);
+    target.classList.add('active');
+    document.getElementById('currentStepNum').textContent = n;
+    document.getElementById('currentStepName').textContent = target.dataset.name;
+    renderProgress();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function renderProgress() {
+    const track = document.getElementById('progressTrack');
+    track.innerHTML = '';
+    for (let i = 1; i <= TOTAL_STEPS; i++) {
+      const seg = document.createElement('div');
+      seg.className = 'progress-segment';
+      if (i < currentStep) seg.classList.add('complete');
+      if (i === currentStep) seg.classList.add('current');
+      seg.addEventListener('click', () => showStep(i));
+      track.appendChild(seg);
+    }
+  }
+
+  document.querySelectorAll('[data-action="next"]').forEach(btn => {
+    btn.addEventListener('click', () => { if (currentStep < TOTAL_STEPS) showStep(currentStep + 1); });
+  });
+  document.querySelectorAll('[data-action="prev"]').forEach(btn => {
+    btn.addEventListener('click', () => { if (currentStep > 1) showStep(currentStep - 1); });
+  });
+  document.querySelectorAll('[data-action="restart"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      unlockedAbilities = new Set();
+      renderAbilities();
+      showStep(1);
+    });
+  });
+
+  // ===== INPUT MAP SIMULATOR =====
+  function renderInputMap(filter = '') {
+    const list = document.getElementById('inputMapList');
+    list.innerHTML = '';
+    const filtered = inputMap.filter(a => a.name.toLowerCase().includes(filter.toLowerCase()));
+    if (filtered.length === 0) {
+      list.innerHTML = '<div style="padding: 24px; text-align: center; color: var(--ink-faint); font-family: \'JetBrains Mono\', monospace; font-size: 13px;">No actions match that filter.</div>';
+      return;
+    }
+    filtered.forEach(action => {
+      const row = document.createElement('div');
+      row.className = 'action-row';
+      const eventsHTML = action.events.map(e =>
+        `<div class="event-item"><span class="event-icon">${e.icon}</span>${e.text}</div>`
+      ).join('');
+      row.innerHTML = `
+        <div class="action-header">
+          <span class="action-arrow">▶</span>
+          <span class="action-name">${action.name}</span>
+          <span class="action-deadzone">deadzone: ${action.deadzone}</span>
+        </div>
+        <div class="action-events">${eventsHTML}</div>
+      `;
+      row.querySelector('.action-header').addEventListener('click', () => {
+        row.classList.toggle('expanded');
+      });
+      list.appendChild(row);
+    });
+  }
+  document.getElementById('inputMapSearch').addEventListener('input', e => {
+    renderInputMap(e.target.value);
+  });
+
+  // ===== COMMENT TOGGLE =====
+  let isCommented = true;
+  document.getElementById('toggleCommentBtn').addEventListener('click', () => {
+    isCommented = !isCommented;
+    const line = document.getElementById('toggleLine');
+    const status = document.getElementById('toggleStatus');
+    const btn = document.getElementById('toggleCommentBtn');
+    const explain = document.getElementById('toggleExplain');
+    if (isCommented) {
+      line.innerHTML = '<span class="ln">290</span><span class="hash">#</span><span class="fn">_glide</span>()';
+      status.textContent = 'DISABLED';
+      status.className = 'status-off';
+      btn.textContent = 'REMOVE THE #';
+      explain.innerHTML = 'With the <em class="kw">#</em> in front, Godot skips this line entirely. The glide ability never runs.';
+    } else {
+      line.innerHTML = '<span class="ln">290</span><span class="fn">_glide</span>()';
+      status.textContent = 'ENABLED';
+      status.className = 'status-on';
+      btn.textContent = 'PUT THE # BACK';
+      explain.innerHTML = 'Now Godot runs this line every physics frame. Hold jump in mid-air and your character will glide.';
+    }
+  });
+
+  // ===== ABILITY UNLOCK GRID =====
+  let unlockedAbilities = new Set();
+  function renderAbilities() {
+    const grid = document.getElementById('abilityGrid');
+    grid.innerHTML = '';
+    abilities.forEach((a, idx) => {
+      const card = document.createElement('div');
+      card.className = 'ability-card' + (unlockedAbilities.has(idx) ? ' unlocked' : '');
+      card.setAttribute('data-clickable', 'true');
+      card.innerHTML = `
+        <div class="ability-icon">${a.icon}</div>
+        <div class="ability-name">${a.name}</div>
+        <div class="ability-keys">${a.keys}</div>
+        <div class="ability-desc">${a.desc}</div>
+        <div style="margin-top: 12px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-faint);">
+          line ${a.line} — remove # before <span style="color: var(--accent);">${a.func}</span>
+        </div>
+      `;
+      card.addEventListener('click', () => {
+        if (unlockedAbilities.has(idx)) unlockedAbilities.delete(idx);
+        else unlockedAbilities.add(idx);
+        renderAbilities();
+      });
+      grid.appendChild(card);
+    });
+  }
+
+  // ===== SIDE QUEST TOGGLE =====
+  document.querySelectorAll('.side-quest-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      btn.parentElement.classList.toggle('expanded');
+    });
+  });
+
+  // ===== INPUT FLOW INTERACTIVE =====
+  let flowResetTimer = null;
+  document.querySelectorAll('.flow-key').forEach(btn => {
+    btn.addEventListener('click', () => {
+      // Reset all keys
+      document.querySelectorAll('.flow-key').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const physical = btn.textContent.trim();
+      const action = btn.getAttribute('data-action');
+      const result = btn.getAttribute('data-result');
+
+      // Stage 1
+      document.getElementById('flowStage1').classList.add('lit');
+      document.getElementById('flowStage1Content').textContent = physical;
+
+      // Stage 2 (delayed)
+      setTimeout(() => {
+        document.getElementById('flowArrow1').classList.add('lit');
+        document.getElementById('flowStage2').classList.add('lit');
+        document.getElementById('flowStage2Content').textContent = action;
+      }, 350);
+
+      // Stage 3 (delayed more)
+      setTimeout(() => {
+        document.getElementById('flowArrow2').classList.add('lit');
+        document.getElementById('flowStage3').classList.add('lit');
+        const codeText = action === 'player_1_jump'
+          ? 'Input.is_action_pressed("player_1_jump") → run _jump()'
+          : 'Input.is_action_pressed("player_2_jump") → run _jump()';
+        document.getElementById('flowStage3Content').textContent = codeText;
+      }, 700);
+
+      // Result
+      setTimeout(() => {
+        const resultEl = document.getElementById('flowResult');
+        resultEl.textContent = '⚡ ' + result;
+        resultEl.classList.add('lit');
+      }, 950);
+
+      // Reset after a while
+      if (flowResetTimer) clearTimeout(flowResetTimer);
+      flowResetTimer = setTimeout(resetFlow, 4500);
+    });
+  });
+
+  function resetFlow() {
+    document.querySelectorAll('.flow-key').forEach(b => b.classList.remove('active'));
+    ['flowStage1', 'flowStage2', 'flowStage3'].forEach(id => {
+      document.getElementById(id).classList.remove('lit');
+    });
+    ['flowArrow1', 'flowArrow2'].forEach(id => {
+      document.getElementById(id).classList.remove('lit');
+    });
+    document.getElementById('flowStage1Content').textContent = '— waiting —';
+    document.getElementById('flowStage2Content').textContent = '— waiting —';
+    document.getElementById('flowStage3Content').textContent = '— waiting —';
+    const resultEl = document.getElementById('flowResult');
+    resultEl.innerHTML = '&nbsp;';
+    resultEl.classList.remove('lit');
+  }
+
+  // ===== INITIAL RENDER =====
+  renderProgress();
+  renderInputMap();
+  renderAbilities();
+</script>
+
+</body>
+</html>
