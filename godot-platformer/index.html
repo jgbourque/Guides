@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -784,6 +783,484 @@
     flex-shrink: 0;
   }
 
+
+  /* ============================================================
+     FIND THE SCRIPT — animated demo of locating player.gd
+     by clicking the Player node's script icon in the Scene panel.
+     Styled to evoke Godot's editor without being a pixel copy.
+     ============================================================ */
+  .find-script {
+    --fs-bg: #232328;
+    --fs-bg-soft: #2a2a30;
+    --fs-bg-hover: #34344a;
+    --fs-bg-active: #3a4d6e;
+    --fs-border: #1a1a1f;
+    --fs-text: #d4d4d8;
+    --fs-text-dim: #8a8a92;
+    --fs-text-blue: #5dade2;
+    --fs-text-orange: #ffb454;
+    --fs-script-blue: #5dade2;
+
+    background: var(--fs-bg);
+    border: 1px solid var(--fs-border);
+    border-radius: 6px;
+    margin: 28px 0;
+    overflow: hidden;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    position: relative;
+  }
+
+  .fs-titlebar {
+    background: #2d2d34;
+    border-bottom: 1px solid var(--fs-border);
+    padding: 8px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 12px;
+    color: var(--fs-text-dim);
+  }
+  .fs-titlebar-label {
+    color: var(--fs-text);
+    font-weight: 500;
+  }
+  .fs-titlebar-spacer { flex: 1; }
+  .fs-titlebar-replay {
+    background: var(--fs-text-orange);
+    border: 1px solid var(--fs-text-orange);
+    color: #1a1a1f;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 5px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+    letter-spacing: 0.06em;
+    box-shadow: 0 2px 6px rgba(255,180,84,0.3);
+  }
+  .fs-titlebar-replay:hover {
+    background: #ffd180;
+    border-color: #ffd180;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(255,180,84,0.5);
+  }
+  .fs-titlebar-replay:active {
+    transform: translateY(0);
+  }
+
+  .fs-stage {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    min-height: 380px;
+    position: relative;
+  }
+
+  /* Scene Panel - left side */
+  .fs-scene-panel {
+    background: var(--fs-bg);
+    border-right: 1px solid var(--fs-border);
+    display: flex;
+    flex-direction: column;
+  }
+  .fs-panel-tabs {
+    display: flex;
+    background: #2d2d34;
+    border-bottom: 1px solid var(--fs-border);
+    padding: 0 8px;
+    font-size: 12px;
+  }
+  .fs-panel-tab {
+    padding: 7px 12px;
+    color: var(--fs-text);
+    border-bottom: 2px solid var(--fs-text-orange);
+    background: rgba(255,180,84,0.05);
+  }
+  .fs-panel-tab.inactive {
+    color: var(--fs-text-dim);
+    border-bottom-color: transparent;
+    background: transparent;
+  }
+
+  .fs-panel-toolbar {
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--fs-border);
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    font-size: 11px;
+    color: var(--fs-text-dim);
+  }
+  .fs-panel-toolbar-input {
+    flex: 1;
+    background: #1c1c22;
+    border: 1px solid var(--fs-border);
+    color: var(--fs-text-dim);
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+  }
+
+  .fs-nodes {
+    padding: 4px 0;
+    font-size: 13px;
+    color: var(--fs-text);
+    flex: 1;
+  }
+  .fs-node {
+    padding: 4px 10px 4px 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: default;
+    user-select: none;
+    transition: background 0.15s;
+    position: relative;
+  }
+  .fs-node.indent-1 { padding-left: 24px; }
+  .fs-node.indent-2 { padding-left: 40px; }
+  .fs-node:hover { background: var(--fs-bg-hover); }
+  .fs-node.highlighted { background: var(--fs-bg-active); }
+  .fs-node.target { cursor: pointer; }
+  .fs-node.target.pulsing::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border: 2px solid var(--fs-text-orange);
+    border-radius: 3px;
+    animation: targetPulse 1.4s ease-out infinite;
+    pointer-events: none;
+  }
+  @keyframes targetPulse {
+    0%   { box-shadow: 0 0 0 0 rgba(255,180,84,0.6); opacity: 1; }
+    100% { box-shadow: 0 0 0 8px rgba(255,180,84,0); opacity: 0; }
+  }
+
+  .fs-node-arrow {
+    color: var(--fs-text-dim);
+    font-size: 9px;
+    width: 8px;
+    flex-shrink: 0;
+  }
+  .fs-node-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .fs-node-icon svg {
+    width: 16px;
+    height: 16px;
+    display: block;
+  }
+  /* Distinct fill colors for different node-type icons (matching Godot's palette) */
+  .fs-icon-node2d   { color: #8aa3c4; }   /* blue circle for Node2D */
+  .fs-icon-runner   { color: #5dade2; }   /* blue running figure for CharacterBody2D */
+  .fs-icon-camera   { color: #f0746e; }   /* red/coral for Camera2D (matches Godot) */
+  .fs-icon-instanced { color: #5dade2; }
+  .fs-icon-localscene { color: #d4d4d8; }
+  .fs-icon-hud      { color: #c39bd3; }   /* purple for Control nodes */
+  .fs-icon-folder   { color: #5dade2; }
+  .fs-icon-gear     { color: #c8c8d0; }   /* white/light-gray for .gd files */
+  .fs-node-name {
+    flex: 1;
+    color: var(--fs-text);
+  }
+  .fs-node-icons {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    opacity: 0.7;
+  }
+  .fs-script-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--fs-script-blue);
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .fs-script-icon svg {
+    width: 16px;
+    height: 16px;
+    display: block;
+  }
+  .fs-node.target:hover .fs-script-icon {
+    transform: scale(1.2);
+    filter: brightness(1.3);
+  }
+  .fs-script-icon.dim {
+    opacity: 0.5;
+    cursor: default;
+  }
+  .fs-script-tab-icon {
+    width: 14px;
+    height: 14px;
+    color: var(--fs-script-blue);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .fs-script-tab-icon svg {
+    width: 14px;
+    height: 14px;
+  }
+  .fs-tiny-icon {
+    width: 12px;
+    height: 12px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 2px;
+  }
+  .fs-eye-icon {
+    color: var(--fs-text-dim);
+    font-size: 10px;
+  }
+
+  /* Script editor preview - right side */
+  .fs-script-panel {
+    background: var(--fs-bg-soft);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+  .fs-script-empty {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--fs-text-dim);
+    font-size: 13px;
+    text-align: center;
+    padding: 20px;
+    font-style: italic;
+  }
+  .fs-script-empty .hint {
+    display: block;
+    margin-top: 8px;
+    color: var(--fs-text-orange);
+    font-style: normal;
+    font-size: 12px;
+  }
+
+  .fs-script-content {
+    position: absolute;
+    inset: 0;
+    background: var(--fs-bg-soft);
+    display: flex;
+    flex-direction: column;
+    transform: translateX(110%);
+    transition: transform 0.5s cubic-bezier(0.4, 0.0, 0.2, 1);
+  }
+  .fs-script-content.visible {
+    transform: translateX(0);
+  }
+  .fs-script-tab {
+    background: #2d2d34;
+    border-bottom: 1px solid var(--fs-border);
+    padding: 6px 14px;
+    font-size: 12px;
+    color: var(--fs-text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 2px solid var(--fs-script-blue);
+  }
+
+  .fs-script-toolbar {
+    padding: 6px 14px;
+    background: var(--fs-bg);
+    border-bottom: 1px solid var(--fs-border);
+    font-size: 11px;
+    color: var(--fs-text-dim);
+    display: flex;
+    gap: 14px;
+  }
+  .fs-script-body {
+    flex: 1;
+    padding: 12px 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--fs-text);
+    overflow: hidden;
+  }
+  .fs-code-comment { color: #6b8a7a; }
+  .fs-code-keyword { color: #c39bd3; }
+  .fs-code-fn      { color: #ffb454; }
+  .fs-code-const   { color: #5ec3a8; }
+  .fs-code-num     { color: #ff9580; }
+  .fs-code-line    { display: block; white-space: pre; opacity: 0; animation: codeFadeIn 0.4s ease-out forwards; }
+  .fs-script-content.visible .fs-code-line { animation-delay: calc(var(--i, 0) * 60ms + 300ms); }
+  @keyframes codeFadeIn {
+    from { opacity: 0; transform: translateX(8px); }
+    to { opacity: 0.95; transform: translateX(0); }
+  }
+
+  /* Simulated cursor */
+  .fs-cursor {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    pointer-events: none;
+    z-index: 10;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .fs-cursor.visible { opacity: 1; }
+  .fs-cursor svg {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,0.5));
+  }
+  .fs-click-ring {
+    position: absolute;
+    width: 36px;
+    height: 36px;
+    border: 2px solid var(--fs-text-orange);
+    border-radius: 50%;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    z-index: 9;
+  }
+  .fs-click-ring.fire {
+    animation: clickRing 0.6s ease-out;
+  }
+  @keyframes clickRing {
+    0%   { opacity: 1; width: 8px;  height: 8px; }
+    100% { opacity: 0; width: 48px; height: 48px; }
+  }
+
+
+  /* === FileSystem path stage (alternate to Scene path) === */
+  .fs-files-panel {
+    background: var(--fs-bg);
+    border-right: 1px solid var(--fs-border);
+    display: flex;
+    flex-direction: column;
+  }
+  .fs-files-breadcrumb {
+    padding: 6px 8px;
+    background: var(--fs-bg);
+    border-bottom: 1px solid var(--fs-border);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--fs-text-dim);
+  }
+  .fs-files-path {
+    flex: 1;
+    background: #1c1c22;
+    border: 1px solid var(--fs-border);
+    color: var(--fs-text);
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .fs-files-list {
+    padding: 4px 0;
+    font-size: 13px;
+    flex: 1;
+    overflow-y: auto;
+  }
+  .fs-file {
+    padding: 4px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: default;
+    user-select: none;
+    transition: background 0.15s;
+    color: var(--fs-text);
+    position: relative;
+  }
+  .fs-file:hover { background: var(--fs-bg-hover); }
+  .fs-file.highlighted { background: var(--fs-bg-active); }
+  .fs-file.indent-1 { padding-left: 26px; }
+  .fs-file.target { cursor: pointer; }
+  .fs-file.target.pulsing::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border: 2px solid var(--fs-text-orange);
+    border-radius: 3px;
+    animation: targetPulse 1.4s ease-out infinite;
+    pointer-events: none;
+  }
+
+  /* Hide either stage based on active mode */
+  .find-script[data-mode="scene"] .fs-files-panel { display: none; }
+  .find-script[data-mode="files"] .fs-scene-panel { display: none; }
+
+  /* Mode toggle below the stage */
+  .fs-mode-toggle {
+    background: #1c1c22;
+    border-top: 1px solid var(--fs-border);
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 12px;
+    color: var(--fs-text-dim);
+  }
+  .fs-mode-toggle strong { color: var(--fs-text); }
+  .fs-mode-btn {
+    background: rgba(255,255,255,0.04);
+    border: 1.5px solid var(--fs-border);
+    color: var(--fs-text);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+    letter-spacing: 0.03em;
+  }
+  .fs-mode-btn.active {
+    background: var(--fs-text-blue);
+    color: #ffffff;
+    border-color: var(--fs-text-blue);
+    box-shadow: 0 2px 8px rgba(93,173,226,0.4);
+  }
+  .fs-mode-btn:hover:not(.active) {
+    background: rgba(255,255,255,0.08);
+    border-color: var(--fs-text-blue);
+    color: #fff;
+  }
+
+  /* Status text below the stage */
+  .fs-status {
+    background: #1c1c22;
+    border-top: 1px solid var(--fs-border);
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--fs-text-dim);
+    text-align: center;
+    min-height: 36px;
+    font-family: 'VT323', monospace;
+    font-size: 16px;
+    letter-spacing: 0.04em;
+  }
+  .fs-status.success { color: var(--accent-cool-bright); }
+  .fs-status.prompt { color: var(--fs-text-orange); }
+
+  @media (max-width: 700px) {
+    .fs-stage { grid-template-columns: 1fr; min-height: auto; }
+    .fs-scene-panel { border-right: none; border-bottom: 1px solid var(--fs-border); }
+    .fs-script-panel { min-height: 280px; }
+  }
+
   /* === ABILITY CARDS === */
   .ability-grid {
     display: grid;
@@ -1118,9 +1595,11 @@
   <!-- ============ STEP 2: THE # TRICK ============ -->
   <section class="step" data-step="2" data-name="The # Trick">
     <div class="step-number">// STEP_02</div>
-    <h2>The hashtag that switches code off</h2>
+    <h2>Turning code on by removing <em class="kw">#</em></h2>
 
-    <p>In your game's code, a line with <em class="kw">#</em> at the start gets <strong>ignored by Godot</strong>. The computer reads right past it. That's how each of your hidden abilities is currently switched off.</p>
+    <p>To turn an ability on, you'll <strong>remove a single <em class="kw">#</em> character</strong> in front of a line of code. Here's why that works: in GDScript, a line that starts with <em class="kw">#</em> gets <strong>ignored by Godot</strong> — the computer reads right past it. That's how each of your hidden abilities is currently switched off. Take the <em class="kw">#</em> away, and the line starts running.</p>
+
+    <p>The lines we'll be turning on look like <em class="kw">_glide()</em> or <em class="kw">_phase()</em>. These are called <strong>function calls</strong> — short instructions that say "go run the recipe named <em class="kw">_glide</em> that's defined elsewhere in the script." The recipe itself is already written; the call is just the trigger. Adding <em class="kw">#</em> in front of a call disables the trigger.</p>
 
     <p>Try the toggle below. Click the button to remove the <em class="kw">#</em> and watch what changes:</p>
 
@@ -1158,10 +1637,359 @@
 
     <p>Now do the same edit in Godot itself.</p>
 
+    <p>Before you can edit the script, you have to find it. There are two common ways — let's see them both. Watch the demo below, then try it yourself.</p>
+
+    <div class="find-script" id="findScript" data-mode="scene">
+      <!-- SVG icon library — used by both stages via <use> -->
+      <svg width="0" height="0" style="position:absolute;overflow:hidden;" aria-hidden="true">
+        <defs>
+          <!-- Node2D base type: circle outline -->
+          <symbol id="ic-node2d" viewBox="0 0 16 16">
+            <circle cx="8" cy="8" r="5" fill="none" stroke="currentColor" stroke-width="1.7"/>
+          </symbol>
+          <!-- CharacterBody2D / Runner figure for Player and Enemy -->
+          <symbol id="ic-runner" viewBox="0 0 16 16">
+            <!-- Head -->
+            <circle cx="9.5" cy="3" r="1.6" fill="currentColor"/>
+            <!-- Body + leading leg + arm -->
+            <path fill="currentColor" d="M9.5 5.2 C 9.5 5.2, 11 6, 11.5 7.5 L 13 7 L 13.4 8 L 11 9 L 10 7.8 L 9 10 L 11 13.5 L 10 14 L 7.8 11 L 5.5 13.5 L 4.5 13 L 7 9.5 L 6 7 L 4 8 L 3.6 7 L 6 6 Z"/>
+          </symbol>
+          <!-- Camera2D: camera body with lens -->
+          <symbol id="ic-camera" viewBox="0 0 16 16">
+            <path fill="currentColor" d="M2 5 L 10 5 L 10 4 L 13.5 6 L 13.5 10 L 10 12 L 10 11 L 2 11 Z"/>
+            <circle cx="6" cy="8" r="2" fill="#232328"/>
+          </symbol>
+          <!-- HUD / Control node: screen with small bar inside -->
+          <symbol id="ic-hud" viewBox="0 0 16 16">
+            <rect x="2" y="3" width="12" height="10" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/>
+            <rect x="4" y="5.5" width="5" height="1.2" fill="currentColor"/>
+            <rect x="4" y="8" width="3" height="1.2" fill="currentColor"/>
+          </symbol>
+          <!-- Folder icon for FileSystem -->
+          <symbol id="ic-folder" viewBox="0 0 16 16">
+            <path fill="currentColor" d="M1.5 4 L 6 4 L 7.2 5.2 L 14.5 5.2 L 14.5 13 L 1.5 13 Z"/>
+            <path fill="rgba(255,255,255,0.15)" d="M1.5 4 L 6 4 L 7.2 5.2 L 14.5 5.2 L 14.5 6.3 L 1.5 6.3 Z"/>
+          </symbol>
+          <!-- Gear / cog icon for .gd files in FileSystem -->
+          <symbol id="ic-gear" viewBox="0 0 16 16">
+            <path fill="currentColor" d="M8 1.5 L 9.2 1.5 L 9.5 3.5 L 11 4 L 12.3 2.7 L 13.3 3.7 L 12 5 L 12.5 6.5 L 14.5 6.8 L 14.5 9.2 L 12.5 9.5 L 12 11 L 13.3 12.3 L 12.3 13.3 L 11 12 L 9.5 12.5 L 9.2 14.5 L 6.8 14.5 L 6.5 12.5 L 5 12 L 3.7 13.3 L 2.7 12.3 L 4 11 L 3.5 9.5 L 1.5 9.2 L 1.5 6.8 L 3.5 6.5 L 4 5 L 2.7 3.7 L 3.7 2.7 L 5 4 L 6.5 3.5 L 6.8 1.5 Z"/>
+            <circle cx="8" cy="8" r="2.2" fill="#232328"/>
+          </symbol>
+          <!-- "Local to scene" indicator: square with a dot -->
+          <symbol id="ic-localscene" viewBox="0 0 16 16">
+            <rect x="3" y="3" width="10" height="10" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/>
+            <circle cx="8" cy="8" r="2" fill="currentColor"/>
+          </symbol>
+          <!-- "Instanced scene" / filmstrip indicator (clapperboard-ish) -->
+          <symbol id="ic-instanced" viewBox="0 0 16 16">
+            <!-- Outer "filmstrip" body -->
+            <path fill="currentColor" d="M2 5 L 14 5 L 14 13.5 L 2 13.5 Z"/>
+            <!-- Top "lid" angled -->
+            <path fill="currentColor" d="M2 5 L 14 5 L 12 2.5 L 4 2.5 Z"/>
+            <!-- Diagonal stripes on the lid -->
+            <path fill="rgba(0,0,0,0.5)" d="M5 2.5 L 6.5 5 L 5 5 L 3.5 2.5 Z"/>
+            <path fill="rgba(0,0,0,0.5)" d="M9 2.5 L 10.5 5 L 9 5 L 7.5 2.5 Z"/>
+            <!-- Folded corner on body -->
+            <path fill="rgba(0,0,0,0.35)" d="M14 5 L 14 7.5 L 11.5 5 Z"/>
+          </symbol>
+          <!-- Script-attached indicator: simple document with code lines.
+               Clean and readable at 16x16 — a page with a small corner notch and
+               horizontal lines suggesting code. Unambiguously means "script file". -->
+          <symbol id="ic-script" viewBox="0 0 16 16" preserveAspectRatio="xMidYMid meet">
+            <!-- Page body with a notched top-right corner -->
+            <path fill="currentColor" d="M 3 1.5 L 10.5 1.5 L 13 4 L 13 14.5 L 3 14.5 Z"/>
+            <!-- Notch/fold detail on top-right corner -->
+            <path fill="rgba(0,0,0,0.35)" d="M 10.5 1.5 L 13 4 L 10.5 4 Z"/>
+            <!-- "Code" lines on the page (varied widths suggest code, not body text) -->
+            <rect x="4.5" y="5.8"  width="4.5" height="0.9" rx="0.3" fill="rgba(0,0,0,0.5)"/>
+            <rect x="4.5" y="7.6"  width="6"   height="0.9" rx="0.3" fill="rgba(0,0,0,0.5)"/>
+            <rect x="4.5" y="9.4"  width="3.5" height="0.9" rx="0.3" fill="rgba(0,0,0,0.5)"/>
+            <rect x="4.5" y="11.2" width="5"   height="0.9" rx="0.3" fill="rgba(0,0,0,0.5)"/>
+          </symbol>
+
+          <!-- Folder icon for FileSystem -->
+          <symbol id="ic-folder" viewBox="0 0 16 16">
+            <path fill="currentColor" d="M1.5 4 L 6 4 L 7.2 5.2 L 14.5 5.2 L 14.5 13 L 1.5 13 Z"/>
+            <path fill="rgba(255,255,255,0.15)" d="M1.5 4 L 6 4 L 7.2 5.2 L 14.5 5.2 L 14.5 6.3 L 1.5 6.3 Z"/>
+          </symbol>
+          <!-- Gear / cog icon for .gd files in FileSystem -->
+          <symbol id="ic-gear" viewBox="0 0 16 16">
+            <path fill="currentColor" d="M8 1.5 L 9.2 1.5 L 9.5 3.5 L 11 4 L 12.3 2.7 L 13.3 3.7 L 12 5 L 12.5 6.5 L 14.5 6.8 L 14.5 9.2 L 12.5 9.5 L 12 11 L 13.3 12.3 L 12.3 13.3 L 11 12 L 9.5 12.5 L 9.2 14.5 L 6.8 14.5 L 6.5 12.5 L 5 12 L 3.7 13.3 L 2.7 12.3 L 4 11 L 3.5 9.5 L 1.5 9.2 L 1.5 6.8 L 3.5 6.5 L 4 5 L 2.7 3.7 L 3.7 2.7 L 5 4 L 6.5 3.5 L 6.8 1.5 Z"/>
+            <circle cx="8" cy="8" r="2.2" fill="#232328"/>
+          </symbol>
+          <!-- "Local to scene" indicator: square with a dot -->
+          <symbol id="ic-localscene" viewBox="0 0 16 16">
+            <rect x="3" y="3" width="10" height="10" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/>
+            <circle cx="8" cy="8" r="2" fill="currentColor"/>
+          </symbol>
+          <!-- "Instanced scene" / filmstrip indicator (clapperboard-ish) -->
+          <symbol id="ic-instanced" viewBox="0 0 16 16">
+            <!-- Outer "filmstrip" body -->
+            <path fill="currentColor" d="M2 5 L 14 5 L 14 13.5 L 2 13.5 Z"/>
+            <!-- Top "lid" angled -->
+            <path fill="currentColor" d="M2 5 L 14 5 L 12 2.5 L 4 2.5 Z"/>
+            <!-- Diagonal stripes on the lid -->
+            <path fill="rgba(0,0,0,0.5)" d="M5 2.5 L 6.5 5 L 5 5 L 3.5 2.5 Z"/>
+            <path fill="rgba(0,0,0,0.5)" d="M9 2.5 L 10.5 5 L 9 5 L 7.5 2.5 Z"/>
+            <!-- Folded corner on body -->
+            <path fill="rgba(0,0,0,0.35)" d="M14 5 L 14 7.5 L 11.5 5 Z"/>
+          </symbol>
+          <!-- Script-attached indicator: scroll seen from a slight side angle.
+               Rolls are tilted in 3D — left end forward, right end receding back.
+               Top curl bends TOWARD viewer (dark opening visible across the top
+               of the cylinder); bottom curl bends AWAY (smooth back, no opening). -->
+          <symbol id="ic-script" viewBox="0 0 16 16" preserveAspectRatio="xMidYMid meet">
+            <!-- Middle flat sheet, tilted so it shares the rolls' axis.
+                 Top edge slopes down-to-right, bottom edge slopes the same way,
+                 giving the whole paper a side-facing parallelogram-ish look. -->
+            <path fill="currentColor" d="M 4 4.5
+                                          L 12.5 5.2
+                                          C 12.5 8, 12.3 10, 12.3 12
+                                          L 4 11.3
+                                          C 4 9, 4 7, 4 4.5 Z"/>
+
+            <!-- TOP ROLL: rotated ellipse, tilted so left end hangs down/forward.
+                 The dark stripe across it (the curl opening facing us) is also tilted. -->
+            <g transform="rotate(-12 8 4.5)">
+              <ellipse cx="8" cy="4.5" rx="5" ry="1.7" fill="currentColor"/>
+              <!-- Dark opening: the inside-of-curl visible because top tips toward us -->
+              <ellipse cx="8" cy="4.2" rx="3.4" ry="0.7" fill="rgba(0,0,0,0.55)"/>
+              <!-- A bit more shadow at the back-right end (farther from viewer) -->
+              <ellipse cx="10.5" cy="4.5" rx="1.6" ry="1.5" fill="rgba(0,0,0,0.18)"/>
+            </g>
+
+            <!-- BOTTOM ROLL: same rotation so the scroll axis is consistent.
+                 No dark stripe — this curl bends AWAY from us, so we just see the
+                 smooth outer cylinder. Add shading on the bottom arc to suggest
+                 the curl receding into shadow. -->
+            <g transform="rotate(-12 8 12)">
+              <ellipse cx="8" cy="12" rx="5" ry="1.7" fill="currentColor"/>
+              <!-- Smooth shadow along the BOTTOM arc (back-side curl, no opening) -->
+              <path fill="rgba(0,0,0,0.3)" d="M 3.4 12.3
+                                                Q 8 13.7, 12.6 12.3
+                                                Q 8 12.9, 3.4 12.3 Z"/>
+              <!-- Back-right depth shading -->
+              <ellipse cx="10.5" cy="12" rx="1.6" ry="1.5" fill="rgba(0,0,0,0.18)"/>
+            </g>
+
+            <!-- Three text lines following the tilted middle paper -->
+            <rect x="5" y="6.7" width="6" height="0.6" rx="0.3" fill="rgba(0,0,0,0.5)" transform="rotate(-4 8 7)"/>
+            <rect x="5" y="8.5" width="6.4" height="0.6" rx="0.3" fill="rgba(0,0,0,0.5)" transform="rotate(-4 8 8.8)"/>
+            <rect x="5" y="10.3" width="6" height="0.6" rx="0.3" fill="rgba(0,0,0,0.5)" transform="rotate(-4 8 10.6)"/>
+          </symbol>
+        </defs>
+      </svg>
+
+      <div class="fs-titlebar">
+        <span class="fs-titlebar-label">Finding player.gd</span>
+        <span class="fs-titlebar-spacer"></span>
+        <button class="fs-titlebar-replay" id="fsReplay">↻ REPLAY DEMO</button>
+      </div>
+
+      <div class="fs-stage">
+        <!-- LEFT: Scene panel -->
+        <div class="fs-scene-panel" id="fsScenePanel">
+          <div class="fs-panel-tabs">
+            <span class="fs-panel-tab">Scene</span>
+            <span class="fs-panel-tab inactive">Import</span>
+          </div>
+          <div class="fs-panel-toolbar">
+            <span style="font-size:14px;color:var(--fs-text-dim);">+</span>
+            <span style="font-size:14px;color:var(--fs-text-dim);">⛓</span>
+            <span class="fs-panel-toolbar-input">Filter Nodes</span>
+          </div>
+          <div class="fs-nodes">
+            <div class="fs-node">
+              <span class="fs-node-arrow">▼</span>
+              <span class="fs-node-icon fs-icon-node2d"><svg><use href="#ic-node2d"/></svg></span>
+              <span class="fs-node-name">Main</span>
+              <span class="fs-node-icons"><span class="fs-eye-icon">👁</span></span>
+            </div>
+            <div class="fs-node indent-1">
+              <span class="fs-node-icon fs-icon-node2d"><svg><use href="#ic-node2d"/></svg></span>
+              <span class="fs-node-name">Platforms</span>
+              <span class="fs-node-icons"><span class="fs-eye-icon">👁</span></span>
+            </div>
+            <div class="fs-node indent-1">
+              <span class="fs-node-arrow">▼</span>
+              <span class="fs-node-icon fs-icon-node2d"><svg><use href="#ic-node2d"/></svg></span>
+              <span class="fs-node-name">Signs</span>
+              <span class="fs-node-icons"><span class="fs-eye-icon">👁</span></span>
+            </div>
+            <div class="fs-node indent-2">
+              <span class="fs-node-icon fs-icon-node2d"><svg><use href="#ic-node2d"/></svg></span>
+              <span class="fs-node-name">Sign</span>
+              <span class="fs-node-icons">
+                <span class="fs-node-icon fs-icon-instanced" title="Instanced scene"><svg><use href="#ic-instanced"/></svg></span>
+                <span class="fs-script-icon dim"><svg><use href="#ic-script"/></svg></span>
+                <span class="fs-eye-icon">👁</span>
+              </span>
+            </div>
+            <div class="fs-node indent-1 target" id="fsPlayerNode" data-target="player">
+              <span class="fs-node-arrow">▼</span>
+              <span class="fs-node-icon fs-icon-runner"><svg><use href="#ic-runner"/></svg></span>
+              <span class="fs-node-name">Player</span>
+              <span class="fs-node-icons">
+                <span class="fs-node-icon fs-icon-localscene" title="Local to scene"><svg><use href="#ic-localscene"/></svg></span>
+                <span class="fs-node-icon fs-icon-instanced" title="Instanced scene"><svg><use href="#ic-instanced"/></svg></span>
+                <span class="fs-script-icon" id="fsPlayerScriptIcon" title="Open Player's script"><svg><use href="#ic-script"/></svg></span>
+                <span class="fs-eye-icon">👁</span>
+              </span>
+            </div>
+            <div class="fs-node indent-2">
+              <span class="fs-node-icon fs-icon-camera"><svg><use href="#ic-camera"/></svg></span>
+              <span class="fs-node-name">Camera2D</span>
+              <span class="fs-node-icons"><span class="fs-eye-icon">👁</span></span>
+            </div>
+            <div class="fs-node indent-1">
+              <span class="fs-node-icon fs-icon-hud"><svg><use href="#ic-hud"/></svg></span>
+              <span class="fs-node-name">HUD</span>
+              <span class="fs-node-icons">
+                <span class="fs-node-icon fs-icon-instanced" title="Instanced scene"><svg><use href="#ic-instanced"/></svg></span>
+                <span class="fs-script-icon dim"><svg><use href="#ic-script"/></svg></span>
+                <span class="fs-eye-icon">👁</span>
+              </span>
+            </div>
+            <div class="fs-node indent-1">
+              <span class="fs-node-arrow">▶</span>
+              <span class="fs-node-icon fs-icon-node2d"><svg><use href="#ic-node2d"/></svg></span>
+              <span class="fs-node-name">Enemies</span>
+              <span class="fs-node-icons"><span class="fs-eye-icon">👁</span></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- LEFT alternate: FileSystem panel (shown when mode=files) -->
+        <div class="fs-files-panel" id="fsFilesPanel">
+          <div class="fs-panel-tabs">
+            <span class="fs-panel-tab">FileSystem</span>
+            <span class="fs-panel-tab inactive">History</span>
+          </div>
+          <div class="fs-files-breadcrumb">
+            <span style="opacity:0.6;">‹</span>
+            <span style="opacity:0.6;">›</span>
+            <span class="fs-files-path" id="fsFilesBreadcrumb">res://</span>
+          </div>
+          <div class="fs-files-list" id="fsFilesList">
+            <!-- Initial state: top-level res:// folders -->
+            <div class="fs-file">
+              <span class="fs-node-arrow">▶</span>
+              <span class="fs-node-icon fs-icon-folder"><svg><use href="#ic-folder"/></svg></span>
+              <span class="fs-node-name">addons</span>
+            </div>
+            <div class="fs-file">
+              <span class="fs-node-arrow">▶</span>
+              <span class="fs-node-icon fs-icon-folder"><svg><use href="#ic-folder"/></svg></span>
+              <span class="fs-node-name">assets</span>
+            </div>
+            <div class="fs-file">
+              <span class="fs-node-arrow">▶</span>
+              <span class="fs-node-icon fs-icon-folder"><svg><use href="#ic-folder"/></svg></span>
+              <span class="fs-node-name">components</span>
+            </div>
+            <div class="fs-file">
+              <span class="fs-node-arrow">▶</span>
+              <span class="fs-node-icon fs-icon-folder"><svg><use href="#ic-folder"/></svg></span>
+              <span class="fs-node-name">doc</span>
+            </div>
+            <div class="fs-file target" id="fsScriptsFolder">
+              <span class="fs-node-arrow" id="fsScriptsFolderArrow">▶</span>
+              <span class="fs-node-icon fs-icon-folder"><svg><use href="#ic-folder"/></svg></span>
+              <span class="fs-node-name">scripts</span>
+            </div>
+            <!-- Children of scripts/ (revealed after the folder expands) -->
+            <div class="fs-file indent-1 fs-scripts-child" style="display:none;">
+              <span class="fs-node-icon fs-icon-gear"><svg><use href="#ic-gear"/></svg></span>
+              <span class="fs-node-name">actions.gd</span>
+            </div>
+            <div class="fs-file indent-1 fs-scripts-child" style="display:none;">
+              <span class="fs-node-icon fs-icon-gear"><svg><use href="#ic-gear"/></svg></span>
+              <span class="fs-node-name">coin.gd</span>
+            </div>
+            <div class="fs-file indent-1 fs-scripts-child" style="display:none;">
+              <span class="fs-node-icon fs-icon-gear"><svg><use href="#ic-gear"/></svg></span>
+              <span class="fs-node-name">global.gd</span>
+            </div>
+            <div class="fs-file indent-1 fs-scripts-child" style="display:none;">
+              <span class="fs-node-icon fs-icon-gear"><svg><use href="#ic-gear"/></svg></span>
+              <span class="fs-node-name">hud.gd</span>
+            </div>
+            <div class="fs-file indent-1 fs-scripts-child target" id="fsPlayerGdFile" style="display:none;">
+              <span class="fs-node-icon fs-icon-gear"><svg><use href="#ic-gear"/></svg></span>
+              <span class="fs-node-name">player.gd</span>
+            </div>
+            <div class="fs-file indent-1 fs-scripts-child" style="display:none;">
+              <span class="fs-node-icon fs-icon-gear"><svg><use href="#ic-gear"/></svg></span>
+              <span class="fs-node-name">web_scene_selector.gd</span>
+            </div>
+            <div class="fs-file">
+              <span class="fs-node-arrow">▶</span>
+              <span class="fs-node-icon fs-icon-folder"><svg><use href="#ic-folder"/></svg></span>
+              <span class="fs-node-name">spaces</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: Script editor preview -->
+        <div class="fs-script-panel">
+          <div class="fs-script-empty" id="fsEmpty">
+            The script editor opens here when you<br>click the Player's script icon.
+            <span class="hint" id="fsEmptyHint">↑ See it light up?</span>
+          </div>
+          <div class="fs-script-content" id="fsScript">
+            <div class="fs-script-tab">
+              <span class="fs-script-tab-icon"><svg><use href="#ic-script"/></svg></span>
+              <span>player.gd</span>
+              <span style="margin-left:auto;color:var(--fs-text-dim);font-size:11px;">✕</span>
+            </div>
+            <div class="fs-script-toolbar">
+              <span>File</span><span>Edit</span><span>Search</span><span>Go To</span><span>Debug</span>
+            </div>
+            <div class="fs-script-body">
+              <span class="fs-code-line" style="--i:0;"><span class="fs-code-comment">## A player's character, which can walk, jump, and stomp on enemies.</span></span>
+              <span class="fs-code-line" style="--i:1;"> </span>
+              <span class="fs-code-line" style="--i:2;"><span class="fs-code-comment">#region Constants used by special abilities</span></span>
+              <span class="fs-code-line" style="--i:3;"><span class="fs-code-keyword">const</span> <span class="fs-code-const">GLIDE_TERMINAL_VELOCITY</span> = <span class="fs-code-num">100</span></span>
+              <span class="fs-code-line" style="--i:4;"><span class="fs-code-keyword">const</span> <span class="fs-code-const">TELEPORT_DISTANCE</span> = <span class="fs-code-num">512</span></span>
+              <span class="fs-code-line" style="--i:5;"><span class="fs-code-keyword">const</span> <span class="fs-code-const">JUMP_VELOCITY_SCALE_WHEN_SMALL</span> = <span class="fs-code-num">0.85</span></span>
+              <span class="fs-code-line" style="--i:6;"><span class="fs-code-comment">#endregion</span></span>
+              <span class="fs-code-line" style="--i:7;"> </span>
+              <span class="fs-code-line" style="--i:8;"><span class="fs-code-keyword">func</span> <span class="fs-code-fn">_physics_process</span>(delta):</span>
+              <span class="fs-code-line" style="--i:9;">    <span class="fs-code-comment">## ...movement and ability code lives here...</span></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Simulated cursor and click ring -->
+        <div class="fs-cursor" id="fsCursor">
+          <svg viewBox="0 0 24 24"><path d="M3 2 L3 20 L8 16 L11 22 L14 21 L11 14 L18 14 Z" fill="white" stroke="black" stroke-width="1"/></svg>
+        </div>
+        <div class="fs-click-ring" id="fsClickRing"></div>
+      </div>
+
+      <div class="fs-mode-toggle">
+        <strong>Show me:</strong>
+        <button class="fs-mode-btn active" id="fsModeScene" data-mode="scene">Scene panel path</button>
+        <button class="fs-mode-btn" id="fsModeFiles" data-mode="files">FileSystem path</button>
+        <span style="margin-left:auto;font-size:11px;">Both lead to the same script.</span>
+      </div>
+
+      <div class="fs-status" id="fsStatus">▸ DEMO PLAYING — watch the cursor</div>
+    </div>
+
+    <div class="callout">
+      <div class="callout-title">Two paths, one destination</div>
+      Whichever way you reach <em class="kw">player.gd</em>, the script editor is where you'll do the actual edit. It is often the case that people use <strong>both</strong> methods depending on what they're working on — the Scene panel when they're focused on a specific character or object, the FileSystem when they already know the file name.
+    </div>
+
+    <p>Got the hang of it? Below is the same workflow you just watched, written out as a checklist you can follow in Godot itself:</p>
+
+    <h3>Step-by-step: unlocking glide for real</h3>
+
     <div class="recipe">
       <ol>
         <li>Open your project in the Godot editor.</li>
-        <li>In the FileSystem panel (usually bottom-left), find <em class="kw">player.gd</em> and double-click to open it.</li>
+        <li>Open <em class="kw">player.gd</em> using either method above — click the Player node's script icon, or find <em class="kw">player.gd</em> in the FileSystem panel (usually bottom-left) and double-click it.</li>
         <li>Press <em class="kw">Ctrl+F</em> (or <em class="kw">Cmd+F</em> on Mac) to open the find tool, type <em class="kw">_glide</em>, and press <strong>Enter</strong>. Godot will jump straight to the line.</li>
         <li>You'll land on a section that looks like the snippet below — a helpful comment, then the function call commented out with a <em class="kw">#</em>.</li>
         <li>Delete the <em class="kw">#</em> in front of <em class="kw">_glide()</em>. (Just the <em class="kw">#</em> — leave the spaces.)</li>
@@ -1191,16 +2019,16 @@
 
     <div class="step-nav">
       <button class="nav-btn" data-action="prev">← Back</button>
-      <button class="nav-btn primary" data-action="next">Find the keys →</button>
+      <button class="nav-btn primary" data-action="next">Find the inputs →</button>
     </div>
   </section>
 
   <!-- ============ STEP 4: FIND THE KEYS ============ -->
-  <section class="step" data-step="4" data-name="Find the Keys">
+  <section class="step" data-step="4" data-name="Find the Inputs">
     <div class="step-number">// STEP_04</div>
-    <h2>Which key triggers what?</h2>
+    <h2>Which input triggers what?</h2>
 
-    <p>Glide was easy because it uses the jump key, which you already knew. But what key is wired to <strong>phase</strong>? Or <strong>teleport</strong>? In Godot, this is set in one place: the <strong>Input Map</strong>.</p>
+    <p>Glide was easy because it uses the jump input, which you already knew. But what input is wired to <strong>phase</strong>? Or <strong>teleport</strong>? In Godot, this is set in one place: the <strong>Input Map</strong> — where any kind of input (keyboard keys, mouse buttons, gamepad buttons, joystick axes) gets connected to an action.</p>
 
     <p>Here's how to find it in your real project:</p>
 
@@ -1209,7 +2037,7 @@
         <li>In Godot, click <strong>Project → Project Settings…</strong> from the top menu.</li>
         <li>Click the <strong>Input Map</strong> tab.</li>
         <li>Use the search box at the top to filter — try typing <em class="kw">phase</em> or <em class="kw">teleport</em>.</li>
-        <li>Click the arrow next to an action to expand it and see what keys are bound.</li>
+        <li>Click the arrow next to an action to expand it and see what inputs are bound.</li>
       </ol>
     </div>
 
@@ -1217,7 +2045,7 @@
 
     <div class="input-map-hint">
       <span class="input-map-hint-icon">▸</span>
-      <span>Click <strong>player_1_teleport</strong>, <strong>player_1_phase</strong>, or <strong>player_1_shrink</strong> to see which keys trigger each ability.</span>
+      <span>Click <strong>player_1_teleport</strong>, <strong>player_1_phase</strong>, or <strong>player_1_shrink</strong> to see which inputs trigger each ability.</span>
     </div>
 
     <div class="godot-window">
@@ -1353,7 +2181,7 @@
     <div class="recipe">
       <ol>
         <li><strong>The <em class="kw">#</em> switches code on and off.</strong> Adding it disables a line; removing it enables one. Indentation matters.</li>
-        <li><strong>The Input Map shows you which keys do what.</strong> Project Settings → Input Map, search and expand.</li>
+        <li><strong>The Input Map shows you which inputs do what.</strong> Project Settings → Input Map, search and expand.</li>
         <li><strong>One change at a time.</strong> Edit, save, test, repeat. Always know which change caused which result.</li>
       </ol>
     </div>
@@ -1673,6 +2501,293 @@
     resultEl.innerHTML = '&nbsp;';
     resultEl.classList.remove('lit');
   }
+
+
+  // ===== FIND THE SCRIPT — animated demo (two paths: Scene & FileSystem) =====
+  (function() {
+    const findScript = document.getElementById('findScript');
+    if (!findScript) return;
+
+    const cursor = document.getElementById('fsCursor');
+    const clickRing = document.getElementById('fsClickRing');
+
+    // Scene-path elements
+    const playerNode = document.getElementById('fsPlayerNode');
+    const playerScriptIcon = document.getElementById('fsPlayerScriptIcon');
+
+    // FileSystem-path elements
+    const scriptsFolder = document.getElementById('fsScriptsFolder');
+    const scriptsFolderArrow = document.getElementById('fsScriptsFolderArrow');
+    const playerGdFile = document.getElementById('fsPlayerGdFile');
+    const filesBreadcrumb = document.getElementById('fsFilesBreadcrumb');
+    const scriptsChildren = document.querySelectorAll('.fs-scripts-child');
+
+    // Shared
+    const scriptContent = document.getElementById('fsScript');
+    const emptyState = document.getElementById('fsEmpty');
+    const replayBtn = document.getElementById('fsReplay');
+    const status = document.getElementById('fsStatus');
+    const modeScene = document.getElementById('fsModeScene');
+    const modeFiles = document.getElementById('fsModeFiles');
+
+    let isAnimating = false;
+    let currentMode = 'scene';
+    let hasAutoPlayed = { scene: false, files: false };
+
+    function setStatus(text, cls) {
+      status.textContent = text;
+      status.className = 'fs-status' + (cls ? ' ' + cls : '');
+    }
+
+    function resetSceneState() {
+      playerNode.classList.remove('highlighted', 'pulsing');
+    }
+    function resetFilesState() {
+      scriptsFolder.classList.remove('highlighted', 'pulsing');
+      playerGdFile.classList.remove('highlighted', 'pulsing');
+      scriptsChildren.forEach(c => c.style.display = 'none');
+      scriptsFolderArrow.textContent = '▶';
+      filesBreadcrumb.textContent = 'res://';
+    }
+    function resetSharedState() {
+      cursor.classList.remove('visible');
+      scriptContent.classList.remove('visible');
+      emptyState.style.display = '';
+    }
+    function fullReset() {
+      resetSceneState();
+      resetFilesState();
+      resetSharedState();
+    }
+
+    function moveCursor(targetEl, duration, callback) {
+      const stage = findScript.querySelector('.fs-stage');
+      const stageRect = stage.getBoundingClientRect();
+      const targetRect = targetEl.getBoundingClientRect();
+      const x = targetRect.left - stageRect.left + targetRect.width / 2 - 8;
+      const y = targetRect.top - stageRect.top + targetRect.height / 2 - 4;
+      cursor.style.transition = `left ${duration}ms cubic-bezier(0.4, 0.0, 0.2, 1), top ${duration}ms cubic-bezier(0.4, 0.0, 0.2, 1)`;
+      cursor.style.left = x + 'px';
+      cursor.style.top = y + 'px';
+      setTimeout(callback, duration);
+    }
+
+    function fireClickRing(targetEl) {
+      const stage = findScript.querySelector('.fs-stage');
+      const stageRect = stage.getBoundingClientRect();
+      const targetRect = targetEl.getBoundingClientRect();
+      const x = targetRect.left - stageRect.left + targetRect.width / 2;
+      const y = targetRect.top - stageRect.top + targetRect.height / 2;
+      clickRing.style.left = x + 'px';
+      clickRing.style.top = y + 'px';
+      clickRing.classList.remove('fire');
+      void clickRing.offsetWidth;
+      clickRing.classList.add('fire');
+    }
+
+    function openScript() {
+      emptyState.style.display = 'none';
+      // Restart line-fade-in animation by re-adding the class
+      scriptContent.classList.remove('visible');
+      void scriptContent.offsetWidth;
+      scriptContent.classList.add('visible');
+    }
+
+    function startCursorAt(xOffset, yOffset) {
+      const stage = findScript.querySelector('.fs-stage');
+      const stageRect = stage.getBoundingClientRect();
+      cursor.style.transition = 'none';
+      cursor.style.left = (xOffset) + 'px';
+      cursor.style.top = (stageRect.height - yOffset) + 'px';
+      void cursor.offsetWidth;
+      cursor.classList.add('visible');
+    }
+
+    // === SCENE PATH DEMO ===
+    function playSceneDemo() {
+      if (isAnimating) return;
+      isAnimating = true;
+      fullReset();
+      setStatus('▸ DEMO PLAYING — click the Player node, then its script icon');
+
+      startCursorAt(20, 30);
+
+      setTimeout(() => {
+        moveCursor(playerNode, 900, () => {
+          playerNode.classList.add('highlighted');
+          setTimeout(() => {
+            moveCursor(playerScriptIcon, 600, () => {
+              setTimeout(() => {
+                fireClickRing(playerScriptIcon);
+                setTimeout(() => {
+                  openScript();
+                  setStatus('✓ player.gd is open — you can edit it now', 'success');
+                  setTimeout(() => {
+                    cursor.classList.remove('visible');
+                    isAnimating = false;
+                    hasAutoPlayed.scene = true;
+                    playerNode.classList.add('pulsing');
+                    setTimeout(() => {
+                      setStatus('▸ NOW YOU TRY — click the Player node\'s script icon', 'prompt');
+                    }, 1200);
+                  }, 1800);
+                }, 200);
+              }, 300);
+            });
+          }, 400);
+        });
+      }, 400);
+    }
+
+    // === FILESYSTEM PATH DEMO ===
+    function playFilesDemo() {
+      if (isAnimating) return;
+      isAnimating = true;
+      fullReset();
+      setStatus('▸ DEMO PLAYING — open the scripts folder, then double-click player.gd');
+
+      startCursorAt(20, 30);
+
+      // Step 1: move to scripts folder
+      setTimeout(() => {
+        moveCursor(scriptsFolder, 900, () => {
+          // Step 2: click to expand
+          setTimeout(() => {
+            fireClickRing(scriptsFolder);
+            scriptsFolder.classList.add('highlighted');
+            scriptsFolderArrow.textContent = '▼';
+            scriptsChildren.forEach(c => c.style.display = '');
+            filesBreadcrumb.textContent = 'res://scripts/';
+
+            // Step 3: move to player.gd
+            setTimeout(() => {
+              moveCursor(playerGdFile, 700, () => {
+                // Step 4: double-click
+                setTimeout(() => {
+                  fireClickRing(playerGdFile);
+                  playerGdFile.classList.add('highlighted');
+                  setTimeout(() => {
+                    fireClickRing(playerGdFile);
+                    setTimeout(() => {
+                      openScript();
+                      setStatus('✓ player.gd is open — same destination, different path', 'success');
+                      setTimeout(() => {
+                        cursor.classList.remove('visible');
+                        isAnimating = false;
+                        hasAutoPlayed.files = true;
+                        playerGdFile.classList.add('pulsing');
+                        setTimeout(() => {
+                          setStatus('▸ NOW YOU TRY — double-click player.gd', 'prompt');
+                        }, 1200);
+                      }, 1800);
+                    }, 250);
+                  }, 250);
+                }, 300);
+              });
+            }, 500);
+          }, 250);
+        });
+      }, 400);
+    }
+
+    function playDemoForMode() {
+      if (currentMode === 'scene') playSceneDemo();
+      else playFilesDemo();
+    }
+
+    // === USER INTERACTIONS ===
+
+    // Scene path: user clicks script icon
+    playerScriptIcon.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (isAnimating || currentMode !== 'scene') return;
+      playerNode.classList.add('highlighted');
+      playerNode.classList.remove('pulsing');
+      fireClickRing(playerScriptIcon);
+      setTimeout(() => {
+        openScript();
+        setStatus('✓ player.gd is open — try clicking again or hit Replay', 'success');
+      }, 150);
+    });
+
+    // FileSystem path: user clicks scripts folder, then player.gd
+    scriptsFolder.addEventListener('click', () => {
+      if (isAnimating || currentMode !== 'files') return;
+      if (scriptsFolderArrow.textContent === '▶') {
+        // Expand
+        fireClickRing(scriptsFolder);
+        scriptsFolder.classList.add('highlighted');
+        scriptsFolderArrow.textContent = '▼';
+        scriptsChildren.forEach(c => c.style.display = '');
+        filesBreadcrumb.textContent = 'res://scripts/';
+        setStatus('▸ Now double-click player.gd', 'prompt');
+        playerGdFile.classList.add('pulsing');
+      } else {
+        // Collapse
+        scriptsFolderArrow.textContent = '▶';
+        scriptsChildren.forEach(c => c.style.display = 'none');
+        filesBreadcrumb.textContent = 'res://';
+      }
+    });
+
+    playerGdFile.addEventListener('dblclick', () => {
+      if (isAnimating || currentMode !== 'files') return;
+      playerGdFile.classList.remove('pulsing');
+      fireClickRing(playerGdFile);
+      setTimeout(() => {
+        openScript();
+        setStatus('✓ player.gd is open — try again or hit Replay', 'success');
+      }, 150);
+    });
+    // Single-click on player.gd just highlights (like real Godot's selection)
+    playerGdFile.addEventListener('click', () => {
+      if (isAnimating || currentMode !== 'files') return;
+      playerGdFile.classList.add('highlighted');
+    });
+
+    // Replay button — replays current mode
+    replayBtn.addEventListener('click', playDemoForMode);
+
+    // Mode toggle
+    function switchMode(newMode) {
+      if (isAnimating) return;
+      currentMode = newMode;
+      findScript.setAttribute('data-mode', newMode);
+      modeScene.classList.toggle('active', newMode === 'scene');
+      modeFiles.classList.toggle('active', newMode === 'files');
+      fullReset();
+      // Auto-play this mode's demo if it hasn't been played yet
+      if (!hasAutoPlayed[newMode]) {
+        setTimeout(playDemoForMode, 400);
+      } else {
+        if (newMode === 'scene') {
+          setStatus('▸ Click the Player node\'s script icon', 'prompt');
+          playerNode.classList.add('pulsing');
+        } else {
+          setStatus('▸ Click the scripts folder to expand it', 'prompt');
+          scriptsFolder.classList.add('pulsing');
+        }
+      }
+    }
+
+    modeScene.addEventListener('click', () => switchMode('scene'));
+    modeFiles.addEventListener('click', () => switchMode('files'));
+
+    // Auto-play scene demo on first navigation to Step 3
+    function tryAutoPlay() {
+      if (hasAutoPlayed.scene) return;
+      const step3 = document.querySelector('.step[data-step="3"]');
+      if (step3 && step3.classList.contains('active')) {
+        setTimeout(playSceneDemo, 600);
+      }
+    }
+    const step3El = document.querySelector('.step[data-step="3"]');
+    if (step3El) {
+      const observer = new MutationObserver(tryAutoPlay);
+      observer.observe(step3El, { attributes: true, attributeFilter: ['class'] });
+      tryAutoPlay();
+    }
+  })();
 
   // ===== INITIAL RENDER =====
   renderProgress();
