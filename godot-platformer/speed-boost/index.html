@@ -362,37 +362,6 @@
 
   /* === STICKY NOTE BOARD (problem decomposition in Step 2) === */
 
-  /* The legend above the board explains the two location badges */
-  .where-legend {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-    margin: 18px auto 6px;
-    max-width: 720px;
-  }
-  .where-legend-item {
-    background: var(--bg-soft);
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    padding: 10px 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-  .where-legend-desc {
-    font-size: 13px;
-    color: var(--ink-dim);
-    font-family: 'Fraunces', serif;
-    line-height: 1.45;
-  }
-  .where-legend-desc em {
-    color: var(--ink);
-    font-style: italic;
-  }
-  @media (max-width: 700px) {
-    .where-legend { grid-template-columns: 1fr; }
-  }
-
   /* The badge itself — orange for editor work, teal for script work */
   .where-badge {
     display: inline-flex;
@@ -3162,25 +3131,7 @@
     <p>That's it. Two pieces. The coin detects the touch, then reaches over and modifies a property on the player. No middleman, no extra scripts. The player keeps using whatever speed it currently has — the coin just changes that value.</p>
 
     <h3 style="margin-top: 2.5rem;">How we'll get there — the journey ahead</h3>
-    <p>Before diving in, let's break this down into the pieces we'll build. Each sticky note is one chunk of work — and just as importantly, each one shows you <strong>where</strong> that work happens.</p>
-
-    <!-- Legend explaining the two "where" badges -->
-    <div class="where-legend">
-      <div class="where-legend-item">
-        <span class="where-badge where-editor" aria-hidden="true">
-          <svg viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="9" rx="1" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="5.5" cy="6.5" r="1.4" fill="currentColor"/><line x1="8" y1="6.5" x2="12" y2="6.5" stroke="currentColor" stroke-width="1.3"/><line x1="4" y1="9.5" x2="12" y2="9.5" stroke="currentColor" stroke-width="1.3"/></svg>
-          GODOT EDITOR
-        </span>
-        <span class="where-legend-desc">You do this by <em>clicking, dragging, and saving</em> in the Godot app — no typing code.</span>
-      </div>
-      <div class="where-legend-item">
-        <span class="where-badge where-script" aria-hidden="true">
-          <svg viewBox="0 0 16 16"><polyline points="5,4 2,8 5,12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><polyline points="11,4 14,8 11,12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          SCRIPT
-        </span>
-        <span class="where-legend-desc">You do this by <em>typing code</em> into the script file (in the Script editor inside Godot, or any text editor).</span>
-      </div>
-    </div>
+    <p>Before diving in, let's break this down. Each sticky note is one chunk of work. Notice the small tag on each one — it shows whether that step happens in the <span class="where-badge where-editor" style="vertical-align: middle;"><svg viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="9" rx="1" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="5.5" cy="6.5" r="1.4" fill="currentColor"/><line x1="8" y1="6.5" x2="12" y2="6.5" stroke="currentColor" stroke-width="1.3"/><line x1="4" y1="9.5" x2="12" y2="9.5" stroke="currentColor" stroke-width="1.3"/></svg>&nbsp;GODOT EDITOR</span> or in the <span class="where-badge where-script" style="vertical-align: middle;"><svg viewBox="0 0 16 16"><polyline points="5,4 2,8 5,12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><polyline points="11,4 14,8 11,12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>&nbsp;SCRIPT</span>.</p>
 
     <div class="sticky-board" aria-label="Six steps to building the boost coin">
       <div class="sticky-note sticky-paper-yellow" data-num="1">
@@ -3275,14 +3226,16 @@
       <button class="side-quest-toggle">
         <span class="sq-label">
           <span class="side-quest-tag">SIDE QUEST</span>
-          <span>Is this really how bigger games are organized?</span>
+          <span>A peek at bigger projects: what if lots of things need to talk to each other?</span>
         </span>
         <span class="side-quest-arrow">▶</span>
       </button>
       <div class="side-quest-body">
-        <p>Honestly? Not always. In bigger projects you'll see a pattern called a <strong>singleton</strong> — a shared "bulletin board" script (like the <em class="kw">Global</em> autoload your project already has) that the coin shouts into, and the player listens for. The advantage: the coin and player don't need to know each other exists.</p>
-        <p>But here's the thing: <strong>that pattern is organizational polish, not a requirement.</strong> The direct call we're using works just fine, and it's much easier to follow when you're learning. Once you've built a few collectibles, the singleton pattern starts to feel useful instead of mysterious — but only then.</p>
-        <p class="note">In Step 7, we'll show you the singleton "upgrade" path if you want it.</p>
+        <p>Our boost coin reaches over and talks to the player directly. That's perfect for a small, focused feature. But as a project grows, you start asking:</p>
+        <p><em>"What if the coin needs to update the HUD's score? And play a sound? And trigger an achievement? And let an analytics system know? Should every coin script know about every one of those?"</em></p>
+        <p>Godot has a pattern that solves this gracefully: an <strong>autoload (singleton)</strong> — a special script that's always loaded and reachable by name from anywhere. Many projects make one called <em class="kw">Global</em>, <em class="kw">GameState</em>, or <em class="kw">EventBus</em>. The coin emits "I was collected!" once, and any system that cares can listen — without the coin knowing they exist.</p>
+        <p>You'll see this pattern crop up a lot. For now, our direct call is the right starting point — it's easier to follow, and the singleton "upgrade" path will make more sense once you've built a few features the simple way first.</p>
+        <p class="note">Your project already has a <em class="kw">Global</em> autoload — peek at it later if you're curious. In Step 7 we'll show what the singleton version of this coin would look like.</p>
       </div>
     </div>
 
