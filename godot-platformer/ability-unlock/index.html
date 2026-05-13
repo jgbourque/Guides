@@ -786,7 +786,7 @@
 
   /* ============================================================
      FIND THE SCRIPT — animated demo of locating player.gd
-     by clicking the Player node's script icon in the Scene panel.
+     by clicking the Player node's script icon in the Scene tree.
      Styled to evoke Godot's editor without being a pixel copy.
      ============================================================ */
   .find-script {
@@ -1202,18 +1202,80 @@
   .find-script[data-mode="scene"] .fs-files-panel { display: none; }
   .find-script[data-mode="files"] .fs-scene-panel { display: none; }
 
+
+  /* Find-script poster (manual play start) */
+  .fs-poster {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, #1a1a1f 0%, #2a2a40 100%);
+    z-index: 70;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: opacity 0.4s ease;
+  }
+  .fs-poster.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .fs-poster-content { text-align: center; }
+  .fs-play-btn {
+    background: var(--accent);
+    color: #1a1a1f;
+    border: none;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 24px rgba(255,180,84,0.45);
+    transition: transform 0.2s, box-shadow 0.2s;
+    margin-bottom: 18px;
+  }
+  .fs-play-btn:hover {
+    transform: scale(1.08);
+    box-shadow: 0 12px 32px rgba(255,180,84,0.6);
+  }
+  .fs-play-btn:active { transform: scale(0.95); }
+  .fs-play-btn svg { width: 36px; height: 36px; margin-left: 4px; }
+  .fs-poster-title {
+    color: #fff;
+    font-family: 'Fraunces', serif;
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .fs-poster-subtitle {
+    color: var(--fs-text-dim);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+  }
+
   /* Mode toggle below the stage */
   .fs-mode-toggle {
     background: #1c1c22;
-    border-top: 1px solid var(--fs-border);
-    padding: 10px 14px;
+    border-bottom: 1px solid var(--fs-border);
+    padding: 12px 14px;
     display: flex;
     align-items: center;
     gap: 12px;
-    font-size: 12px;
+    font-size: 13px;
     color: var(--fs-text-dim);
   }
-  .fs-mode-toggle strong { color: var(--fs-text); }
+  .fs-mode-toggle strong {
+    color: var(--fs-text);
+    font-size: 14px;
+  }
+  .fs-mode-note {
+    margin-left: auto;
+    font-size: 13px;
+    color: var(--fs-text-dim);
+    font-style: italic;
+  }
   .fs-mode-btn {
     background: rgba(255,255,255,0.04);
     border: 1.5px solid var(--fs-border);
@@ -1337,6 +1399,622 @@
     padding: 4px 14px;
     border-radius: 3px;
     white-space: nowrap;
+  }
+
+
+
+  /* Poster overlay shown until user clicks the play button on the Input Map demo */
+  .im-poster {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, #1a1a1f 0%, #2a2a40 100%);
+    z-index: 70;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: opacity 0.4s ease;
+  }
+  .im-poster.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .im-poster-content {
+    text-align: center;
+  }
+  .im-play-btn {
+    background: var(--accent);
+    color: #1a1a1f;
+    border: none;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 24px rgba(255,180,84,0.45);
+    transition: transform 0.2s, box-shadow 0.2s;
+    margin-bottom: 18px;
+  }
+  .im-play-btn:hover {
+    transform: scale(1.08);
+    box-shadow: 0 12px 32px rgba(255,180,84,0.6);
+  }
+  .im-play-btn:active {
+    transform: scale(0.95);
+  }
+  .im-play-btn svg {
+    width: 36px;
+    height: 36px;
+    margin-left: 4px;  /* visual centering for play-triangle shape */
+  }
+  .im-poster-title {
+    color: #fff;
+    font-family: 'Fraunces', serif;
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .im-poster-subtitle {
+    color: var(--fs-text-dim);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+  }
+
+  /* ===================================================================
+     INPUT MAP NAVIGATION WALKTHROUGH COMPONENT
+     Step 4's new "how to find the Input Map" demo:
+     editor wireframe -> top menu Project -> dropdown -> Project Settings
+     modal -> Input Map tab.
+     =================================================================== */
+  .im-component {
+    background: var(--bg-soft);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    overflow: hidden;
+    margin: 24px 0;
+    font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+  }
+  .im-titlebar {
+    display: flex;
+    align-items: center;
+    background: #14141a;
+    padding: 10px 18px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .im-titlebar-label {
+    font-weight: 600;
+    color: #d4d4d8;
+    font-size: 14px;
+  }
+  .im-titlebar-spacer { flex: 1; }
+  .im-titlebar-replay {
+    background: var(--accent);
+    border: 1px solid var(--accent);
+    color: #1a1a1f;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 5px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+    letter-spacing: 0.06em;
+    box-shadow: 0 2px 6px rgba(255,180,84,0.3);
+  }
+  .im-titlebar-replay:hover {
+    background: #ffd180;
+    border-color: #ffd180;
+    transform: translateY(-1px);
+  }
+
+  .im-stage {
+    position: relative;
+    background: #1a1a1f;
+    min-height: 460px;
+    overflow: hidden;
+  }
+
+  /* Establishing shot */
+  .im-establish {
+    position: absolute;
+    inset: 0;
+    background: var(--bg-soft);
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    transition: transform 1.7s cubic-bezier(0.4, 0.0, 0.2, 1),
+                opacity 1.7s cubic-bezier(0.4, 0.0, 0.2, 1);
+    transform-origin: 12% 10%;  /* zoom into Project word top-left */
+  }
+  .im-establish.hidden {
+    transform: scale(3.5);
+    opacity: 0;
+    pointer-events: none;
+  }
+  .im-establish svg {
+    width: 100%; height: 100%;
+    max-width: 700px; max-height: 440px;
+  }
+  .im-establish-label {
+    position: absolute;
+    bottom: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'VT323', monospace;
+    font-size: 18px;
+    color: var(--accent);
+    letter-spacing: 0.06em;
+    background: rgba(0,0,0,0.4);
+    padding: 4px 14px;
+    border-radius: 3px;
+    white-space: nowrap;
+  }
+  .im-w-highlight {
+    fill: rgba(255,138,76,0.15);
+    stroke: #ff8a4c;
+    stroke-width: 1.6;
+    animation: imEstablishPulse 0.9s ease-in-out infinite;
+  }
+  @keyframes imEstablishPulse {
+    0%, 100% {
+      stroke-opacity: 1; fill-opacity: 1;
+      filter: drop-shadow(0 0 10px rgba(255,138,76,0.85));
+    }
+    50% {
+      stroke-opacity: 0.15; fill-opacity: 0.15;
+      filter: drop-shadow(0 0 1px rgba(255,138,76,0.15));
+    }
+  }
+
+  /* Zoomed view (top menu bar close-up + dropdown + modal) */
+  .im-zoomed {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    min-height: 460px;
+  }
+
+  /* Top menu bar close-up */
+  .im-menubar {
+    display: flex;
+    align-items: center;
+    background: #1a1a1f;
+    padding: 0 16px;
+    height: 36px;
+    border-bottom: 1px solid #2c2c34;
+    font-size: 14px;
+  }
+  .im-menu-item {
+    color: #c8c8d0;
+    padding: 8px 12px;
+    cursor: default;
+    user-select: none;
+    border-radius: 3px;
+    transition: background 0.15s;
+  }
+  .im-menu-item.im-target {
+    cursor: pointer;
+  }
+  .im-menu-item.im-target.armed {
+    animation: imHintPulse 1.4s ease-in-out infinite;
+  }
+  .im-menu-item.im-target:hover {
+    background: rgba(93,173,226,0.15);
+  }
+  .im-menu-item.opened {
+    background: rgba(93,173,226,0.2);
+  }
+  .im-menubar-spacer { flex: 1; }
+  .im-menu-tabs {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+  .im-tab-2d {
+    color: #5dade2;
+    font-weight: 700;
+    border-bottom: 2px solid #5dade2;
+    padding: 4px 8px;
+  }
+  .im-tab-dim {
+    color: #6a6a72;
+    padding: 4px 8px;
+  }
+  @keyframes imHintPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255,138,76,0); background: transparent; }
+    50%      { box-shadow: 0 0 0 3px rgba(255,138,76,0.45); background: rgba(255,138,76,0.12); }
+  }
+
+  /* Dropdown that appears under "Project" */
+  .im-dropdown {
+    position: absolute;
+    top: 36px;
+    left: 60px;
+    min-width: 280px;
+    background: #2a2a30;
+    border: 1px solid #3a3a44;
+    border-radius: 4px;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+    padding: 4px 0;
+    z-index: 5;
+    opacity: 0;
+    transform: translateY(-8px);
+    pointer-events: none;
+    transition: opacity 0.18s, transform 0.18s;
+    font-size: 13px;
+  }
+  .im-dropdown.open {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+  .im-dropdown-item {
+    padding: 6px 16px;
+    color: #c8c8d0;
+    cursor: default;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .im-dropdown-item.dim {
+    color: #8a8a92;
+  }
+  .im-dropdown-item.im-target {
+    cursor: pointer;
+    color: #c8c8d0;
+  }
+  .im-dropdown-item.im-target:hover {
+    background: rgba(93,173,226,0.2);
+  }
+  .im-dropdown-item.im-target.armed {
+    animation: imHintPulse 1.4s ease-in-out infinite;
+  }
+  .im-dropdown-divider {
+    height: 1px;
+    background: #3a3a44;
+    margin: 4px 0;
+  }
+  .im-shortcut {
+    color: #6a6a72;
+    font-size: 11px;
+    font-family: monospace;
+  }
+
+  /* Filler under menu bar */
+  .im-editor-filler {
+    height: 90px;
+    background: linear-gradient(180deg, #14141a 0%, #1a1a1f 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .im-filler-text {
+    color: #3a3a44;
+    font-family: 'VT323', monospace;
+    font-size: 24px;
+    letter-spacing: 0.1em;
+  }
+
+  /* Project Settings modal */
+  .im-modal {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.85);
+    width: 92%;
+    max-width: 720px;
+    height: 380px;
+    background: #1a1a1f;
+    border: 1px solid #2c2c34;
+    border-radius: 6px;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.7);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s, transform 0.35s cubic-bezier(0.34, 1.4, 0.64, 1);
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .im-modal.open {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+    pointer-events: auto;
+  }
+  .im-modal-titlebar {
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    background: #14141a;
+    border-bottom: 1px solid #2c2c34;
+    font-size: 13px;
+  }
+  .im-modal-icon { margin-right: 8px; font-size: 14px; }
+  .im-modal-title { color: #d4d4d8; }
+  .im-modal-spacer { flex: 1; }
+  .im-modal-controls { display: flex; gap: 10px; }
+  .im-modal-ctrl {
+    color: #6a6a72;
+    font-size: 14px;
+    padding: 0 4px;
+    cursor: default;
+  }
+  .im-modal-tabs {
+    display: flex;
+    background: #1a1a1f;
+    padding: 0 16px;
+    border-bottom: 1px solid #2c2c34;
+    gap: 4px;
+  }
+  .im-modal-tab {
+    padding: 12px 18px;
+    color: #c8c8d0;
+    font-size: 13px;
+    cursor: default;
+    position: relative;
+  }
+  .im-modal-tab.active {
+    color: #fff;
+    font-weight: 600;
+  }
+  .im-modal-tab.active::after {
+    content: '';
+    position: absolute;
+    left: 14px; right: 14px;
+    bottom: 0;
+    height: 2px;
+    background: #5dade2;
+  }
+  .im-modal-tab.dim { color: #6a6a72; }
+  .im-modal-tab.im-target {
+    cursor: pointer;
+  }
+  .im-modal-tab.im-target:hover {
+    background: rgba(93,173,226,0.15);
+  }
+  .im-modal-tab.im-target.armed {
+    animation: imHintPulse 1.4s ease-in-out infinite;
+  }
+  .im-modal-body { flex: 1; overflow: hidden; }
+  .im-modal-content { display: flex; flex-direction: column; height: 100%; padding: 12px 16px; gap: 10px; }
+  .im-modal-content.hidden { display: none; }
+  .im-modal-filter { display: flex; align-items: center; gap: 12px; }
+  .im-modal-filter input {
+    flex: 1;
+    background: #0f0f14;
+    border: 1px solid #2c2c34;
+    border-radius: 4px;
+    padding: 6px 10px;
+    color: #c8c8d0;
+    font-family: inherit;
+    font-size: 12px;
+  }
+  .im-advanced-label { color: #8a8a92; font-size: 12px; }
+  .im-advanced-label .im-toggle {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    background: #5dade2;
+    border-radius: 50%;
+    margin-left: 4px;
+  }
+  .im-modal-twocol { display: grid; grid-template-columns: 180px 1fr; gap: 12px; flex: 1; min-height: 0; }
+  .im-modal-tree {
+    background: #14141a;
+    border-radius: 4px;
+    padding: 8px;
+    overflow-y: auto;
+  }
+  .im-tree-item {
+    font-size: 12px;
+    color: #c8c8d0;
+    padding: 3px 4px;
+    cursor: default;
+    border-radius: 2px;
+  }
+  .im-tree-item.indent { padding-left: 16px; color: #a4a4ac; }
+  .im-tree-item.bold { color: #d4d4d8; font-weight: 500; }
+  .im-tree-item.active { background: rgba(93,173,226,0.2); color: #fff; }
+
+  .im-modal-detail {
+    background: #14141a;
+    border-radius: 4px;
+    padding: 12px;
+    overflow-y: auto;
+  }
+  .im-detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid #2c2c34;
+    font-size: 12px;
+  }
+  .im-detail-key { color: #8a8a92; }
+  .im-detail-val { color: #d4d4d8; font-family: monospace; }
+
+  /* Input Map content (revealed after Input Map tab clicked) */
+  .im-modal-add {
+    background: rgba(93,173,226,0.15);
+    color: #5dade2;
+    border: 1px solid rgba(93,173,226,0.3);
+    padding: 5px 12px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-family: inherit;
+    cursor: default;
+  }
+  .im-action-list {
+    flex: 1;
+    overflow-y: auto;
+    background: #14141a;
+    border-radius: 4px;
+    padding: 6px;
+  }
+  .im-action-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 8px;
+    color: #d4d4d8;
+    font-size: 13px;
+    border-radius: 2px;
+    cursor: default;
+  }
+  .im-action-row:hover { background: rgba(255,255,255,0.04); }
+  .im-action-row.expanded { background: rgba(93,173,226,0.1); }
+  .im-action-arrow {
+    color: #8a8a92;
+    transition: transform 0.2s;
+    font-size: 11px;
+  }
+  .im-action-arrow.open { transform: rotate(90deg); color: var(--accent); }
+  .im-action-name { font-family: monospace; flex: 1; }
+  .im-action-deadzone {
+    font-size: 11px;
+    color: #6a6a72;
+    background: #0f0f14;
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+  .im-action-bindings {
+    padding: 4px 8px 8px 30px;
+    border-left: 2px solid rgba(255,138,76,0.4);
+    margin-left: 12px;
+    transition: max-height 0.3s, opacity 0.3s, padding 0.3s;
+    overflow: hidden;
+  }
+  .im-action-bindings.hidden {
+    max-height: 0;
+    opacity: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+  .im-binding-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 0;
+    color: #c8c8d0;
+    font-size: 12px;
+  }
+  .im-binding-icon { width: 18px; text-align: center; }
+  .im-modal-footer {
+    padding: 12px 16px;
+    text-align: center;
+    border-top: 1px solid #2c2c34;
+  }
+  .im-modal-close {
+    background: #2a2a30;
+    color: #c8c8d0;
+    border: 1px solid #3a3a44;
+    padding: 6px 24px;
+    border-radius: 3px;
+    cursor: default;
+    font-family: inherit;
+  }
+
+  /* Cursor + click ring (reused pattern) */
+  .im-cursor {
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    pointer-events: none;
+    z-index: 50;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .im-cursor.visible { opacity: 1; }
+  .im-cursor::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, #fff 50%, transparent 50%);
+    clip-path: polygon(0 0, 100% 60%, 60% 70%, 75% 100%, 50% 100%, 35% 70%, 0 80%);
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+  }
+  .im-click-ring {
+    position: absolute;
+    width: 0;
+    height: 0;
+    border: 2px solid var(--accent);
+    border-radius: 50%;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 49;
+    transform: translate(-50%, -50%);
+  }
+  .im-click-ring.fire {
+    animation: imRingExpand 0.5s ease-out forwards;
+  }
+  @keyframes imRingExpand {
+    0%   { width: 0; height: 0; opacity: 1; border-width: 3px; }
+    100% { width: 60px; height: 60px; opacity: 0; border-width: 1px; }
+  }
+
+  /* Try-it banner */
+  .im-try-banner {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(0.8);
+    background: var(--accent);
+    color: #1a1a1f;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 18px;
+    padding: 18px 32px;
+    border-radius: 8px;
+    box-shadow: 0 8px 28px rgba(255,138,76,0.45);
+    z-index: 60;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    letter-spacing: 0.04em;
+    text-align: center;
+    line-height: 1.4;
+  }
+  .im-try-banner.show {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  .im-try-banner-sub {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    margin-top: 6px;
+    color: rgba(26,26,31,0.75);
+    letter-spacing: 0.02em;
+  }
+
+  /* Status bar */
+  .im-status {
+    background: #14141a;
+    padding: 12px 18px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: #c8c8d0;
+    transition: background 0.25s, font-size 0.25s, padding 0.25s;
+  }
+  .im-status.prompt {
+    color: #1a1a1f;
+    background: var(--accent);
+    font-size: 15px;
+    font-weight: 700;
+    padding: 16px 22px;
+    letter-spacing: 0.03em;
+    box-shadow: 0 -2px 8px rgba(255,180,84,0.25);
+  }
+  .im-status.success {
+    color: #1a1a1f;
+    background: var(--accent-cool-bright);
+    font-size: 14px;
+    font-weight: 700;
+    padding: 14px 20px;
   }
 
   /* === ABILITY CARDS === */
@@ -1635,12 +2313,12 @@
 
     <div class="ability-grid">
       <div class="ability-card">
-        <div class="ability-icon">~~</div>
+        <div class="ability-icon">☂</div>
         <div class="ability-name">Glide</div>
         <div class="ability-desc">Fall slowly when holding jump in mid-air. Great for reaching distant platforms.</div>
       </div>
       <div class="ability-card">
-        <div class="ability-icon">◇</div>
+        <div class="ability-icon">◌</div>
         <div class="ability-name">Phase</div>
         <div class="ability-desc">Become invulnerable while a key is held. The catch: you can't collect coins while phased.</div>
       </div>
@@ -1664,45 +2342,12 @@
     </div>
   </section>
 
-  <!-- ============ STEP 2: THE # TRICK ============ -->
-  <section class="step" data-step="2" data-name="The # Trick">
+  <!-- ============ STEP 2: FIND THE ABILITY ============ -->
+  <section class="step" data-step="2" data-name="Find the Ability">
     <div class="step-number">// STEP_02</div>
-    <h2>Turning code on by removing <em class="kw">#</em></h2>
+    <h2>Find the ability in <em class="kw">player.gd</em></h2>
 
-    <p>To turn an ability on, you'll <strong>remove a single <em class="kw">#</em> character</strong> in front of a line of code. A line starting with <em class="kw">#</em> is ignored by Godot; remove the <em class="kw">#</em> and the line starts running.</p>
-
-    <p>The lines we'll be turning on look like <em class="kw">_glide()</em> or <em class="kw">_phase()</em>. These are <strong>function calls</strong> — short instructions that trigger a "recipe" of code defined elsewhere. The recipe is already written; the call is the trigger.</p>
-
-    <p>Try it — click the button to remove the <em class="kw">#</em>:</p>
-
-    <div class="comment-toggle-demo">
-      <div class="toggle-row">
-        <div class="toggle-status">
-          GLIDE ABILITY: <span id="toggleStatus" class="status-off">DISABLED</span>
-        </div>
-        <button class="toggle-btn" id="toggleCommentBtn">REMOVE THE #</button>
-      </div>
-      <div class="code-block" id="toggleCodeBlock">
-<span class="code-line"><span class="cm"># Remove the '#' below to enable the glide special ability</span></span>
-<span class="code-line" id="toggleLine"><span class="hash">#</span><span class="fn">_glide</span>()</span>
-      </div>
-      <p class="note" id="toggleExplain">With the <em class="kw">#</em> in front, Godot skips this line entirely. The glide ability never runs.</p>
-    </div>
-
-    <p>That's the whole concept. Each ability has one line just like this. <strong>Only delete the <em class="kw">#</em></strong> — leave the spaces in front of it alone, since GDScript uses indentation to keep its structure.</p>
-
-    <div class="step-nav">
-      <button class="nav-btn" data-action="prev">← Back</button>
-      <button class="nav-btn primary" data-action="next">Do it for real →</button>
-    </div>
-  </section>
-
-  <!-- ============ STEP 3: DO IT FOR REAL ============ -->
-  <section class="step" data-step="3" data-name="Unlock Glide">
-    <div class="step-number">// STEP_03</div>
-    <h2>Unlock the ability in your real project</h2>
-
-    <p>To turn on an ability like glide in your project, you first need to find the script where its code lives. There are two common ways — watch the demo, then try it yourself:</p>
+    <p>Before you can turn an ability on, you have to find it. Every ability lives in one file — <em class="kw">player.gd</em> — inside a function called <em class="kw">_physics_process</em>. There are two common ways to open that file. Watch the demo, then try it yourself:</p>
 
     <div class="find-script" id="findScript" data-mode="scene">
       <!-- SVG icon library — used by both stages via <use> -->
@@ -1851,7 +2496,27 @@
         <button class="fs-titlebar-replay" id="fsReplay">↻ REPLAY DEMO</button>
       </div>
 
+      <div class="fs-mode-toggle">
+        <strong>Show me:</strong>
+        <button class="fs-mode-btn active" id="fsModeScene" data-mode="scene">Scene tree path</button>
+        <button class="fs-mode-btn" id="fsModeFiles" data-mode="files">FileSystem path</button>
+        <span class="fs-mode-note">Both paths lead to the same script — pick either one.</span>
+      </div>
+
       <div class="fs-stage">
+        <!-- POSTER OVERLAY: shown until user clicks play -->
+        <div class="fs-poster" id="fsPoster">
+          <div class="fs-poster-content">
+            <button class="fs-play-btn" id="fsPlayBtn" aria-label="Play the demo">
+              <svg viewBox="0 0 64 64" width="48" height="48" fill="currentColor">
+                <path d="M 18 12 L 18 52 L 52 32 Z"/>
+              </svg>
+            </button>
+            <div class="fs-poster-title">Watch the path</div>
+            <div class="fs-poster-subtitle" id="fsPosterSubtitle">Scene tree → Player → script icon</div>
+          </div>
+        </div>
+
         <!-- ESTABLISHING SHOT: wireframe of the full Godot editor, shown
              briefly before zooming into the close-up. -->
         <div class="fs-establish hidden" id="fsEstablish" aria-hidden="true">
@@ -1899,7 +2564,7 @@
                  LEFT COLUMN: SCENE PANEL (top) + FILESYSTEM PANEL (bottom)
                  =================================================== -->
             <g id="fsWireScenePanel">
-              <!-- Scene panel body -->
+              <!-- Scene tree body -->
               <rect x="2" y="22" width="74" height="86" fill="#1a1a1f" stroke="#2c2c34" stroke-width="0.4"/>
               <!-- Tab strip (Scene, Import) -->
               <rect x="2" y="22" width="74" height="9" fill="#14141a"/>
@@ -2066,7 +2731,7 @@
           <div class="fs-establish-label" id="fsEstablishLabel">▸ ZOOMING TO SCENE PANEL</div>
         </div>
 
-        <!-- LEFT: Scene panel -->
+        <!-- LEFT: Scene tree -->
         <div class="fs-scene-panel" id="fsScenePanel">
           <div class="fs-panel-tabs">
             <span class="fs-panel-tab">Scene</span>
@@ -2246,17 +2911,10 @@
         <div class="fs-click-ring" id="fsClickRing"></div>
       </div>
 
-      <div class="fs-mode-toggle">
-        <strong>Show me:</strong>
-        <button class="fs-mode-btn active" id="fsModeScene" data-mode="scene">Scene panel path</button>
-        <button class="fs-mode-btn" id="fsModeFiles" data-mode="files">FileSystem path</button>
-        <span style="margin-left:auto;font-size:11px;">Both lead to the same script.</span>
-      </div>
-
       <div class="fs-status" id="fsStatus">▸ DEMO PLAYING — watch the cursor</div>
     </div>
 
-    <h3>Now do it for real</h3>
+    <h3>How to find it yourself</h3>
 
     <div class="recipe">
       <ol>
@@ -2268,8 +2926,7 @@
 <span class="code-line highlight-line"><span class="hash">#</span><span class="fn">_glide</span>()</span>
           </div>
         </li>
-        <li>Delete the <em class="kw">#</em> in front of <em class="kw">_glide()</em>. (Just the <em class="kw">#</em> — leave the spaces.)</li>
-        <li>Save (<em class="kw">Ctrl+S</em> / <em class="kw">Cmd+S</em>), run with <em class="kw">F5</em>, and hold jump in mid-air.</li>
+        <li>Stop when you land on the <em class="kw">#_glide()</em> line shown above. That’s where we’re heading. (We’ll do the actual edit in the next step.)</li>
       </ol>
     </div>
 
@@ -2278,54 +2935,308 @@
       The four ability switches all sit inside <em class="kw">_physics_process</em> — the function that runs every frame to handle the player's per-frame behavior. The line you're looking for is always the same shape: a helpful comment that says "Remove the '#' below to enable…" followed by a <em class="kw">#</em>-prefixed function call. <strong>That comment is your landmark</strong> — it only appears at the four ability switches.
     </div>
 
-    <p>You just modded a game. The other three abilities work the same way — but first, <strong>which key triggers each one?</strong></p>
+    <div class="step-nav">
+      <button class="nav-btn" data-action="prev">← Back</button>
+      <button class="nav-btn primary" data-action="next">Turn it on →</button>
+    </div>
+  </section>
+
+  <!-- ============ STEP 3: TURN IT ON ============ -->
+  <section class="step" data-step="3" data-name="Turn It On">
+    <div class="step-number">// STEP_03</div>
+    <h2>Now turn the ability on</h2>
+
+    <p>You’re looking at a line that starts with <em class="kw">#</em>:</p>
+
+    <div class="code-block">
+<span class="code-line"><span class="cm"># Remove the '#' below to enable the glide special ability</span></span>
+<span class="code-line highlight-line"><span class="hash">#</span><span class="fn">_glide</span>()</span>
+    </div>
+
+    <p>In GDScript, a line starting with <em class="kw">#</em> is a <strong>comment</strong> — the computer ignores it. Right now there’s a <em class="kw">#</em> in front of <em class="kw">_glide()</em>, which is why the ability doesn’t work. Remove the <em class="kw">#</em> to turn the ability on.</p>
+
+    <p>Try it — click the button to remove the <em class="kw">#</em>:</p>
+
+    <div class="comment-toggle-demo">
+      <div class="toggle-row">
+        <div class="toggle-status">
+          GLIDE ABILITY: <span id="toggleStatus" class="status-off">DISABLED</span>
+        </div>
+        <button class="toggle-btn" id="toggleCommentBtn">REMOVE THE #</button>
+      </div>
+      <div class="code-block" id="toggleCodeBlock">
+<span class="code-line"><span class="cm"># Remove the '#' below to enable the glide special ability</span></span>
+<span class="code-line" id="toggleLine"><span class="hash">#</span><span class="fn">_glide</span>()</span>
+      </div>
+      <p class="note" id="toggleExplain">With the <em class="kw">#</em> in front, Godot skips this line entirely. The glide ability never runs.</p>
+    </div>
+
+    <p>That’s the whole concept. <strong>Only delete the <em class="kw">#</em></strong> — leave the spaces in front of it alone, since GDScript uses indentation to keep its structure. Save with <em class="kw">Ctrl+S</em> (<em class="kw">Cmd+S</em> on Mac), run with <em class="kw">F5</em>, and hold jump in mid-air.</p>
+
+    <!-- Collapsible: what comments really are -->
+    <div class="side-quest" id="commentSideQuest">
+      <button class="side-quest-toggle" type="button">
+        <span class="sq-label">
+          <span class="side-quest-tag">DEEPER DIVE</span>
+          <span>Why is <em class="kw">#</em> a thing? A bit of CS background.</span>
+        </span>
+        <span class="side-quest-arrow">▶</span>
+      </button>
+      <div class="side-quest-body">
+        <p>Almost every programming language lets you leave notes in your code that the computer ignores — called <strong>comments</strong>. Programmers use them to explain what code does, mark things to fix later, or label sections so other people (and their future selves) can understand the file.</p>
+        <p>In GDScript, a comment starts with <em class="kw">#</em>; everything after it on that line is for human eyes only. Comments have a useful side effect: if you put <em class="kw">#</em> in front of a line of <em>working</em> code, that whole line becomes a comment too — so it stops running. Programmers call this <strong>"commenting out"</strong> code. It’s a fast way to disable a line without deleting it — great for testing, experimenting, or hiding features until they’re ready, which is exactly what your game is doing.</p>
+        <p>The lines you’re unlocking, like <em class="kw">_glide()</em>, are called <strong>function calls</strong> — short instructions that trigger a "recipe" of code defined elsewhere in the script. The <em class="kw">#</em> in front of each call disables that trigger. Remove it, and the call runs.</p>
+      </div>
+    </div>
+
+<h3 style="margin-top: 48px;">Now unlock the other three</h3>
+
+    <p>You just learned the workflow. Apply the same skill to the remaining abilities — <strong>same pattern, different names</strong>. Each lives in the same <em class="kw">_physics_process</em> function, each is preceded by a "Remove the '#' below to enable…" comment.</p>
+
+    <div class="ability-grid" id="abilityGrid"></div>
+
+    <div class="callout">
+      <div class="callout-title">Try them one at a time</div>
+      Enable just one, save, run the game, see how it feels. Then come back for the next. <strong>One change, one test</strong> — the way real game designers iterate. If something breaks, you instantly know which change caused it.
+    </div>
 
     <div class="step-nav">
       <button class="nav-btn" data-action="prev">← Back</button>
-      <button class="nav-btn primary" data-action="next">Find the inputs →</button>
+      <button class="nav-btn primary" data-action="next">Find the Input Map →</button>
     </div>
   </section>
 
   <!-- ============ STEP 4: FIND THE KEYS ============ -->
   <section class="step" data-step="4" data-name="Find the Inputs">
     <div class="step-number">// STEP_04</div>
-    <h2>Which input triggers what?</h2>
+    <h2>Finding the Input Map</h2>
 
-    <p>Glide uses the jump input you already knew. But what's wired to <strong>phase</strong> or <strong>teleport</strong>? The <strong>Input Map</strong> — found in <strong>Project → Project Settings → Input Map</strong> — is where any kind of input (keyboard, mouse, gamepad) gets connected to an action.</p>
+    <p>You've turned the powers on. But which key triggers each one? That's controlled by Godot's <strong>Input Map</strong> — where keys, mouse buttons, and gamepad buttons get connected to named actions like <em class="kw">player_1_phase</em>.</p>
 
-    <p>Below is your project's actual Input Map. Click any action to expand it:</p>
+    <p>It lives inside <strong>Project → Project Settings → Input Map</strong>. Click the play button to see the path:</p>
 
-    <div class="input-map-hint">
-      <span class="input-map-hint-icon">▸</span>
-      <span>Click <strong>player_1_teleport</strong>, <strong>player_1_phase</strong>, or <strong>player_1_shrink</strong> to see which inputs trigger each ability.</span>
-    </div>
+    <!-- ============ NEW: NAVIGATE-TO-INPUT-MAP COMPONENT ============ -->
+    <div class="im-component">
+      <div class="im-titlebar">
+        <span class="im-titlebar-label">Finding the Input Map</span>
+        <span class="im-titlebar-spacer"></span>
+        <button class="im-titlebar-replay" id="imReplay">↻ REPLAY DEMO</button>
+      </div>
 
-    <div class="godot-window">
-      <div class="gd-titlebar">
-        <span class="gd-titlebar-icon"></span>
-        <span class="gd-titlebar-text">Project Settings</span>
-        <span class="gd-titlebar-text-dim">(project.godot)</span>
+      <div class="im-stage" id="imStage">
+        <!-- POSTER OVERLAY: shown until user clicks play -->
+        <div class="im-poster" id="imPoster">
+          <div class="im-poster-content">
+            <button class="im-play-btn" id="imPlayBtn" aria-label="Play the demo">
+              <svg viewBox="0 0 64 64" width="48" height="48" fill="currentColor">
+                <path d="M 18 12 L 18 52 L 52 32 Z"/>
+              </svg>
+            </button>
+            <div class="im-poster-title">Watch the path</div>
+            <div class="im-poster-subtitle">Project menu → Project Settings → Input Map</div>
+          </div>
+        </div>
+
+        <!-- ESTABLISHING SHOT: editor wireframe with "Project" highlighted -->
+        <div class="im-establish hidden" id="imEstablish" aria-hidden="true">
+          <svg viewBox="0 0 320 200" preserveAspectRatio="xMidYMid meet">
+            <defs>
+              <linearGradient id="imViewportSky" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#0a0a14"/>
+                <stop offset="100%" stop-color="#1a1a2a"/>
+              </linearGradient>
+            </defs>
+            <rect x="0" y="0" width="320" height="200" fill="#1a1a1f"/>
+            <!-- Top menu bar -->
+            <rect x="0" y="0" width="320" height="11" fill="#1a1a1f"/>
+            <text x="6" y="7.5" font-size="4" font-family="-apple-system, Segoe UI, sans-serif" fill="#c8c8d0">Scene</text>
+            <text x="22" y="7.5" font-size="4" font-family="-apple-system, Segoe UI, sans-serif" fill="#c8c8d0">Project</text>
+            <text x="44" y="7.5" font-size="4" font-family="-apple-system, Segoe UI, sans-serif" fill="#c8c8d0">Debug</text>
+            <text x="64" y="7.5" font-size="4" font-family="-apple-system, Segoe UI, sans-serif" fill="#c8c8d0">Editor</text>
+            <text x="82" y="7.5" font-size="4" font-family="-apple-system, Segoe UI, sans-serif" fill="#c8c8d0">Help</text>
+            <rect x="0" y="11" width="320" height="11" fill="#14141a"/>
+            <g transform="translate(130, 0)">
+              <rect x="0" y="1" width="14" height="10" fill="rgba(255,255,255,0.04)"/>
+              <text x="3" y="8" font-size="4" font-family="sans-serif" fill="#5dade2" font-weight="bold">2D</text>
+              <rect x="0" y="10" width="14" height="1.2" fill="#5dade2"/>
+              <text x="18" y="8" font-size="4" font-family="sans-serif" fill="#8a8a92">3D</text>
+              <text x="30" y="8" font-size="4" font-family="sans-serif" fill="#8a8a92">Script</text>
+              <text x="50" y="8" font-size="4" font-family="sans-serif" fill="#8a8a92">Game</text>
+              <text x="68" y="8" font-size="4" font-family="sans-serif" fill="#8a8a92">AssetLib</text>
+            </g>
+            <circle cx="295" cy="5.5" r="2" fill="#3a3a44"/>
+            <circle cx="303" cy="5.5" r="2" fill="#3a3a44"/>
+            <circle cx="311" cy="5.5" r="2" fill="#3a3a44"/>
+            <rect x="80" y="13" width="22" height="9" fill="#2a2a30" stroke="#3a3a44" stroke-width="0.4"/>
+            <text x="84" y="20" font-size="4" font-family="sans-serif" fill="#d4d4d8">○ main</text>
+            <rect x="2" y="22" width="74" height="86" fill="#1a1a1f" stroke="#2c2c34" stroke-width="0.4"/>
+            <rect x="2" y="22" width="74" height="9" fill="#14141a"/>
+            <text x="6" y="29" font-size="4" font-family="sans-serif" fill="#d4d4d8" font-weight="bold">Scene</text>
+            <rect x="2" y="108" width="74" height="84" fill="#1a1a1f" stroke="#2c2c34" stroke-width="0.4"/>
+            <rect x="2" y="108" width="74" height="9" fill="#14141a"/>
+            <text x="6" y="115" font-size="4" font-family="sans-serif" fill="#d4d4d8" font-weight="bold">FileSystem</text>
+            <rect x="77" y="22" width="170" height="135" fill="url(#imViewportSky)" stroke="#2c2c34" stroke-width="0.4"/>
+            <rect x="80" y="120" width="167" height="30" fill="#5d3a2b"/>
+            <rect x="80" y="118" width="167" height="4" fill="#6ab553"/>
+            <rect x="248" y="22" width="70" height="135" fill="#1a1a1f" stroke="#2c2c34" stroke-width="0.4"/>
+            <rect x="248" y="22" width="70" height="9" fill="#14141a"/>
+            <text x="252" y="29" font-size="4" font-family="sans-serif" fill="#d4d4d8" font-weight="bold">Inspector</text>
+            <rect x="77" y="157" width="170" height="35" fill="#1a1a1f" stroke="#2c2c34" stroke-width="0.4"/>
+            <!-- HIGHLIGHT FRAME on "Project" word in top menu -->
+            <rect id="imHighlightProject" class="im-w-highlight" x="19" y="1" width="20" height="9"/>
+          </svg>
+          <div class="im-establish-label">▸ ZOOMING TO PROJECT MENU (top-left)</div>
+        </div>
+
+        <!-- ZOOMED EDITOR VIEW: top menu bar with Project clickable -->
+        <div class="im-zoomed" id="imZoomed">
+          <div class="im-menubar">
+            <span class="im-menu-item">Scene</span>
+            <span class="im-menu-item im-target" id="imProjectMenuItem" data-step="project">Project</span>
+            <span class="im-menu-item">Debug</span>
+            <span class="im-menu-item">Editor</span>
+            <span class="im-menu-item">Help</span>
+            <span class="im-menubar-spacer"></span>
+            <span class="im-menu-tabs">
+              <span class="im-tab-2d">2D</span>
+              <span class="im-tab-dim">3D</span>
+              <span class="im-tab-dim">Script</span>
+              <span class="im-tab-dim">Game</span>
+            </span>
+          </div>
+
+          <div class="im-dropdown" id="imDropdown">
+            <div class="im-dropdown-item dim">Project Setup...</div>
+            <div class="im-dropdown-item dim">Version Control ▸</div>
+            <div class="im-dropdown-item dim">Export...</div>
+            <div class="im-dropdown-item dim">Pack Project as ZIP...</div>
+            <div class="im-dropdown-divider"></div>
+            <div class="im-dropdown-item dim">Install Android Build Template...</div>
+            <div class="im-dropdown-item dim">Open User Data Folder</div>
+            <div class="im-dropdown-divider"></div>
+            <div class="im-dropdown-item dim">Customize Engine Build Configuration...</div>
+            <div class="im-dropdown-item dim">Tools ▸</div>
+            <div class="im-dropdown-divider"></div>
+            <div class="im-dropdown-item im-target" id="imProjectSettingsItem" data-step="settings">Project Settings...</div>
+            <div class="im-dropdown-item dim">Reload Current Project</div>
+            <div class="im-dropdown-item dim">Quit to Project List <span class="im-shortcut">Ctrl+Shift+Q</span></div>
+          </div>
+
+          <div class="im-editor-filler">
+            <span class="im-filler-text">Godot Editor</span>
+          </div>
+
+          <!-- PROJECT SETTINGS MODAL -->
+          <div class="im-modal" id="imModal">
+            <div class="im-modal-titlebar">
+              <span class="im-modal-icon">🤖</span>
+              <span class="im-modal-title">Project Settings (project.godot)</span>
+              <span class="im-modal-spacer"></span>
+              <span class="im-modal-controls">
+                <span class="im-modal-ctrl">–</span>
+                <span class="im-modal-ctrl">□</span>
+                <span class="im-modal-ctrl">×</span>
+              </span>
+            </div>
+            <div class="im-modal-tabs">
+              <div class="im-modal-tab active" id="imTabGeneral">General</div>
+              <div class="im-modal-tab im-target" id="imTabInputMap" data-step="inputmap">Input Map</div>
+              <div class="im-modal-tab dim">Localization</div>
+              <div class="im-modal-tab dim">Globals</div>
+              <div class="im-modal-tab dim">Plugins</div>
+              <div class="im-modal-tab dim">Import Defaults</div>
+            </div>
+            <div class="im-modal-body">
+              <div class="im-modal-content" id="imContentGeneral">
+                <div class="im-modal-filter">
+                  <input type="text" placeholder="Filter Settings" disabled/>
+                  <span class="im-advanced-label">Advanced Settings <span class="im-toggle">●</span></span>
+                </div>
+                <div class="im-modal-twocol">
+                  <div class="im-modal-tree">
+                    <div class="im-tree-item bold">▾ Application</div>
+                    <div class="im-tree-item indent active">Config</div>
+                    <div class="im-tree-item indent">Run</div>
+                    <div class="im-tree-item indent">Boot Splash</div>
+                    <div class="im-tree-item bold">▾ Accessibility</div>
+                    <div class="im-tree-item indent">General</div>
+                    <div class="im-tree-item bold">▾ Display</div>
+                    <div class="im-tree-item indent">Window</div>
+                    <div class="im-tree-item indent">Mouse Cursor</div>
+                  </div>
+                  <div class="im-modal-detail">
+                    <div class="im-detail-row"><span class="im-detail-key">Name</span><span class="im-detail-val">Moddable Platformer</span></div>
+                    <div class="im-detail-row"><span class="im-detail-key">Description</span><span class="im-detail-val">A 2D platformer</span></div>
+                    <div class="im-detail-row"><span class="im-detail-key">Version</span><span class="im-detail-val">1.0.0</span></div>
+                    <div class="im-detail-row"><span class="im-detail-key">Auto Accept Quit</span><span class="im-detail-val">☑ On</span></div>
+                  </div>
+                </div>
+              </div>
+              <div class="im-modal-content hidden" id="imContentInputMap">
+                <div class="im-modal-filter">
+                  <input type="text" placeholder="Filter by name..." disabled/>
+                  <button class="im-modal-add" disabled>+ Add New Action</button>
+                </div>
+                <div class="im-action-list">
+                  <div class="im-action-row">
+                    <span class="im-action-arrow">▸</span>
+                    <span class="im-action-name">player_1_jump</span>
+                    <span class="im-action-deadzone">Deadzone 0.5</span>
+                  </div>
+                  <div class="im-action-row">
+                    <span class="im-action-arrow">▸</span>
+                    <span class="im-action-name">player_1_left</span>
+                    <span class="im-action-deadzone">Deadzone 0.5</span>
+                  </div>
+                  <div class="im-action-row">
+                    <span class="im-action-arrow">▸</span>
+                    <span class="im-action-name">player_1_right</span>
+                    <span class="im-action-deadzone">Deadzone 0.5</span>
+                  </div>
+                  <div class="im-action-row" id="imPhaseRow">
+                    <span class="im-action-arrow" id="imPhaseArrow">▸</span>
+                    <span class="im-action-name">player_1_phase</span>
+                    <span class="im-action-deadzone">Deadzone 0.5</span>
+                  </div>
+                  <div class="im-action-bindings hidden" id="imPhaseBindings">
+                    <div class="im-binding-row">
+                      <span class="im-binding-icon">⌨</span>
+                      <span class="im-binding-text">Backspace (Physical)</span>
+                    </div>
+                    <div class="im-binding-row">
+                      <span class="im-binding-icon">🎮</span>
+                      <span class="im-binding-text">Joypad Button 10</span>
+                    </div>
+                  </div>
+                  <div class="im-action-row">
+                    <span class="im-action-arrow">▸</span>
+                    <span class="im-action-name">player_1_teleport</span>
+                    <span class="im-action-deadzone">Deadzone 0.5</span>
+                  </div>
+                  <div class="im-action-row">
+                    <span class="im-action-arrow">▸</span>
+                    <span class="im-action-name">player_1_shrink</span>
+                    <span class="im-action-deadzone">Deadzone 0.5</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="im-modal-footer">
+              <button class="im-modal-close" disabled>Close</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="im-cursor" id="imCursor"></div>
+        <div class="im-click-ring" id="imClickRing"></div>
+
+        <div class="im-try-banner" id="imTryBanner" aria-hidden="true">
+          ✋ NOW YOU TRY
+          <span class="im-try-banner-sub" id="imTryBannerSub">Click the <strong>Project</strong> menu, then walk the path yourself</span>
+        </div>
       </div>
-      <div class="gd-tabs">
-        <div class="gd-tab">General</div>
-        <div class="gd-tab active">Input Map</div>
-        <div class="gd-tab">Localization</div>
-        <div class="gd-tab">Globals</div>
-        <div class="gd-tab">Plugins</div>
-        <div class="gd-tab">Import Defaults</div>
-      </div>
-      <div class="gd-toolbar">
-        <input class="gd-input" placeholder="Filter by Name" id="inputMapSearch" />
-        <input class="gd-input" placeholder="Filter by Event" disabled />
-        <button class="gd-btn">Clear All</button>
-        <span class="gd-btn-toggle">Show Built-in Actions <span class="gd-toggle-pill"></span></span>
-      </div>
-      <div class="gd-table-header">
-        <span class="gd-table-header-action">Action</span>
-        <span>Deadzone</span>
-        <span></span>
-      </div>
-      <div class="gd-list" id="inputMapList"></div>
+
+      <div class="im-status" id="imStatus">▸ DEMO PLAYING — watch how to navigate there</div>
     </div>
 
     <div class="callout">
@@ -2383,50 +3294,13 @@
 
     <div class="step-nav">
       <button class="nav-btn" data-action="prev">← Back</button>
-      <button class="nav-btn primary" data-action="next">Unlock the rest →</button>
-    </div>
-  </section>
-
-  <!-- ============ STEP 5: UNLOCK THE REST ============ -->
-  <section class="step" data-step="5" data-name="The Other Three">
-    <div class="step-number">// STEP_05</div>
-    <h2>Unlock the other three</h2>
-
-    <p>Same trick as glide — just different line numbers. Click each card below as you unlock it in your real project to track your progress:</p>
-
-    <div class="ability-grid" id="abilityGrid"></div>
-
-    <h3>The full reference</h3>
-    <p>All four switches live in <em class="kw">player.gd</em>, inside the <em class="kw">_physics_process</em> function. To find each one, press <em class="kw">Ctrl+F</em> (<em class="kw">Cmd+F</em> on Mac) and search for the function name — then <strong>cycle through matches until you find the one with the helpful comment above it</strong>, exactly like Glide:</p>
-
-    <div class="code-block">
-<span class="code-line">    <span class="cm"># Remove the '#' below to enable the [ability] special ability</span></span>
-<span class="code-line">    <span class="hash">#</span><span class="fn">_ability_name</span>()</span>
-    </div>
-
-    <p>The four function names to search for:</p>
-
-    <div class="code-block">
-<span class="code-line"><span class="fn">_phase</span>       <span class="cm">←  the phase ability</span></span>
-<span class="code-line"><span class="fn">_shrink</span>      <span class="cm">←  the shrink ability</span></span>
-<span class="code-line"><span class="fn">_glide</span>       <span class="cm">←  the glide ability (already enabled)</span></span>
-<span class="code-line"><span class="fn">_teleport</span>    <span class="cm">←  the teleport ability</span></span>
-    </div>
-
-    <div class="callout">
-      <div class="callout-title">Try them one at a time</div>
-      Enable just one, save, run the game, see how it feels. Then come back for the next. <strong>One change, one test</strong> — the way real game designers iterate. If something breaks, you instantly know which change caused it.
-    </div>
-
-    <div class="step-nav">
-      <button class="nav-btn" data-action="prev">← Back</button>
       <button class="nav-btn primary" data-action="next">Wrap up →</button>
     </div>
   </section>
 
-  <!-- ============ STEP 6: WHAT'S NEXT ============ -->
-  <section class="step" data-step="6" data-name="What's Next">
-    <div class="step-number">// STEP_06</div>
+  <!-- ============ STEP 5: WHAT'S NEXT ============ -->
+  <section class="step" data-step="5" data-name="What's Next">
+    <div class="step-number">// STEP_05</div>
     <h2>Three skills you'll likely use again</h2>
 
     <p>These aren't tricks specific to glide or phase — they're general concepts that come up in lots of moments while you're modding or designing a game:</p>
@@ -2479,7 +3353,7 @@
 
 <script>
   // ===== STATE =====
-  const TOTAL_STEPS = 6;
+  const TOTAL_STEPS = 5;
   let currentStep = 1;
 
   // ===== INPUT MAP DATA =====
@@ -2546,9 +3420,9 @@
 
   // ===== ABILITY DATA =====
   const abilities = [
-    { name: 'Glide', icon: '~~', search: '_glide', func: '_glide()', keys: 'HOLD JUMP IN MID-AIR',
+    { name: 'Glide', icon: '☂', search: '_glide', func: '_glide()', keys: 'HOLD JUMP IN MID-AIR',
       desc: 'Already done in Step 3! Falls slowly when jump is held while airborne.' },
-    { name: 'Phase', icon: '◇', search: '_phase', func: '_phase()', keys: 'HOLD BACKSPACE (P1) / TAB (P2)',
+    { name: 'Phase', icon: '◌', search: '_phase', func: '_phase()', keys: 'HOLD BACKSPACE (P1) / TAB (P2)',
       desc: 'Become invulnerable while held. You cannot collect coins while phased.' },
     { name: 'Shrink', icon: '▾', search: '_shrink', func: '_shrink()', keys: 'PRESS DOWN ARROW (P1) / S (P2)',
       desc: 'Toggle to half-size. Fits through narrow gaps but jumps lower.' },
@@ -2595,9 +3469,12 @@
     });
   });
 
-  // ===== INPUT MAP SIMULATOR =====
+  // ===== INPUT MAP SIMULATOR (legacy: simulator was removed in v33;
+  //       the renderInputMap function and its listener are now no-ops, but kept
+  //       here so init code calling renderInputMap() doesn't break) =====
   function renderInputMap(filter = '') {
     const list = document.getElementById('inputMapList');
+    if (!list) return;  // simulator no longer in DOM
     list.innerHTML = '';
     const filtered = inputMap.filter(a => a.name.toLowerCase().includes(filter.toLowerCase()));
     if (filtered.length === 0) {
@@ -2632,9 +3509,12 @@
       list.appendChild(row);
     });
   }
-  document.getElementById('inputMapSearch').addEventListener('input', e => {
-    renderInputMap(e.target.value);
-  });
+  const _imSearch = document.getElementById('inputMapSearch');
+  if (_imSearch) {
+    _imSearch.addEventListener('input', e => {
+      renderInputMap(e.target.value);
+    });
+  }
 
   // ===== COMMENT TOGGLE =====
   let isCommented = true;
@@ -2868,7 +3748,7 @@
         wireHighlightScene.style.display = '';
         wireHighlightFiles.style.display = 'none';
         establish.classList.remove('target-files');
-        establishLabel.textContent = '▸ ZOOMING TO SCENE PANEL (top-left)';
+        establishLabel.textContent = '▸ ZOOMING TO SCENE TREE (top-left)';
       } else {
         wireHighlightScene.style.display = 'none';
         wireHighlightFiles.style.display = '';
@@ -2891,7 +3771,7 @@
       if (isAnimating) return;
       isAnimating = true;
       fullReset();
-      setStatus('▸ Take a look — here\'s where the Scene panel lives');
+      setStatus('▸ Take a look — here\'s where the Scene tree lives');
 
       runEstablishingShot('scene', () => {
         setStatus('▸ DEMO PLAYING — click the Player node, then its script icon');
@@ -2911,9 +3791,8 @@
                     cursor.classList.remove('visible');
                     isAnimating = false;
                     hasAutoPlayed.scene = true;
-                    playerNode.classList.add('pulsing');
                     setTimeout(() => {
-                      setStatus('▸ NOW YOU TRY — click the Player node\'s script icon', 'prompt');
+                      setStatus('✓ Demo complete — try this in real Godot, or hit Replay to watch again', 'success');
                     }, 1200);
                   }, 1800);
                 }, 200);
@@ -2963,9 +3842,8 @@
                         cursor.classList.remove('visible');
                         isAnimating = false;
                         hasAutoPlayed.files = true;
-                        playerGdFile.classList.add('pulsing');
                         setTimeout(() => {
-                          setStatus('▸ NOW YOU TRY — double-click player.gd', 'prompt');
+                          setStatus('✓ Demo complete — try this in real Godot, or hit Replay to watch again', 'success');
                         }, 1200);
                       }, 1800);
                     }, 250);
@@ -3049,32 +3927,285 @@
       if (!hasAutoPlayed[newMode]) {
         setTimeout(playDemoForMode, 400);
       } else {
-        if (newMode === 'scene') {
-          setStatus('▸ Click the Player node\'s script icon', 'prompt');
-          playerNode.classList.add('pulsing');
-        } else {
-          setStatus('▸ Click the scripts folder to expand it', 'prompt');
-          scriptsFolder.classList.add('pulsing');
-        }
+        setStatus('✓ Demo already shown — hit Replay to watch again', 'success');
       }
     }
 
     modeScene.addEventListener('click', () => switchMode('scene'));
     modeFiles.addEventListener('click', () => switchMode('files'));
 
-    // Auto-play scene demo on first navigation to Step 3
-    function tryAutoPlay() {
-      if (hasAutoPlayed.scene) return;
-      const step3 = document.querySelector('.step[data-step="3"]');
-      if (step3 && step3.classList.contains('active')) {
-        setTimeout(playSceneDemo, 600);
+    // Demo is NOT auto-played. User clicks the poster's play button to start.
+    const fsPoster = document.getElementById('fsPoster');
+    const fsPlayBtn = document.getElementById('fsPlayBtn');
+    const fsPosterSubtitle = document.getElementById('fsPosterSubtitle');
+    if (fsPlayBtn && fsPoster) {
+      fsPlayBtn.addEventListener('click', () => {
+        fsPoster.classList.add('hidden');
+        playDemoForMode();
+      });
+    }
+    function updateFsPosterSubtitle() {
+      if (!fsPosterSubtitle) return;
+      if (currentMode === 'scene') {
+        fsPosterSubtitle.textContent = 'Scene tree → Player → script icon';
+      } else {
+        fsPosterSubtitle.textContent = 'FileSystem → scripts folder → player.gd';
       }
     }
-    const step3El = document.querySelector('.step[data-step="3"]');
-    if (step3El) {
-      const observer = new MutationObserver(tryAutoPlay);
-      observer.observe(step3El, { attributes: true, attributeFilter: ['class'] });
-      tryAutoPlay();
+    [modeScene, modeFiles].forEach(btn => {
+      btn.addEventListener('click', updateFsPosterSubtitle);
+    });
+    updateFsPosterSubtitle();
+  })();
+
+
+  // ===================================================================
+  // INPUT MAP NAVIGATION WALKTHROUGH (Step 4)
+  // ===================================================================
+  (function () {
+    const stage = document.getElementById('imStage');
+    if (!stage) return;  // safety: component not present
+
+    const establish = document.getElementById('imEstablish');
+    const cursor = document.getElementById('imCursor');
+    const ring = document.getElementById('imClickRing');
+    const status = document.getElementById('imStatus');
+    const replayBtn = document.getElementById('imReplay');
+    const tryBanner = document.getElementById('imTryBanner');
+    const tryBannerSub = document.getElementById('imTryBannerSub');
+
+    const projectMenuItem = document.getElementById('imProjectMenuItem');
+    const dropdown = document.getElementById('imDropdown');
+    const projectSettingsItem = document.getElementById('imProjectSettingsItem');
+    const modal = document.getElementById('imModal');
+    const tabGeneral = document.getElementById('imTabGeneral');
+    const tabInputMap = document.getElementById('imTabInputMap');
+    const contentGeneral = document.getElementById('imContentGeneral');
+    const contentInputMap = document.getElementById('imContentInputMap');
+    const phaseRow = document.getElementById('imPhaseRow');
+    const phaseArrow = document.getElementById('imPhaseArrow');
+    const phaseBindings = document.getElementById('imPhaseBindings');
+
+    let isAnimating = false;
+    let hasAutoPlayed = false;
+    let userStep = 'project';  // current step the user is on in their flow
+
+    function setStatus(text, cls) {
+      status.textContent = text;
+      status.className = 'im-status' + (cls ? ' ' + cls : '');
+    }
+
+    function showCursorAt(x, y) {
+      cursor.style.left = x + 'px';
+      cursor.style.top = y + 'px';
+      cursor.classList.add('visible');
+    }
+    function hideCursor() { cursor.classList.remove('visible'); }
+
+    function moveCursor(targetEl, duration, done) {
+      const stageRect = stage.getBoundingClientRect();
+      const targetRect = targetEl.getBoundingClientRect();
+      const tx = targetRect.left + targetRect.width/2 - stageRect.left - 5;
+      const ty = targetRect.top + targetRect.height/2 - stageRect.top - 5;
+      cursor.style.transition = `left ${duration}ms cubic-bezier(0.4,0.0,0.2,1), top ${duration}ms cubic-bezier(0.4,0.0,0.2,1)`;
+      cursor.style.left = tx + 'px';
+      cursor.style.top = ty + 'px';
+      setTimeout(() => {
+        cursor.style.transition = '';
+        if (done) done();
+      }, duration);
+    }
+
+    function fireRing(targetEl) {
+      const stageRect = stage.getBoundingClientRect();
+      const targetRect = targetEl.getBoundingClientRect();
+      const cx = targetRect.left + targetRect.width/2 - stageRect.left;
+      const cy = targetRect.top + targetRect.height/2 - stageRect.top;
+      ring.style.left = cx + 'px';
+      ring.style.top = cy + 'px';
+      ring.classList.remove('fire');
+      void ring.offsetWidth;
+      ring.classList.add('fire');
+    }
+
+    function showTryBanner(subHtml) {
+      if (tryBannerSub) tryBannerSub.innerHTML = subHtml;
+      tryBanner.classList.add('show');
+      setTimeout(() => tryBanner.classList.remove('show'), 1800);
+    }
+
+    function fullReset() {
+      // Reset all panel state
+      dropdown.classList.remove('open');
+      modal.classList.remove('open');
+      tabGeneral.classList.add('active');
+      tabInputMap.classList.remove('active');
+      contentGeneral.classList.remove('hidden');
+      contentInputMap.classList.add('hidden');
+      phaseRow.classList.remove('expanded');
+      phaseArrow.classList.remove('open');
+      phaseBindings.classList.add('hidden');
+      // Reset arming/state classes on targets
+      [projectMenuItem, projectSettingsItem, tabInputMap].forEach(el => {
+        el.classList.remove('armed', 'opened');
+      });
+      hideCursor();
+      userStep = 'project';
+    }
+
+    function armTarget(el) {
+      el.classList.add('armed');
+    }
+    function disarmTarget(el) {
+      el.classList.remove('armed');
+    }
+
+    // === AUTO-DEMO ===
+    function runEstablishingShot(callback) {
+      establish.classList.remove('hidden');
+      setTimeout(() => {
+        establish.classList.add('hidden');
+        setTimeout(callback, 1500);
+      }, 2700);
+    }
+
+    function playDemo() {
+      if (isAnimating) return;
+      isAnimating = true;
+      fullReset();
+      setStatus('▸ Take a look — here is where the Project menu lives');
+
+      runEstablishingShot(() => {
+        setStatus('▸ DEMO PLAYING — click Project, then Project Settings, then Input Map');
+
+        // Start cursor off-screen-ish (top-left area of stage)
+        showCursorAt(20, 70);
+
+        // Step 1: move to Project menu
+        setTimeout(() => {
+          moveCursor(projectMenuItem, 900, () => {
+            setTimeout(() => {
+              fireRing(projectMenuItem);
+              projectMenuItem.classList.add('opened');
+              dropdown.classList.add('open');
+
+              // Step 2: move to Project Settings...
+              setTimeout(() => {
+                moveCursor(projectSettingsItem, 800, () => {
+                  setTimeout(() => {
+                    fireRing(projectSettingsItem);
+
+                    // Close dropdown, open modal
+                    setTimeout(() => {
+                      dropdown.classList.remove('open');
+                      projectMenuItem.classList.remove('opened');
+                      modal.classList.add('open');
+
+                      // Step 3: move to Input Map tab
+                      setTimeout(() => {
+                        moveCursor(tabInputMap, 900, () => {
+                          setTimeout(() => {
+                            fireRing(tabInputMap);
+
+                            // Switch tab content
+                            setTimeout(() => {
+                              tabGeneral.classList.remove('active');
+                              tabInputMap.classList.add('active');
+                              contentGeneral.classList.add('hidden');
+                              contentInputMap.classList.remove('hidden');
+
+                              // Step 4: expand player_1_phase row
+                              setTimeout(() => {
+                                moveCursor(phaseRow, 700, () => {
+                                  setTimeout(() => {
+                                    fireRing(phaseRow);
+                                    phaseRow.classList.add('expanded');
+                                    phaseArrow.classList.add('open');
+                                    phaseBindings.classList.remove('hidden');
+
+                                    // Done!
+                                    setTimeout(() => {
+                                      hideCursor();
+                                      isAnimating = false;
+                                      hasAutoPlayed = true;
+                                      setStatus('▸ NOW YOU TRY — click the Project menu to start the path yourself', 'prompt');
+                                      showTryBanner('Click the <strong>Project</strong> menu to begin');
+                                      // Reset state so the user can do it themselves,
+                                      // then arm the first target.
+                                      setTimeout(() => {
+                                        fullReset();
+                                        armTarget(projectMenuItem);
+                                      }, 1900);
+                                    }, 1600);
+                                  }, 250);
+                                });
+                              }, 700);
+                            }, 250);
+                          }, 250);
+                        });
+                      }, 700);
+                    }, 250);
+                  }, 250);
+                });
+              }, 700);
+            }, 250);
+          });
+        }, 500);
+      });
+    }
+
+    // === USER INTERACTIONS (after demo, user reproduces the path) ===
+
+    projectMenuItem.addEventListener('click', () => {
+      if (isAnimating) return;
+      if (userStep !== 'project') return;
+      fireRing(projectMenuItem);
+      projectMenuItem.classList.add('opened');
+      dropdown.classList.add('open');
+      disarmTarget(projectMenuItem);
+      armTarget(projectSettingsItem);
+      userStep = 'settings';
+      setStatus('▸ Next: click Project Settings...', 'prompt');
+    });
+
+    projectSettingsItem.addEventListener('click', () => {
+      if (isAnimating) return;
+      if (userStep !== 'settings') return;
+      fireRing(projectSettingsItem);
+      setTimeout(() => {
+        dropdown.classList.remove('open');
+        projectMenuItem.classList.remove('opened');
+        modal.classList.add('open');
+        disarmTarget(projectSettingsItem);
+        armTarget(tabInputMap);
+        userStep = 'inputmap';
+        setStatus('▸ Next: click the Input Map tab', 'prompt');
+      }, 200);
+    });
+
+    tabInputMap.addEventListener('click', () => {
+      if (isAnimating) return;
+      if (userStep !== 'inputmap') return;
+      fireRing(tabInputMap);
+      tabGeneral.classList.remove('active');
+      tabInputMap.classList.add('active');
+      contentGeneral.classList.add('hidden');
+      contentInputMap.classList.remove('hidden');
+      disarmTarget(tabInputMap);
+      userStep = 'done';
+      setStatus('✓ You did it! This is the Input Map — explore the action rows below', 'success');
+    });
+
+    replayBtn.addEventListener('click', playDemo);
+
+    // Demo is NOT auto-played. User clicks the poster's play button to start.
+    const poster = document.getElementById('imPoster');
+    const playBtn = document.getElementById('imPlayBtn');
+    if (playBtn && poster) {
+      playBtn.addEventListener('click', () => {
+        poster.classList.add('hidden');
+        playDemo();
+      });
     }
   })();
 
