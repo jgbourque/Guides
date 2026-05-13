@@ -2971,7 +2971,9 @@
       <p class="note" id="toggleExplain">With the <em class="kw">#</em> in front, Godot skips this line entirely. The glide ability never runs.</p>
     </div>
 
-    <p>That’s the whole concept. <strong>Only delete the <em class="kw">#</em></strong> — leave the spaces in front of it alone, since GDScript uses indentation to keep its structure. Save with <em class="kw">Ctrl+S</em> (<em class="kw">Cmd+S</em> on Mac), run with <em class="kw">F5</em>, and hold jump in mid-air.</p>
+    <p>That’s the whole concept. <strong>Only delete the <em class="kw">#</em></strong> — leave the spaces in front of it alone, since GDScript uses indentation to keep its structure. Save with <em class="kw">Ctrl+S</em> (<em class="kw">Cmd+S</em> on Mac).</p>
+
+    <p>Now go try it out. Run your game — press <em class="kw">F5</em>, or click the ▶ play button in the top-right corner of the Godot editor. When the game starts, <strong>jump once</strong>, then <strong>hold the jump button while you’re still in the air</strong>. You should fall slowly with a glide sound — your first unlocked power.</p>
 
     <!-- Collapsible: what comments really are -->
     <div class="side-quest" id="commentSideQuest">
@@ -2994,11 +2996,6 @@
     <p>You just learned the workflow. Apply the same skill to the remaining abilities — <strong>same pattern, different names</strong>. Each lives in the same <em class="kw">_physics_process</em> function, each is preceded by a "Remove the '#' below to enable…" comment.</p>
 
     <div class="ability-grid" id="abilityGrid"></div>
-
-    <div class="callout">
-      <div class="callout-title">Try them one at a time</div>
-      Enable just one, save, run the game, see how it feels. Then come back for the next. <strong>One change, one test</strong> — the way real game designers iterate. If something breaks, you instantly know which change caused it.
-    </div>
 
     <div class="step-nav">
       <button class="nav-btn" data-action="prev">← Back</button>
@@ -3535,7 +3532,7 @@
       status.textContent = 'ENABLED';
       status.className = 'status-on';
       btn.textContent = 'PUT THE # BACK';
-      explain.innerHTML = 'Now Godot runs this line every physics frame. Hold jump in mid-air and your character will glide.';
+      explain.innerHTML = 'Now Godot runs this line every physics frame. Jump, then hold the jump button while in mid-air — your character will glide.';
     }
   });
 
