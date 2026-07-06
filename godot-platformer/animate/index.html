@@ -1,1 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Make Your Character Walk — Threadbare Pixel Stitch</title>
+<style>
+  :root{
+    --bg:#080b18; --panel:#0e1428; --panel2:#0b1020; --card:#0c1330; 
+    --border:#212a52; --border2:#171d3a;
+    --teal:#1f93b0; --teal-fill:#1b7f99; --teal-glow:rgba(46,178,211,.45);
+    --text:#e9eafb; --muted:#8f8ab3; --label:#a996d8; --magenta:#ff2bff;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:"Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+    overflow:hidden; user-select:none;
+  }
+  .app{position:absolute; inset:0; padding:16px 20px 150px; display:flex; flex-direction:column; gap:12px}
+  /* header */
+  .hdr{display:flex; align-items:center; gap:14px}
+  .logo{width:52px;height:52px;border-radius:12px;flex:0 0 auto;
+    background:radial-gradient(circle at 40% 35%,#3a2f6a,#0d1330);
+    border:1px solid #2b2f5e; display:flex;align-items:center;justify-content:center;
+    font-size:9px;color:#c9c2f0;font-style:italic;text-align:center;line-height:1.05;overflow:hidden}
+  .title{font-size:26px;font-weight:800;color:#3fb6cf;letter-spacing:.3px;line-height:1}
+  .subtitle{font-size:13px;color:var(--label);margin-top:3px}
+  .hdr-right{margin-left:auto;display:flex;gap:10px}
+  .btn-ghost{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:9px;
+    background:#0d1densely;border:1px solid var(--border);color:var(--text);font-size:13px}
+  .btn-ghost svg{width:15px;height:15px}
+  .langtog{display:flex;border:1px solid var(--border);border-radius:9px;overflow:hidden;font-size:13px;font-weight:800}
+  .langtog span{padding:8px 13px;color:var(--muted);cursor:pointer;transition:background .15s,color .15s}
+  .langtog span.on{background:var(--teal-fill);color:#fff}
+  /* cards */
+  .card{background:var(--panel2);border:1px solid var(--border2);border-radius:14px;padding:12px 14px}
+  .row{display:flex;align-items:center;gap:10px}
+  .canvas-card{align-self:flex-start;padding:14px 18px}
+  .lbl{color:var(--label);font-size:15px;font-weight:600}
+  .sizes{display:flex;gap:10px}
+  .size{min-width:78px;text-align:center;padding:10px 14px;border-radius:10px;
+    background:#0c1230;border:1px solid var(--border);font-weight:700;font-size:15px;color:var(--text);
+    transition:background .18s,box-shadow .18s}
+  .size.active{background:var(--teal-fill);border-color:var(--teal);box-shadow:0 0 14px var(--teal-glow)}
+  /* toolbar */
+  .toolbar{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;overflow:hidden}
+  .tool{width:46px;height:46px;flex:0 0 auto;border-radius:10px;background:#0a1030;
+    border:1px solid var(--border);display:flex;align-items:center;justify-content:center;
+    color:#d6d8f2;transition:background .18s,box-shadow .18s}
+  .tool svg{width:20px;height:20px}
+  .tool.active{background:var(--teal-fill);border-color:var(--teal);box-shadow:0 0 12px var(--teal-glow);color:#fff}
+  .tool.txt{font-weight:700;font-size:13px;color:#cfd2ee}
+  .divider{width:1px;height:30px;background:var(--border);flex:0 0 auto;margin:0 2px}
+  .save{margin-left:6px;display:flex;align-items:center;gap:9px;padding:0 20px;height:46px;flex:0 0 auto;
+    border-radius:10px;background:var(--teal-fill);border:1px solid var(--teal);color:#fff;
+    font-weight:700;font-size:15px;white-space:nowrap;box-shadow:0 0 12px var(--teal-glow)}
+  .save svg{width:18px;height:18px}
+  /* zoom */
+  .zoom{align-self:center;display:flex;align-items:center;gap:10px}
+  .zoom .pill{padding:8px 12px;border-radius:9px;background:#0c1230;border:1px solid var(--border);font-weight:700}
+  /* main */
+  .main{display:flex;gap:16px;flex:1;min-height:0}
+  .stage-wrap{flex:1;min-width:0;background:var(--panel2);border:1px solid var(--border2);
+    border-radius:14px;display:flex;align-items:center;justify-content:center;padding:14px;position:relative;overflow:hidden}
+  .stage{position:relative;width:min(42vh,420px);height:min(42vh,420px);border:1px solid #2b3160;
+    box-shadow:0 0 0 1px #101830}
+  .checker{position:absolute;inset:0;
+    background-image:
+      linear-gradient(45deg,#cfcfcf 25%,transparent 25%),
+      linear-gradient(-45deg,#cfcfcf 25%,transparent 25%),
+      linear-gradient(45deg,transparent 75%,#cfcfcf 75%),
+      linear-gradient(-45deg,transparent 75%,#cfcfcf 75%);
+    background-size:16px 16px;background-position:0 0,0 8px,8px -8px,-8px 0;
+    background-color:#efefef;}
+  .gridlines{position:absolute;inset:0;pointer-events:none;background-image:
+      linear-gradient(to right,rgba(90,90,110,.28) 1px,transparent 1px),
+      linear-gradient(to bottom,rgba(90,90,110,.28) 1px,transparent 1px);}
+  .gridlines.hidden{display:none}
+  .sprite,.ghost{position:absolute;inset:0;width:100%;height:100%;
+    image-rendering:pixelated;image-rendering:crisp-edges;}
+  .ghost{opacity:0}
+  .sprite{opacity:0;transition:opacity .35s}
+  /* right panel */
+  .panel{width:330px;flex:0 0 auto;display:flex;flex-direction:column;gap:12px;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;padding-right:4px}
+  .panel::-webkit-scrollbar{width:8px}.panel::-webkit-scrollbar-thumb{background:#2a3160;border-radius:4px}
+  .sec{background:var(--panel2);border:1px solid var(--border2);border-radius:14px;padding:12px 14px}
+  .sec h3{margin:0 0 10px;font-size:15px;font-weight:800;color:#fff}
+  .sublbl{color:var(--label);font-size:11px;font-weight:700;letter-spacing:.6px;margin:8px 0 6px}
+  .swatches{display:flex;gap:6px}
+  .sw{width:100%;aspect-ratio:1;border-radius:6px;border:1px solid rgba(255,255,255,.06)}
+  .slider{height:6px;border-radius:5px;background:linear-gradient(90deg,var(--teal) var(--v,50%),#1a2044 var(--v,50%));position:relative;margin:6px 0 2px}
+  .slider .knob{position:absolute;top:50%;left:var(--v,50%);width:15px;height:15px;border-radius:50%;
+    background:#0c1230;border:2px solid var(--teal);transform:translate(-50%,-50%)}
+  .kv{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+  .toggle{width:40px;height:22px;border-radius:12px;background:#1a2044;position:relative;transition:background .2s}
+  .toggle .dot{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#6b6f92;transition:.2s}
+  .toggle.on{background:var(--teal-fill)} .toggle.on .dot{left:20px;background:#eafcff}
+  .onion-body{max-height:0;opacity:0;overflow:hidden;transition:max-height .3s,opacity .3s}
+  .onion-body.show{max-height:200px;opacity:1;margin-top:10px}
+  .preview-box{width:120px;height:120px;margin:6px auto;border:1px solid var(--teal);border-radius:8px;
+    position:relative;background:
+      linear-gradient(45deg,#c9c9c9 25%,transparent 25%),linear-gradient(-45deg,#c9c9c9 25%,transparent 25%),
+      linear-gradient(45deg,transparent 75%,#c9c9c9 75%),linear-gradient(-45deg,transparent 75%,#c9c9c9 75%);
+    background-size:12px 12px;background-color:#efefef;background-position:0 0,0 6px,6px -6px,-6px 0}
+  .preview-box img{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated;opacity:0}
+  /* frames bar */
+  .frames{position:absolute;left:20px;right:366px;bottom:96px;background:var(--panel2);
+    border:1px solid var(--border2);border-radius:14px;padding:12px 16px}
+  .frames-head{display:flex;align-items:center;margin-bottom:10px}
+  .frames-head .h{font-size:15px;font-weight:800}
+  .frames-head .actions{margin-left:auto;display:flex;gap:10px}
+  .play,.addframe{display:flex;align-items:center;gap:7px;padding:8px 14px;border-radius:9px;
+    background:#0c1230;border:1px solid var(--border);font-weight:700;font-size:13px;color:var(--text)}
+  .play{padding:8px 12px}
+  .thumbs{display:flex;gap:12px}
+  .thumb{width:74px;border-radius:8px;background:#0a1030;border:1px solid var(--border);padding:5px}
+  .thumb.sel{border-color:var(--teal);box-shadow:0 0 10px var(--teal-glow)}
+  .thumb .pic{width:100%;height:52px;border-radius:5px;position:relative;overflow:hidden;
+    background:linear-gradient(45deg,#c9c9c9 25%,transparent 25%),linear-gradient(-45deg,#c9c9c9 25%,transparent 25%),
+      linear-gradient(45deg,transparent 75%,#c9c9c9 75%),linear-gradient(-45deg,transparent 75%,#c9c9c9 75%);
+    background-size:8px 8px;background-color:#efefef;background-position:0 0,0 4px,4px -4px,-4px 0}
+  .thumb .pic img{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated}
+  .thumb .meta{display:flex;align-items:center;gap:4px;margin-top:4px;font-size:11px;color:var(--muted)}
+  .thumb .meta .ic{width:14px;height:14px;margin-left:auto;color:#7a7ea0}
+  .thumb .meta .ic+.ic{margin-left:2px}
+  /* coach overlay */
+  .spotlight{position:absolute;border-radius:12px;box-shadow:0 0 0 9999px rgba(4,6,16,.62);
+    border:2px solid var(--teal);transition:all .4s cubic-bezier(.4,0,.2,1);pointer-events:none;z-index:40;opacity:0}
+  .spotlight.on{opacity:1}
+  .spotlight.nodim{box-shadow:none;border-color:transparent}
+  @keyframes popin{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+  .thumb.new{animation:popin .38s cubic-bezier(.2,1.2,.4,1)}
+  .tip{position:absolute;z-index:44;background:#0f1530;border:1px solid var(--teal);color:#eafcff;
+    padding:7px 12px;border-radius:8px;font-size:13px;white-space:nowrap;opacity:0;transition:opacity .3s;
+    box-shadow:0 6px 20px rgba(0,0,0,.5)}
+  .tip.on{opacity:1}
+  .cursor{position:absolute;z-index:50;width:26px;height:26px;left:0;top:0;pointer-events:none;
+    transition:transform .55s cubic-bezier(.45,.05,.3,1);filter:drop-shadow(0 2px 3px rgba(0,0,0,.6))}
+  .cursor.click::after{content:"";position:absolute;left:2px;top:2px;width:20px;height:20px;border-radius:50%;
+    border:2px solid var(--teal);animation:ping .5s ease-out}
+  @keyframes ping{from{transform:scale(.3);opacity:.9}to{transform:scale(2.2);opacity:0}}
+  /* coach bar */
+  .coach{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);z-index:60;
+    width:min(760px,94vw);background:linear-gradient(180deg,#121a3a,#0c1330);
+    border:1px solid #2b356a;border-radius:16px;padding:14px 18px;display:flex;align-items:center;gap:16px;
+    box-shadow:0 12px 40px rgba(0,0,0,.55)}
+  .coach .step-no{flex:0 0 auto;width:44px;height:44px;border-radius:12px;background:var(--teal-fill);
+    display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:#fff;
+    box-shadow:0 0 14px var(--teal-glow)}
+  .coach .body{flex:1;min-width:0}
+  .coach .ct{font-weight:800;font-size:16px;margin-bottom:2px}
+  .coach .cd{font-size:13.5px;color:#c4c7e6;line-height:1.35}
+  .coach .nav{flex:0 0 auto;display:flex;align-items:center;gap:10px}
+  .nav button{padding:10px 18px;border-radius:10px;font-weight:700;font-size:14px;border:1px solid var(--border);
+    background:#0c1230;color:var(--text)}
+  .nav button.primary{background:var(--teal-fill);border-color:var(--teal);color:#fff;box-shadow:0 0 12px var(--teal-glow)}
+  .nav button:disabled{opacity:.4}
+  .dots{position:absolute;left:50%;bottom:0;transform:translate(-50%,150%);display:flex;gap:7px}
+  .dot{width:8px;height:8px;border-radius:50%;background:#2a3160}
+  .dot.on{background:var(--teal);width:22px;border-radius:4px}
+  @media (prefers-reduced-motion: reduce){
+    .cursor{transition:none}.spotlight{transition:none}.sprite{transition:none}
+  }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <!-- header -->
+  <div class="hdr">
+    <div class="logo">Thread<br>bare</div>
+    <div>
+      <div class="title">Threadbare Pixel Stitch</div>
+      <div class="subtitle">Weave Pixel Art and Animations</div>
+    </div>
+    <div class="hdr-right">
+      <div class="btn-ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h6l2 2h10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg> <span data-i18n="open">Open</span></div>
+      <div class="btn-ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3h11l3 3v15H5z"/><path d="M8 3v5h7"/><rect x="8" y="13" width="8" height="5"/></svg> <span data-i18n="save">Save</span></div>
+      <div class="langtog" id="langtog"><span data-l="en" class="on">EN</span><span data-l="es">ES</span></div>
+    </div>
+  </div>
+  <!-- canvas sizes -->
+  <div class="card canvas-card">
+    <div class="row">
+      <span class="lbl" data-i18n="canvas">Canvas:</span>
+      <div class="sizes">
+        <div class="size" data-size="16">16x16</div>
+        <div class="size active" data-size="32" data-tour="size32">32x32</div>
+        <div class="size" data-size="64" data-tour="size64">64x64</div>
+        <div class="size" data-size="128">128x128</div>
+      </div>
+    </div>
+  </div>
+  <!-- toolbar -->
+  <div class="card">
+    <div class="toolbar">
+      <div class="tool active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="M14 5l3 3"/></svg></div>
+      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15l7-7 6 6-5 5H8z"/><path d="M4 20h16"/></svg></div>
+      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 11l6-6 7 7-6 6a2 2 0 0 1-3 0l-4-4a2 2 0 0 1 0-3z"/><path d="M20 16c0 1.5-1 3-1 3s-1-1.5-1-3a1 1 0 0 1 2 0z" fill="currentColor"/></svg></div>
+      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="14" height="6" rx="1"/><path d="M18 7h2v4h-8v3"/><rect x="9" y="14" width="6" height="6" rx="1"/></svg></div>
+      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 3l3 3-9 9-4 1 1-4z"/><path d="M14 7l3 3"/></svg></div>
+      <div class="tool" data-tour="select"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3 3"><rect x="4" y="4" width="16" height="16" rx="2"/></svg></div>
+      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><path d="M8 8l12 10M8 16L20 6"/></svg></div>
+      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18"/><path d="M8 7L4 12l4 5zM16 7l4 5-4 5z"/></svg></div>
+      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="8" width="18" height="8" rx="2"/><path d="M3 12h18"/></svg></div>
+      <div class="divider"></div>
+      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14"/></svg></div>
+      <div class="tool txt">1×1</div>
+      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg></div>
+      <div class="divider"></div>
+      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 7L4 12l5 5"/><path d="M4 12h11a5 5 0 0 1 0 10h-2"/></svg></div>
+      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 7l5 5-5 5"/><path d="M20 12H9a5 5 0 0 0 0 10h2"/></svg></div>
+      <div class="tool active" data-tour="grid"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg></div>
+      <div class="tool" data-tour="import"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v11"/><path d="M8 10l4 4 4-4"/><path d="M5 19h14"/></svg></div>
+      <div class="tool" data-tour="export"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15V4"/><path d="M8 8l4-4 4 4"/><path d="M5 19h14"/></svg></div>
+      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="9" cy="9" r="1.5"/><path d="M6 18l4-4 3 3 2-2 3 3"/></svg></div>
+      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg></div>
+      <div class="divider"></div>
+      <div class="save" data-tour="save"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3L11 14M22 3l-7 18-4-7-7-4z"/></svg> <span data-i18n="saveSubmit">Save &amp; Submit</span></div>
+    </div>
+  </div>
+  <!-- zoom -->
+  <div class="zoom"><span class="pill">−</span><span class="pill">100%</span><span class="pill">+</span></div>
+  <!-- main -->
+  <div class="main">
+    <div class="stage-wrap">
+      <div class="stage" data-tour="canvas">
+        <div class="checker"></div>
+        <img class="ghost" id="ghost" alt=""/>
+        <img class="sprite" id="sprite" alt=""/>
+        <div class="gridlines" id="grid"></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="sec">
+        <div class="row" style="gap:12px">
+          <div style="width:54px;height:54px;border-radius:9px;background:var(--magenta)"></div>
+          <div style="flex:1">
+            <div style="height:16px;border-radius:5px;background:var(--magenta);margin-bottom:8px"></div>
+            <div style="font-family:monospace;font-size:14px;color:#dfe1ff;background:#0a1030;border:1px solid var(--border);border-radius:6px;padding:4px 8px">#FF00FF</div>
+          </div>
+        </div>
+        <div class="kv" style="margin-top:12px"><span style="color:var(--text);font-weight:600" data-i18n="brushOpacity">Brush Opacity</span><span>100%</span></div>
+        <div class="slider" style="--v:100%"><div class="knob"></div></div>
+        <div style="font-size:12px;color:var(--muted);margin:10px 0 2px" data-i18n="dragColors">Drag colors to slots to customize palette</div>
+        <div class="sublbl" data-i18n="palColor">COLOR</div><div class="swatches" id="pal-color"></div>
+        <div class="sublbl" data-i18n="palS1">COLOR SHADE 1</div><div class="swatches" id="pal-s1"></div>
+        <div class="sublbl" data-i18n="palS2">COLOR SHADE 2</div><div class="swatches" id="pal-s2"></div>
+        <div class="sublbl" data-i18n="palHi">HIGHLIGHT</div><div class="swatches" id="pal-hi"></div>
+      </div>
+      <div class="sec">
+        <div class="row"><h3 style="margin:0" data-i18n="layers">Layers</h3><div class="btn-ghost" style="margin-left:auto;padding:6px 12px">＋ <span data-i18n="addLayer">Add Layer</span></div></div>
+        <div style="margin-top:10px;border:1px solid var(--teal);border-radius:10px;padding:10px">
+          <div class="row"><span style="color:#cfd2ee">👁</span><div style="flex:1;background:#0a1030;border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-size:13px" data-i18n="layer1">Layer 1</div></div>
+          <div class="kv" style="margin-top:8px"><span data-i18n="opacity">Opacity</span><span>100%</span></div>
+          <div class="slider" style="--v:100%"><div class="knob"></div></div>
+        </div>
+      </div>
+      <div class="sec" data-tour="onion">
+        <div class="row"><h3 style="margin:0" data-i18n="onion">Onion Skinning</h3><div class="toggle" id="onionToggle" style="margin-left:auto"><div class="dot"></div></div></div>
+        <div class="onion-body" id="onionBody">
+          <div class="kv"><span style="color:var(--label);font-weight:700" data-i18n="prevFrames">Previous Frames</span><span>1</span></div>
+          <div class="slider" style="--v:33%"><div class="knob"></div></div>
+          <div class="kv" style="margin-top:8px"><span style="color:var(--label);font-weight:700" data-i18n="nextFrames">Next Frames</span><span>1</span></div>
+          <div class="slider" style="--v:33%"><div class="knob"></div></div>
+          <div class="kv" style="margin-top:8px"><span style="color:var(--label);font-weight:700" data-i18n="onionOpacity">Onion Opacity</span><span>30%</span></div>
+          <div class="slider" style="--v:30%"><div class="knob"></div></div>
+        </div>
+      </div>
+      <div class="sec" data-tour="preview">
+        <h3 data-i18n="animPreview">Animation Preview</h3>
+        <div class="preview-box"><img id="previewImg" alt=""/></div>
+        <div class="kv"><span>FPS: 8</span><span id="frameCount">Frame 1 / 1</span></div>
+        <div class="slider" style="--v:40%"><div class="knob"></div></div>
+      </div>
+    </div>
+  </div>
+  <!-- frames bar -->
+  <div class="frames">
+    <div class="frames-head">
+      <span class="h" data-i18n="animFrames">Animation Frames</span>
+      <div class="actions">
+        <div class="play" data-tour="play"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 5l12 7-12 7z"/></svg></div>
+        <div class="addframe" data-tour="addframe">＋ <span data-i18n="addFrame">Add Frame</span></div>
+      </div>
+    </div>
+    <div class="thumbs" id="thumbs"></div>
+  </div>
+</div>
 
+<!-- overlay bits -->
+<div class="spotlight" id="spotlight"></div>
+<div class="tip" id="tip"></div>
+<svg class="cursor" id="cursor" viewBox="0 0 24 24" width="28" height="28">
+  <g stroke="#111" stroke-width="1" stroke-linejoin="round">
+    <path d="M2 2 L7.5 3.4 L20 15.9 L15.9 20 L3.4 7.5 Z" fill="#f2c14e"/>
+    <path d="M2 2 L4.8 6.2 L6.2 4.8 Z" fill="#2b2b2b"/>
+    <path d="M15.9 20 L20 15.9 L21.8 21.8 Z" fill="#e86a6a"/>
+  </g>
+</svg>
+
+<!-- coach -->
+<div class="coach">
+  <div class="step-no" id="stepNo">1</div>
+  <div class="body"><div class="ct" id="coachTitle"></div><div class="cd" id="coachDesc"></div></div>
+  <div class="nav">
+    <button id="backBtn">Back</button>
+    <button id="nextBtn" class="primary">Next</button>
+  </div>
+  <div class="dots" id="dots"></div>
+</div>
+
+<script>
+const F = {
+  f1:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAEBUlEQVR4nO1brW4bQRAen6JgAwMDP4EVYBRFQXmAKqCoCiyIqjyEgdUnKIiigMAoKKDqAxRFkZGBlScwOGBgHOAUuHud25vZm92dPV/S+5Dvbv/m25nZ2dk1QIcOHf5n9PbR6XB49BZaN8+XPVM/z5fR42+cgBjhKcSS0AgBnND9bAW/v01q65/dLGCzHbHfY0hIRsBwePSG1RVDKjiHyfWafB9CRBICUghNgdIMXxIqhfHMhTBKCb+4Gvg24wVbI3zGXSpIDd6nMbt+ilnnQJmFZOwH5kesd8b1/wmeduY1kAGUB38IF3AIF0UBCTG08M2in61gcTUomZtk7Bl+wIJjIlwNaa/rocCk97NV8btufJnrI4ZE0H3Nvg17DK6xH+CHV7gvaYGNuhA0pfCuYChmlekB0AxhIl7hvvhtC2/qas0+F+S44Oobt0dNHEuAAUWEaUhT+BDBOWCNsDXHJqF4sEnAYSynDQDphO9nK3h6vq2te3pyWTENMyZJbFAbKNhLpDYBnG1LCTCgiLBBmcABVdCA8w02CaGghPcV3MDUGR/PvOqxyyAlPCV46OxPrtdqwmO8zKelOACDkqmiAT6Bza4j/yXo7GYBAGXhX+ZT73Y4PD3fikwCQLAZ4hBq+7Zj0ph1DpQ52H5AbTMUApfwpyeXpedUJDmdoDbw7GvPfChh4r2AJlKqvS8q2+HUaJPwAAINyPNljwogNtvRX2/+vpEBVD2jecbvORJ8sdmOYHw88w5YUqFwghwJ9jvbXM5uFsHB0Ph4xppEU2YSlBaPSX5S4a9mEGRABULsdjgEMbl/19Y3lgyXaakSABB/AMLtBH1IkPoSLoulqgEGGiRogyMgKBCqixt8lsgUeUSTIpcgOhTuZyvYbEfsFlQC/aMzeXtRBJRVvf2nQBT2shdoE7w1ANt/audF5Q6wz5hcr50O15inC16rQMrTX620uO1PzCrDrQLBPqCNwuO2zPjqNKCRhIimgFJstqNSv9yFj6DLDxoh7z6BiQjSgDq1ch12SIh7HJyLxvF5/dP5nZsArA3eBFBCVDuij6p8YoXZ7M75fTr96vy+I/Gust02ewdDgogAe+kzYW4TMXwIHgfnBYF2XuFlPi1toNRMgEts2NlaKepm2IUf32cAIAvPvQ5HOdQlOg3jMUJJ8OXTqOjLNSZTJs+XvQ8VCkuEtyFaBuu0QKoBADsbfPgVvnME2M001bZkTLi82AlyV9RDzhPsAYeYBSc0vrliss8cTNnou8L4mgznBPeR8XFNDi6rcllaogmxmiNt29WHelK0rkNXx3V1JUK9y3+McMDCuQTT/LsMQJcRag8BvjOq5UcavSChAS3VN2iNBmC05QZ6hw4dPj7+AHjzXaLGMqJrAAAAAElFTkSuQmCC", f2:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAELElEQVR4nO1bvU7jQBCeWIg6RYoUfoKIIlWEqHgAREGFKK9AJx4ihXVPcEWEKCgRFQW6B7gKoVQpojxBChcpUlOEK2DNeD2znv1zfHf+JKQ42V3PfDszOzu7AHTo8F+jt4+XDodH765983zZU/3zfOktf+ME+ChPwZeERgjglO4na/j9fVzb//R2Adtdyv7uQ0I0AobDo3dsrhhSxTmMZxvyexciohAQQ2kKlGXYklBpjGfOhVFK+cXNwHYYK+gWYSN3qSElvM1gev8Ys86BcguJ7Afqg290xv2/FI878yGQAJSFP4QrOISrooGEGFr5ZtFP1rC4GZTcTSJ7gh+w4pgI00Ch13VXYNL7ybr4XCdfYvoRQ6LovmZfhy6DSfYD/PAGDyUr0FGXgsZU3pQM+awyPQCaIUzEGzwUn3XlVd9Qs88lOSaY3o3HoyaOJUCBIkINFFJ5F8U5YIvQLUcnoXjQScBpLGcNAPGU7ydreHm9q+17cnxdcQ0lkyQ3qE0U9CUyNAGcb0sJUKCI0EG5wAHVUIGLDToJrqCUt1VcQfUZTTKrfuwySClPKe46++PZJpjyGKv5tJQHYFA6VSzAJrH5eJH9EnR6uwCAsvKr+dR6HA4vr3cilwAQbIY4uPq+HphCzDoHyh30OBBsM+QCk/Inx9el51gkGYNgaODZDz3zroSJ9wIhEdPsbVHZDsdGm5QHEFhAni97VAKx3aWf0fzvRgJQjYzqGX/PkWCL7S6F0SSzTlhioQiCHAn6d7q7nN4unJOh0SRjXaIpN3Eqi/sUP6n0N2QSpEAlQux22AU+tX/T1teXDJNrBSUAwP8AhNsJ2pAgjSVcFSuoBSiEICE0OAKcEqG6vMFmiYxRR1Qlcgm8U+F+sobtLmW3oBKEPzqTj+dFQNnU238KRGEve4E2wdoCsP/HDl5U7QDHjPFsYwy4yj1NsFoFYp7+hiqL6/FErTLcKuAcA9qoPB5LyVdnAc4EmJQ3lbp1E24K3IUPMQH6ETiO+lVF6IOKJleK7S6tyEWdbXrd/pAGQVt3eRqci9pdbJ6drUiRYO0CX8dO1e+pLaxeq5Miy+6Nv0+n3wDAnESZyFEuISJAX/r0ur6pzPXyegejSQbj2aYQWuFi8yx5vRM+rOi+Ipu+eXIKgk1sXnSybPA0OC8sSJ+Y1XxaIqGWgJAF0yy7h9V8Co+/1oWgPnganJNW9PNHBgCy/Umj5wIAZRP0mWUFTOLlWfo5fiquPouqwnVttruUDXauQdCEy7O0+MNQ5NqU3q2XQUxICPdwsYK6FQKAJwFbYJ4ve953hdtyTQ6genVH0jbIZWmbF0rb24K7vFXXNthtcekLpX2pPtw9Jklbbsy9/MsMBSywibCQ/y4D0FWE2kOA7YyGiiONJ0K+CGX6Cq2xAIw2La0dOnTo8E/jDxTxZSl/+YyyAAAAAElFTkSuQmCC", f2a:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAEFklEQVR4nO1bvU4bQRAenxC1Cxcu/ASIwhVCVDwAokiFKFOgiIdwccoTpLCQC0qUiiLKA6RCiMqFxRO4uMKFawqTAtbMzc3szf6dj+Q+Ccnn213vfDt/O7sAdOjQ4X9Gbxc/Ohwevvr2LYpFz/QvikXw/BsnIER4DqEkNEKAJHQ/W8Kfb+Pa/qc3c1hvRuL7EBKSETAcHr5idcXQCi5hPF2x3/sQkYSAFEJz4DTDlYRKY7xyPoxyws+vB67DOIFqhMu8Sw25ybsMRvunWHUJnFlo5r5nPoR6Z9z/Q/C0Kx8DGUB58vtwCftwuW2gIYYXvln0syXMrwclc9PMPcMPWHBMhG2g2HHdF5j0frbcfq6bX2Z7iaERdFerT0HnYJv7Hn54gbuSFlDUpaAphbclQyFRpgfAM4SJeIG77WcqvOkba/WlJMcG22/j8biFEwkw4IgwA8UU3kdwCVgjqOZQErYPlAScxkraAJBO+H62hIfHWW3fk+OrimmYOWlyg9pEgYbI2ARItq0lwIAjgoIzgT2uoYHkGygJvuCEdxXcwPQ5OMqd+olhkBOeE9x39cfTVTThMZ6fJqU8AIOTqaIBLonN2w+5h6DTmzkAlIV/fpo4jyPh4XGmMgkAxWZIgq/tU8cUY9UlcOZA/UC0zZAPbMKfHF+VnlORZHWCsYFXP/bK+xKm3gvEREq1d0VlO5wabRIeQKEBRbHocQnEejN69+afGxlA1TOaZ/y9RIIr1psRHBzlzglLKmydoEQC/Y6ay+nN3DsZOjjKRZNoyky8yuIhxU8u/Y2ZBBlwiZC4HfZBSO3ftvUNJcNmWlEJAAg/AJF2gi4kaH2JVMWKqgEGMUiIDYkAr0SoLm9wCZEp6oimRK5BcCrcz5aw3ozELagG8Y/O9OMFEVBW9fafAnHYyV6gTXDWAGz/qZ0XVzvAPmM8XVkdrjFPG5yiQMrT31hlcepPTJSRooC3D2ij8HgsM79kGmDz3LZSN1XhJuFcFsegR+DY61cF4Q8qdh0puLPNoNsfWifoai73g3NVuy+rX9b3Ng0zJDj7gI9jp+r33BaW1uq0yPNb6/vJ5Kv1/RuJt5V5mb2DuQOlygNo6KNprq3M9fA4g/VmBOPpCu4H56W/VLgfnG8JpPOiGy2vKNDE5qVuhW348T0HAF16XktAzIJpnt/C89MEfv5+m1ioFtD+F2ejdxUfqYuvjZ4LAJT37yGrbBvbpfKsigLa+0GSE5RMxpeAi7OP8aSCiDQf3L4oFj3nMIhjaAzz8CFBihD05ooNpm3wXeG2XJOT7i7VtY1yWdqFcW17F3Aprvbab7Tb4lrGtX01Qn3K/xiRgIWzCRbz32UAuopQewhwXdFYfqTxRCgUsVTfoDUagNGW0NqhQ4d/H38BiARc2l9zrCIAAAAASUVORK5CYII=", f3:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAEBUlEQVR4nO1brW4bQRAen6JgAwMDP4EVYBRFQXmAKqCoCiyIqjyEgdUnKIiigMAoKKDqAxRFkZGBlScwOGBgHOAUuHud25vZm92dPV/S+5Dvbv/m25nZ2dk1QIcOHf5n9PbR6XB49BZaN8+XPVM/z5fR42+cgBjhKcSS0AgBnND9bAW/v01q65/dLGCzHbHfY0hIRsBwePSG1RVDKjiHyfWafB9CRBICUghNgdIMXxIqhfHMhTBKCb+4Gvg24wVbI3zGXSpIDd6nMbt+ilnnQJmFZOwH5kesd8b1/wmeduY1kAGUB38IF3AIF0UBCTG08M2in61gcTUomZtk7Bl+wIJjIlwNaa/rocCk97NV8btufJnrI4ZE0H3Nvg17DK6xH+CHV7gvaYGNuhA0pfCuYChmlekB0AxhIl7hvvhtC2/qas0+F+S44Oobt0dNHEuAAUWEaUhT+BDBOWCNsDXHJqF4sEnAYSynDQDphO9nK3h6vq2te3pyWTENMyZJbFAbKNhLpDYBnG1LCTCgiLBBmcABVdCA8w02CaGghPcV3MDUGR/PvOqxyyAlPCV46OxPrtdqwmO8zKelOACDkqmiAT6Bza4j/yXo7GYBAGXhX+ZT73Y4PD3fikwCQLAZ4hBq+7Zj0ph1DpQ52H5AbTMUApfwpyeXpedUJDmdoDbw7GvPfChh4r2AJlKqvS8q2+HUaJPwAAINyPNljwogNtvRX2/+vpEBVD2jecbvORJ8sdmOYHw88w5YUqFwghwJ9jvbXM5uFsHB0Ph4xppEU2YSlBaPSX5S4a9mEGRABULsdjgEMbl/19Y3lgyXaakSABB/AMLtBH1IkPoSLoulqgEGGiRogyMgKBCqixt8lsgUeUSTIpcgOhTuZyvYbEfsFlQC/aMzeXtRBJRVvf2nQBT2shdoE7w1ANt/audF5Q6wz5hcr50O15inC16rQMrTX620uO1PzCrDrQLBPqCNwuO2zPjqNKCRhIimgFJstqNSv9yFj6DLDxoh7z6BiQjSgDq1ch12SIh7HJyLxvF5/dP5nZsArA3eBFBCVDuij6p8YoXZ7M75fTr96vy+I/Gust02ewdDgogAe+kzYW4TMXwIHgfnBYF2XuFlPi1toNRMgEts2NlaKepm2IUf32cAIAvPvQ5HOdQlOg3jMUJJ8OXTqOjLNSZTJs+XvQ8VCkuEtyFaBuu0QKoBADsbfPgVvnME2M001bZkTLi82AlyV9RDzhPsAYeYBSc0vrliss8cTNnou8L4mgznBPeR8XFNDi6rcllaogmxmiNt29WHelK0rkNXx3V1JUK9y3+McMDCuQTT/LsMQJcRag8BvjOq5UcavSChAS3VN2iNBmC05QZ6hw4dPj7+AHjzXaLGMqJrAAAAAElFTkSuQmCC", f4:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAEDUlEQVR4nO1brW4jMRCerKrigICAfYKqICiqivIA1YFDVeGB6tSHCFjdExyoqoLAwgP3BIeqqigg6hMELAgILkgPpE5nvTPesT3ebO/yoeyPvTPfzNjjsQNwwAH/NXr7+OhwePoW2rYsFz3TviwX0fK3TkCM8hRiSWiFAE7pfraEP99Hje0nd3NYb3L2eQwJyQgYDk/fsLtiSBXnMLpdkfdDiEhCQAqlKVCe4UtC7WVsuRBGKeXnNwPfbrxge4SP3JUXKeF9OrPbp7A6ByosJLIfmR+xozNu/6F4WstrIAOoCn8MV3AMV7sXJMTQyreLfraE+c2gEm4S2TN8gRXHRLg60p7XQ4FJ72fL3e8m+TLXQwyJovuyvg1bBpfsR/jiFR4qXmCjKQVNqbwrGYqZZXoANEOYiFd42P22lTdttazPJTkuuL6N+6MMxxJgQBFhOtJUPkRxDtgjbM+xSdhd2CTgNJbzBoB0yvezJTw+3Te2PT+7roWGkUmSGzQmCvYUqU0AF9tSAgwoImxQIXBEvWjAjQ02CaGglPdV3MC0ORkXXu3YaZBSnlI81Pqj25Wa8hgvz9NKHoBB6VTzAJ/EZvsh/ylocjcHgKryL89T7344PD7di0ICQLAY4hAa+/bApGF1DlQ42OOA2mIoBC7lz8+uK9epSHIOgtrA1te2fChh4rWAJlK6vS9qy+HU6JLyAAIPKMtFj0og1pv8fTT/3MgA6iOjucb3ORJ8sd7kcDIuvBOWVNgNghwJ9j07XCZ38+Bk6GRcsCHRVpgElcVjip9U+quZBBlQiRC7HA5BTO3ftfSNJcMVWqoEAMRvgHArQR8SpGMJV8VS9QADDRK0wREQlAg15Q0+U2SKOqIpkUsQnQr3syWsNzm7BJVAf+tM3l8UAVVX7/4uEIW9rAW6BG8PwPGfevCiagd4zHBNp9txgC6MYnjNAil3fzXL4hyomSA4BD6b8gBbA9pGbKUgklJB1wzCfRcf/hATELIF3pZlKfwafAGAWW2xZTJHQ0KQBzQNfq7NDglxW+Gb8XX1m21fFDMAqK8qX56nlfTZm4C2tsCNAhym02/ss58/CgCQJWciAuypz64B1F2d3qtLkSxhb7m8yN+tm4tLb8EhkHoR47IwB+PaPnVHr81RF7iPmnI1FTbSWHeBCxVOHhz/ZbnoqRDQxLj5aIhVm9A0VrggmgW44677xOXFR+gVkbVVUSZoV4dDDycXxcwSPsx6pqpsV4N8ZDPvqZTEpCGQEtzZpaZ3o5bDpqP1Jq/tzRlw9zXhY3XvIzISSMYI/GH7uJ30jDJ1jilEXgy14/JSl5O0d72v+XcZAMXVoJZAbaMzJTFfArWm5lYPSGhA29M64wEYXUu8DjjggAP+WfwFbdVchauoKhEAAAAASUVORK5CYII="
+};
+// palette approximations
+const PAL={
+ color:["#3f9d63","#7dff2b","#f6f61a","#f39a1f","#ec1c1c","#f52b8f","#9b1ff5","#a878b0","#28e6f0","#3f9d63"],
+ s1:["#8a8a8a","#177f1f","#8f8f16","#8f6a16","#8f1717","#7a1263","#6a1f8f","#101f8f","#127f8f","#0a0a0a"],
+ s2:["#5a5a5a","#0f5a12","#5a5a0e","#5a440e","#5a0f0f","#4f0c40","#44125a","#0a125a","#0c5058","#050505"],
+ hi:["#ffffff","#c3f0b8","#f3f0b0","#f6cfa0","#f79c9c","#f79ccf","#c99cf7","#a0a0f6","#a0f6f0","#a8a8a8"]
+};
+for(const [id,arr] of [["pal-color",PAL.color],["pal-s1",PAL.s1],["pal-s2",PAL.s2],["pal-hi",PAL.hi]]){
+  const el=document.getElementById(id);
+  arr.forEach(c=>{const d=document.createElement("div");d.className="sw";d.style.background=c;el.appendChild(d);});
+}
+
+const sprite=document.getElementById("sprite"), ghost=document.getElementById("ghost"),
+      grid=document.getElementById("grid"), onionToggle=document.getElementById("onionToggle"),
+      onionBody=document.getElementById("onionBody"), thumbsEl=document.getElementById("thumbs"),
+      previewImg=document.getElementById("previewImg"), frameCount=document.getElementById("frameCount"),
+      spotlight=document.getElementById("spotlight"), tip=document.getElementById("tip"),
+      cursor=document.getElementById("cursor");
+
+const dupSvg='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M4 16V4h12"/></svg>';
+const trashSvg='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg>';
+
+// STEPS
+const STEPS=[
+ {t:"Start with any still image",t2:"Empieza con cualquier imagen",
+  d:"We'll animate this little character here as our example — but the same steps work for anything you draw: a character, a tree swaying in the wind, a waving flag, any object. Click Next to see how it's done.",
+  d2:"Animaremos este personaje como ejemplo, pero los mismos pasos sirven para lo que dibujes: un personaje, un árbol movido por el viento, una bandera, cualquier objeto. Toca Siguiente para verlo.",
+  size:"32", frames:[], onion:false, target:"canvas", nodim:true},
+ {t:"Pick a canvas size",t2:"Elige el tamaño del lienzo",
+  d:"For our example we'll switch to a bigger 64×64 canvas so there's room for detail. You can choose any size up here that fits your image — 32×32 works fine too. It's your call.",
+  d2:"Para el ejemplo usaremos un lienzo más grande de 64×64 para tener espacio. Puedes elegir arriba el tamaño que quieras; 32×32 también sirve. Tú decides.",
+  size:"64", frames:[], onion:false, target:"size64"},
+ {t:"Import your image",t2:"Importa tu imagen",
+  d:"First, make sure your image is saved on your computer. You can't drag and drop it onto the canvas — you have to use the 'Import image to canvas' button to bring it in. It arrives as pixels you can edit.",
+  d2:"Primero, guarda tu imagen en la computadora. No puedes arrastrarla y soltarla en el lienzo: usa el botón 'Importar imagen al lienzo' para traerla. Llega como píxeles que puedes editar.",
+  size:"64", frames:["f1"], sel:0, onion:false, target:"import", tip:"Import image to canvas", tip2:"Importar imagen al lienzo"},
+ {t:"Duplicate the frame",t2:"Duplica el cuadro",
+  d:"An animation is just frames that each change a little. Click the copy button on your frame to make a second one — watch it appear along the bottom. It's an exact duplicate, ready to edit.",
+  d2:"Una animación son cuadros que cambian un poco. Toca el botón de copiar en tu cuadro para crear un segundo; míralo aparecer abajo. Es una copia exacta, lista para editar.",
+  size:"64", startFrames:["f1"], frames:["f1","f1"], sel:1, onion:false, target:"frame-dup", action:"duplicate"},
+ {t:"Turn on onion skinning",t2:"Activa el papel cebolla",
+  d:"Flip this on. Now the frame before shows through faintly, like tracing paper, so you can see where things were while you make small changes.",
+  d2:"Actívalo. El cuadro anterior se ve tenue por detrás, como papel de calco, para guiarte al hacer cambios pequeños.",
+  size:"64", frames:["f1","f2a"], sel:1, onion:true, ghost:"f1", target:"onion"},
+ {t:"Select a part and nudge it",t2:"Selecciona una parte y muévela",
+  d:"With the Select tool you can grab any part of your image and move it a few pixels — here we swing the character's hands and bob the body. If moving a piece doesn't look right for your image, you can also just erase and redraw that part with the pencil instead. Either way, it's the small changes between frames that create the motion.",
+  d2:"Con la herramienta Seleccionar puedes tomar una parte de tu imagen y moverla unos píxeles; aquí movemos las manos y damos un leve rebote al cuerpo. Si mover una pieza no queda bien en tu imagen, también puedes borrarla y volver a dibujarla con el lápiz. En ambos casos, los cambios pequeños entre cuadros crean el movimiento.",
+  size:"64", frames:["f1","f2"], sel:1, onion:true, ghost:"f1", target:"select"},
+ {t:"Repeat for more frames",t2:"Repite para más cuadros",
+  d:"Copy, nudge, copy, nudge. Doing that a couple more times gives you a short loop — here we end up with four frames.",
+  d2:"Copia, mueve, copia, mueve. Un par de veces más y tienes un bucle corto; aquí terminamos con cuatro cuadros.",
+  size:"64", frames:["f1","f2","f1","f4"], sel:3, onion:true, ghost:"f1", target:"addframe"},
+ {t:"Play it back",t2:"Reprodúcelo",
+  d:"Press play to watch your frames loop into a simple idle motion. Slide the FPS control to speed it up or slow it down.",
+  d2:"Toca reproducir para ver tus cuadros en bucle con un leve movimiento. Usa el control de FPS para acelerarlo o hacerlo más lento.",
+  size:"64", frames:["f1","f2","f1","f4"], sel:3, onion:false, target:"play", preview:true, walk:true},
+ {t:"Save and share",t2:"Guarda y comparte",
+  d:"Happy with it? 'Export as PNG' saves the image to your computer. 'Save & Submit' does that and opens the platform so you can post your creation. Now try it with something of your own.",
+  d2:"¿Contento? 'Exportar como PNG' guarda la imagen en tu computadora. 'Guardar y enviar' hace eso y abre la plataforma para publicar tu creación. Ahora inténtalo con algo tuyo.",
+  size:"64", frames:["f1","f2","f1","f4"], sel:3, onion:false, target:"export", tip:"Export as PNG", tip2:"Exportar como PNG"}
+];
+let lang="en";
+const LANG={
+ en:{open:"Open",save:"Save",canvas:"Canvas:",saveSubmit:"Save & Submit",dragColors:"Drag colors to slots to customize palette",
+     palColor:"COLOR",palS1:"COLOR SHADE 1",palS2:"COLOR SHADE 2",palHi:"HIGHLIGHT",brushOpacity:"Brush Opacity",
+     layers:"Layers",addLayer:"Add Layer",layer1:"Layer 1",opacity:"Opacity",onion:"Onion Skinning",
+     prevFrames:"Previous Frames",nextFrames:"Next Frames",onionOpacity:"Onion Opacity",animPreview:"Animation Preview",
+     animFrames:"Animation Frames",addFrame:"Add Frame",back:"Back",next:"Next",restart:"Restart",frame:"Frame"},
+ es:{open:"Abrir",save:"Guardar",canvas:"Lienzo:",saveSubmit:"Guardar y enviar",dragColors:"Arrastra colores para armar tu paleta",
+     palColor:"COLOR",palS1:"TONO 1",palS2:"TONO 2",palHi:"BRILLO",brushOpacity:"Opacidad del pincel",
+     layers:"Capas",addLayer:"Añadir capa",layer1:"Capa 1",opacity:"Opacidad",onion:"Papel cebolla",
+     prevFrames:"Cuadros previos",nextFrames:"Cuadros siguientes",onionOpacity:"Opacidad cebolla",animPreview:"Vista previa",
+     animFrames:"Cuadros de animación",addFrame:"Añadir cuadro",back:"Atrás",next:"Siguiente",restart:"Reiniciar",frame:"Cuadro"}
+};
+
+let cur=0, previewTimer=null, canvasTimer=null, revealTimer=null;
+function stopCanvasWalk(){ if(canvasTimer){clearInterval(canvasTimer);canvasTimer=null;} }
+
+function setGrid(size){
+  const stage=document.querySelector(".stage");
+  const px=stage.clientWidth; const cell=px/parseInt(size);
+  grid.style.backgroundSize=cell+"px "+cell+"px";
+}
+function renderThumbs(frames,sel,newIdx){
+  thumbsEl.innerHTML="";
+  frames.forEach((f,i)=>{
+    const t=document.createElement("div"); t.className="thumb"+(i===sel?" sel":"")+(i===newIdx?" new":"");
+    if(i===0) t.setAttribute("data-tour-dup","1");
+    t.innerHTML=`<div class="pic"><img src="${F[f]}"></div>
+      <div class="meta"><span>${LANG[lang].frame} ${i+1}</span><span class="ic dup">${dupSvg}</span><span class="ic">${trashSvg}</span></div>`;
+    thumbsEl.appendChild(t);
+  });
+}
+function stopPreview(){ if(previewTimer){clearInterval(previewTimer);previewTimer=null;} previewImg.style.opacity=0; }
+function startPreview(frames){
+  stopPreview(); let i=0; previewImg.style.opacity=1;
+  const seq=frames.length?frames:["f1"];
+  previewImg.src=F[seq[0]];
+  previewTimer=setInterval(()=>{ i=(i+1)%seq.length; previewImg.src=F[seq[i]]; },140);
+}
+
+function moveCursorTo(sel){
+  let el=null;
+  if(sel==="frame-dup"){ el=document.querySelector('[data-tour-dup] .dup'); }
+  else { el=document.querySelector('[data-tour="'+sel+'"]'); }
+  if(!el){ spotlight.classList.remove("on"); return; }
+  const place=()=>{
+    const r=el.getBoundingClientRect();
+    const pad=6;
+    spotlight.style.left=(r.left-pad)+"px"; spotlight.style.top=(r.top-pad)+"px";
+    spotlight.style.width=(r.width+pad*2)+"px"; spotlight.style.height=(r.height+pad*2)+"px";
+    spotlight.classList.add("on");
+    spotlight.classList.toggle("nodim", !!STEPS[cur].nodim);
+    const cx=r.left+r.width/2, cy=r.top+r.height/2;
+    cursor.style.transform=`translate(${cx-2}px, ${cy-2}px)`;
+    cursor.classList.remove("click"); void cursor.offsetWidth; cursor.classList.add("click");
+    const tt = lang==="es" ? STEPS[cur].tip2 : STEPS[cur].tip;
+    if(tt){ tip.textContent=tt; tip.style.left=(r.left)+"px"; tip.style.top=(r.top-42)+"px"; tip.classList.add("on"); }
+    else tip.classList.remove("on");
+  };
+  if(el.closest(".panel")){ el.scrollIntoView({block:"center"}); setTimeout(place,400); }
+  else place();
+}
+
+function render(){
+  const s=STEPS[cur];
+  if(revealTimer){clearTimeout(revealTimer);revealTimer=null;}
+  // sizes
+  document.querySelectorAll(".size").forEach(b=>b.classList.toggle("active", b.dataset.size===s.size));
+  setGrid(s.size);
+  // sprite + ghost
+  stopCanvasWalk();
+  if(s.frames && s.frames.length){
+    const art=s.frames[s.sel];
+    sprite.src=F[art]; sprite.style.opacity=1;
+    if(s.walk){ let i=s.sel; canvasTimer=setInterval(()=>{ i=(i+1)%s.frames.length; sprite.src=F[s.frames[i]]; },150); }
+  } else { sprite.style.opacity=0; }
+  if(s.onion && s.ghost){ ghost.src=F[s.ghost]; ghost.style.opacity=0.4; } else { ghost.style.opacity=0; }
+  // onion panel
+  onionToggle.classList.toggle("on", !!s.onion);
+  onionBody.classList.toggle("show", !!s.onion);
+  // frames bar
+  if(s.action==="duplicate" && s.startFrames){
+    renderThumbs(s.startFrames, 0);
+    frameCount.textContent = LANG[lang].frame+" 1 / "+s.startFrames.length;
+    revealTimer=setTimeout(()=>{
+      renderThumbs(s.frames, s.sel, s.sel);
+      frameCount.textContent = LANG[lang].frame+" "+(s.sel+1)+" / "+s.frames.length;
+    }, 2100);
+  } else {
+    renderThumbs(s.frames||[], s.sel!=null?s.sel:0);
+    frameCount.textContent = LANG[lang].frame+" "+((s.sel!=null?s.sel:0)+1)+" / "+Math.max(1,(s.frames||[]).length);
+  }
+  // preview
+  if(s.preview) startPreview(s.frames); else stopPreview();
+  // coach
+  document.getElementById("stepNo").textContent=cur+1;
+  document.getElementById("coachTitle").textContent = lang==="es" ? s.t2 : s.t;
+  document.getElementById("coachDesc").textContent  = lang==="es" ? s.d2 : s.d;
+  document.getElementById("backBtn").disabled = cur===0;
+  document.getElementById("backBtn").textContent = LANG[lang].back;
+  document.getElementById("nextBtn").textContent = cur===STEPS.length-1 ? LANG[lang].restart : LANG[lang].next;
+  // dots
+  const dots=document.getElementById("dots"); dots.innerHTML="";
+  STEPS.forEach((_,i)=>{const d=document.createElement("div");d.className="dot"+(i===cur?" on":"");dots.appendChild(d);});
+  // cursor + spotlight (after layout settles)
+  requestAnimationFrame(()=>setTimeout(()=>moveCursorTo(s.target),40));
+}
+
+function applyLang(){
+  document.querySelectorAll("[data-i18n]").forEach(el=>{ el.textContent=LANG[lang][el.dataset.i18n]; });
+  document.querySelectorAll("#langtog span").forEach(s=>s.classList.toggle("on", s.dataset.l===lang));
+}
+document.querySelectorAll("#langtog span").forEach(s=>{
+  s.onclick=()=>{ lang=s.dataset.l; applyLang(); render(); };
+});
+document.getElementById("nextBtn").onclick=()=>{ cur = (cur+1)%STEPS.length; render(); };
+document.getElementById("backBtn").onclick=()=>{ if(cur>0){cur--;render();} };
+document.addEventListener("keydown",e=>{ if(e.key==="ArrowRight")document.getElementById("nextBtn").click();
+  if(e.key==="ArrowLeft")document.getElementById("backBtn").click(); });
+window.addEventListener("resize",()=>render());
+applyLang(); render();
+</script>
+</body>
+</html>
