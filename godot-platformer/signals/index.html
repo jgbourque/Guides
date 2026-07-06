@@ -1,0 +1,3204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>How Game Objects Communicate in Godot</title>
+<style>
+:root{
+  --bg:#1a1625;
+  --bg-soft:#221d33;
+  --bg-deeper:#14111e;
+  --code-bg:#0f0c17;
+  --ink:#f4ecd8;
+  --ink-dim:#b3a98f;
+  --ink-faint:#6b6478;
+  --accent:#ffb454;
+  --hot:#ff6b6b;
+  --cool:#5ec3a8;
+  --line:#3a3349;
+  --blue:#5dade2;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.55}
+body:before{
+  content:"";position:fixed;inset:0;pointer-events:none;
+  background:
+    radial-gradient(circle at 10% 0%,rgba(255,180,84,.11),transparent 36%),
+    radial-gradient(circle at 90% 100%,rgba(94,195,168,.08),transparent 42%);
+}
+main{position:relative;max-width:1120px;margin:0 auto;padding:34px 16px 88px}
+.eyebrow{font:700 12px/1.2 ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--cool);letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px}
+h1{font-family:Georgia,serif;font-size:clamp(32px,6vw,64px);line-height:1.03;margin:0 0 14px;font-weight:800}
+h1 .ac{color:var(--accent);font-style:italic}
+.lede{font-size:clamp(16px,2vw,18px);max-width:790px;color:var(--ink-dim);margin:0 0 22px}
+.note{background:rgba(34,29,51,.7);border-left:3px solid var(--accent);border-radius:0 10px 10px 0;padding:12px 14px;color:var(--ink-dim);max-width:820px;margin:0 0 22px}
+.lesson{
+  border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#0d0b15;box-shadow:0 24px 70px rgba(0,0,0,.35)
+}
+.topbar{
+  display:flex;align-items:center;gap:10px;min-height:46px;padding:9px 12px;background:var(--bg-deeper);border-bottom:1px solid var(--line);
+  font:12px ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--ink-faint);position:sticky;top:0;z-index:30
+}
+.topbar strong{color:var(--accent)}
+.topbar .spacer{flex:1}
+.topbar button,.controls button,.jump-row button{
+  border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--ink);border-radius:8px;padding:8px 10px;
+  font:700 12px ui-monospace,SFMono-Regular,Consolas,monospace;cursor:pointer
+}
+.topbar button.primary,.controls button.primary{border-color:var(--accent);color:var(--accent)}
+#topBackBtn,#topNextBtn{display:inline-block}
+.topbar button.on{background:rgba(255,180,84,.18);border-color:var(--accent);color:var(--accent)}
+/* Segmented EN / ES language toggle. Sits in the topbar next to the navigation buttons. */
+.lang-toggle{
+  display:inline-flex;
+  border:1px solid var(--line);
+  border-radius:8px;
+  overflow:hidden;
+}
+.lang-toggle button{
+  border:none !important;
+  background:rgba(255,255,255,.04);
+  color:var(--ink-faint);
+  padding:8px 11px;
+  font:700 12px ui-monospace,SFMono-Regular,Consolas,monospace;
+  cursor:pointer;
+  border-radius:0 !important;
+  min-width:34px;
+}
+.lang-toggle button + button{border-left:1px solid var(--line) !important}
+.lang-toggle button.active{
+  background:rgba(255,180,84,.18);
+  color:var(--accent);
+}
+.lang-toggle button:not(.active):hover{background:rgba(255,255,255,.08);color:var(--ink)}
+@media(max-width:800px){
+  .lang-toggle button{padding:6px 8px;font-size:11px;min-width:30px}
+}
+.work{display:grid;grid-template-columns:minmax(320px,1.08fr) minmax(320px,.92fr);height:520px;min-height:0;overflow:hidden}
+.visual{border-right:1px solid var(--line);background:#11101a;min-width:0;display:flex;flex-direction:column;position:relative;height:100%;overflow:hidden}
+.canvas-wrap{position:relative;min-height:0;flex:1;overflow:hidden}
+canvas{display:block;width:100%;height:100%;min-height:0}
+
+.code-help-hint{
+  position:absolute;
+  left:34px;
+  bottom:32px;
+  z-index:35;
+  display:none;
+  border:1px solid rgba(94,195,168,.45);
+  background:rgba(15,12,23,.86);
+  color:var(--cool);
+  border-radius:999px;
+  padding:7px 10px;
+  font:700 11px ui-monospace,SFMono-Regular,Consolas,monospace;
+  pointer-events:none;
+}
+.lesson.code-focus .code-help-hint{display:block}
+.code-popover{
+  position:absolute;
+  z-index:60;
+  max-width:320px;
+  display:none;
+  background:rgba(20,17,30,.97);
+  border:1px solid rgba(255,180,84,.72);
+  border-radius:12px;
+  padding:12px 14px;
+  box-shadow:0 18px 44px rgba(0,0,0,.42);
+}
+.code-popover.active{display:block}
+.code-popover h3{
+  margin:0 0 5px;
+  color:var(--accent);
+  font:800 14px ui-monospace,SFMono-Regular,Consolas,monospace;
+}
+.code-popover p{
+  margin:0;
+  color:var(--ink-dim);
+  font:13px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+}
+.code-popover button{
+  position:absolute;
+  top:6px;
+  right:7px;
+  border:0;
+  background:transparent;
+  color:var(--ink-faint);
+  font:800 16px system-ui;
+  cursor:pointer;
+}
+@media(max-width:800px){
+  .code-help-hint{font-size:10px;left:10px;bottom:10px}
+  .code-popover{left:12px!important;right:12px!important;top:auto!important;bottom:80px!important;max-width:none}
+}
+
+.mode{
+  position:absolute;top:10px;right:10px;left:auto;background:rgba(15,12,23,.88);border:1px solid rgba(255,255,255,.1);border-radius:7px;
+  padding:5px 8px;font:700 11px ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--cool)
+}
+.visual-step-card{
+  position:absolute;
+  left:auto;
+  right:14px;
+  top:56px;
+  bottom:auto;
+  z-index:8;
+  display:none;
+  background:rgba(20,17,30,.94);
+  border:1px solid rgba(255,180,84,.62);
+  border-radius:12px;
+  padding:12px 14px;
+  box-shadow:0 12px 32px rgba(0,0,0,.32);
+  max-width:340px;
+  width:calc(50% - 24px);
+}
+.visual-step-card.active{display:block}
+.visual-step-kicker{
+  margin:0 0 4px;
+  color:var(--cool);
+  font:700 10px/1.2 ui-monospace,SFMono-Regular,Consolas,monospace;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.visual-step-card h2{
+  margin:0 0 4px;
+  font-size:15px;
+  line-height:1.25;
+  color:var(--accent);
+}
+.visual-step-card p{
+  margin:0;
+  color:var(--ink-dim);
+  font-size:13px;
+  line-height:1.4;
+}
+.mobile-pad{display:none;padding:10px 12px;background:rgba(15,12,23,.92);border:1px solid rgba(255,255,255,.12);border-radius:14px;justify-content:space-between;gap:10px;align-items:center;position:absolute;left:14px;right:14px;bottom:18px;z-index:26;box-shadow:0 12px 32px rgba(0,0,0,.35)}
+.mobile-pad.active{display:flex}
+.pad-label{font:700 11px ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.08em;min-width:72px}
+.mobile-pad .pair{display:flex;gap:10px}
+.mobile-pad button{width:40px;height:40px;border-radius:50%;border:2px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:var(--ink);font-size:18px}
+.mobile-pad button.on,.mobile-pad button:active{border-color:var(--accent);background:rgba(255,180,84,.25)}
+.code-area{display:flex;flex-direction:column;background:var(--code-bg);min-width:0;height:100%;overflow:hidden}
+
+.lesson.code-focus .code-area .file,
+.lesson.code-focus .code-area pre{
+  display:none;
+}
+.lesson.code-focus .code-area{
+  background:var(--bg-deeper);
+}
+.lesson.code-focus .canvas-wrap::after{
+  content:"";
+  position:absolute;
+  inset:30px 0 0 0;
+  background:rgba(15,12,23,.78);
+  z-index:30;
+  pointer-events:none;
+}
+.lesson.code-focus .center-code-panel,
+.lesson.code-focus .code-help-hint,
+.lesson.code-focus .code-popover{
+  z-index:64;
+}
+.lesson.code-focus .explain{
+  flex:1;
+  border-top:none;
+  max-height:none;
+}
+.lesson.code-focus .work{
+  grid-template-columns:minmax(740px,1.8fr) minmax(220px,.38fr);
+}
+@media(max-width:800px){
+  .lesson.code-focus .work{
+    grid-template-columns:1fr;
+  }
+  .lesson.code-focus .code-area .file,
+  .lesson.code-focus .code-area pre{
+    display:flex;
+  }
+}
+
+.file{height:38px;display:flex;align-items:center;padding:0 12px;background:var(--bg-deeper);border-bottom:1px solid var(--line);font:700 12px ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--accent)}
+pre{margin:0;padding:12px 10px;overflow:auto;flex:1;min-height:0;font:13px/1.75 ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--ink)}
+.code-line{display:block;white-space:pre;border-left:3px solid transparent;padding:0 8px;border-radius:0 6px 6px 0;min-height:1.65em;opacity:.28}
+.code-line.visible{opacity:1}
+.code-line.hi{background:rgba(255,180,84,.16);border-left-color:var(--accent);box-shadow:0 0 18px rgba(255,180,84,.06) inset}
+.code-line.glow{background:rgba(94,195,168,.16);border-left-color:var(--cool);box-shadow:0 0 22px rgba(94,195,168,.12) inset}
+.explain{border-top:1px solid var(--line);background:var(--bg-deeper);padding:10px 14px 28px;min-height:126px;max-height:170px;overflow:auto}
+.explain-label{font:700 11px/1.2 ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--accent);letter-spacing:.08em;text-transform:uppercase;margin-bottom:7px}
+.explain h2{font-size:18px;margin:0 0 6px;color:var(--ink)}
+.explain p{margin:0;color:var(--ink-dim);font-size:15px}
+.progress{display:flex;gap:5px;margin-top:10px;margin-bottom:8px}
+.progress span{height:6px;flex:1;border-radius:999px;background:var(--line)}
+.progress span.done{background:var(--cool)}
+.progress span.now{background:var(--accent);box-shadow:0 0 14px rgba(255,180,84,.45)}
+.controls{display:flex;gap:9px;align-items:center;justify-content:space-between;padding:8px 12px;border-top:1px solid var(--line);background:#0b0911;position:sticky;bottom:0;z-index:24}
+.controls .left-controls,.controls .right-controls{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+.counter{font:700 12px ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--ink-faint)}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:18px}
+.card{background:var(--bg-soft);border:1px solid var(--line);border-radius:12px;padding:16px}
+.card h3{margin:0 0 7px;font-size:17px}
+.card p{margin:0;color:var(--ink-dim);font-size:14px}
+.next{margin-top:34px}
+.next h2{font-size:26px;margin:0 0 10px}
+.next ol{color:var(--ink-dim);padding-left:22px}
+.next li{margin:8px 0}
+strong{color:var(--accent)}
+kbd{font:700 12px ui-monospace,SFMono-Regular,Consolas,monospace;background:rgba(255,255,255,.08);border:1px solid var(--line);padding:2px 5px;border-radius:5px;color:var(--ink)}
+@media(max-width:1000px){
+  .cards{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:800px){
+  main{padding:22px 10px 80px}
+  .work{grid-template-columns:1fr;height:auto;min-height:0;overflow:visible}
+  .visual{border-right:none;border-bottom:1px solid var(--line)}
+  .canvas-wrap{min-height:280px}
+  canvas{min-height:280px;height:280px}
+  .visual-step-card{left:auto;right:8px;top:50px;bottom:auto;padding:9px 10px;width:calc(58% - 16px);max-width:270px}
+  .visual-step-card h2{font-size:14px}
+  .visual-step-card p{font-size:12px}
+  .code-area{min-height:430px}
+  pre{font-size:12px;line-height:1.9;max-height:285px}
+  .topbar{gap:6px;overflow-x:auto}
+  .topbar span.long{display:none}
+  #topBackBtn,#topNextBtn{display:inline-block}
+  .topbar button{padding:7px 8px;font-size:11px}
+  .cards{grid-template-columns:1fr}
+  .controls{position:sticky;bottom:0;z-index:12;align-items:stretch}
+  .controls .left-controls,.controls .right-controls{width:50%;display:grid;grid-template-columns:1fr 1fr}
+  .controls button{padding:10px 8px}
+  .counter{display:none}
+}
+@media(max-width:430px){
+  main{padding-left:8px;padding-right:8px}
+  .canvas-wrap{min-height:280px}
+  canvas{min-height:280px;height:280px}
+  pre{font-size:11px;padding-left:6px;padding-right:4px}
+  .code-line{padding-left:5px;padding-right:4px}
+  .explain{min-height:190px}
+  .topbar button{padding:7px 8px}
+}
+
+.copy-code{margin-top:30px;background:var(--bg-soft);border:1px solid var(--line);border-radius:12px;padding:18px}
+.copy-code h2{margin:0 0 8px;font-size:24px}
+.copy-code p{margin:0 0 12px;color:var(--ink-dim)}
+.copy-code pre{background:var(--code-bg);border:1px solid var(--line);border-radius:10px;padding:14px;overflow:auto;font:13px/1.7 ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--ink);min-height:0}
+
+/* Chapter indicator in the topbar. Sits where topTitle used to live and stays stable
+   across every step inside a single chapter, giving the learner a clear "where am I" cue. */
+.chapter-indicator{
+  display:flex;align-items:center;gap:8px;min-width:0;padding:2px 4px;
+  border-radius:6px;transition:background .3s ease;
+}
+
+/* During Chapter 1 we hide the whole code column. There is no script yet, so a "coin.gd"
+   label with an empty pre below plus a "What's happening" block that repeats the visual
+   step card creates noise without adding information. The visual gets the full width so the
+   Godot editor mockup has room to breathe. */
+.lesson.no-code-panel .work{grid-template-columns:1fr}
+.lesson.no-code-panel .code-area{display:none}
+
+/* During Chapter 3 we keep the code area visible as a reference (the finished coin.gd is
+   nice to have on-screen while placing coins in a level), but hide the explain block below
+   it because that block would just repeat the visual step card text. */
+.lesson.hide-explain .explain{display:none}
+.lesson.hide-explain .code-area{border-left:1px solid var(--line)}
+
+/* Anchor the visual step card to the right edge of the canvas so it works in both the
+   narrow (split with code column) and wide (no code column) layouts without repositioning. */
+  display:flex;align-items:center;gap:8px;min-width:0;padding:2px 4px;
+  border-radius:6px;transition:background .3s ease;
+}
+.chapter-indicator .ch-num{
+  flex:0 0 auto;
+  font:700 10px ui-monospace,SFMono-Regular,Consolas,monospace;
+  color:var(--cool);background:rgba(94,195,168,.14);
+  border:1px solid rgba(94,195,168,.4);
+  padding:3px 7px;border-radius:999px;letter-spacing:.06em;
+}
+.chapter-indicator .ch-title{
+  font:700 12px ui-monospace,SFMono-Regular,Consolas,monospace;
+  color:var(--accent);letter-spacing:.04em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.chapter-indicator.chapter-flash{animation:chapterFlash 1.1s ease-out}
+@keyframes chapterFlash{
+  0%{background:rgba(255,180,84,.28);transform:scale(1.02)}
+  60%{background:rgba(255,180,84,.10);transform:scale(1)}
+  100%{background:transparent}
+}
+
+/* Post-guide reference material stays hidden while the learner is working through the
+   step-through. It reveals once they reach the final checkpoint, so they can focus on
+   the guide during the walkthrough and use the reference material afterward. */
+.post-guide{display:none}
+.post-guide.revealed{display:block;animation:postGuideReveal .5s ease-out}
+@keyframes postGuideReveal{
+  from{opacity:0;transform:translateY(14px)}
+  to{opacity:1;transform:translateY(0)}
+}
+.post-guide-hint{
+  margin-top:22px;text-align:center;
+  color:var(--ink-faint);
+  font:12px ui-monospace,SFMono-Regular,Consolas,monospace;
+  opacity:.75;
+}
+.post-guide.revealed ~ .post-guide-hint,
+.post-guide-hint.hidden{display:none}
+.completion-banner{
+  margin-top:30px;
+  background:linear-gradient(135deg,rgba(94,195,168,.14),rgba(255,180,84,.10));
+  border:1px solid rgba(94,195,168,.45);
+  border-radius:14px;padding:24px 26px;text-align:center;
+}
+.completion-banner .banner-eyebrow{
+  font:700 11px ui-monospace,SFMono-Regular,Consolas,monospace;
+  color:var(--cool);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;
+}
+.completion-banner h2{
+  margin:0 0 8px;font-size:28px;color:var(--accent);
+}
+.completion-banner p{
+  margin:0;color:var(--ink-dim);max-width:640px;margin:0 auto;
+}
+@media(max-width:800px){
+  .chapter-indicator .ch-title{font-size:11px}
+  .chapter-indicator .ch-num{font-size:9px;padding:2px 5px}
+  .completion-banner{padding:18px 16px}
+  .completion-banner h2{font-size:22px}
+}
+
+
+.build-strip{
+  display:flex;gap:6px;overflow-x:auto;padding:8px 10px;background:#0b0911;border-bottom:1px solid var(--line);
+}
+.build-strip span{
+  flex:0 0 auto;border:1px solid var(--line);border-radius:999px;padding:5px 9px;
+  font:700 11px ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--ink-faint);background:rgba(255,255,255,.035)
+}
+.build-strip span.active{border-color:var(--accent);color:var(--accent);background:rgba(255,180,84,.14)}
+.build-strip span.done{border-color:rgba(94,195,168,.65);color:var(--cool);background:rgba(94,195,168,.10)}
+.quick-build{margin-top:30px;background:var(--bg-soft);border:1px solid var(--line);border-radius:12px;padding:18px}
+.quick-build h2{margin:0 0 8px;font-size:24px}
+.quick-build ol{margin:0;color:var(--ink-dim);padding-left:22px}
+.quick-build li{margin:6px 0}
+@media(max-width:800px){
+  .build-strip{position:sticky;top:46px;z-index:20}
+  .build-strip span{font-size:10px;padding:5px 8px}
+}
+
+
+
+
+.checkpoint-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:16px;
+  margin-top:34px;
+}
+.checkpoint-card{
+  background:var(--bg-soft);
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:18px;
+}
+.checkpoint-tag{
+  display:inline-block;
+  margin-bottom:10px;
+  padding:4px 8px;
+  border-radius:999px;
+  border:1px solid rgba(255,180,84,.55);
+  color:var(--accent);
+  background:rgba(255,180,84,.12);
+  font:700 10px ui-monospace,SFMono-Regular,Consolas,monospace;
+  text-transform:uppercase;
+}
+.checkpoint-card h3{
+  margin:0 0 10px;
+  font-size:20px;
+}
+.checkpoint-card p{
+  margin:0 0 10px;
+  color:var(--ink-dim);
+}
+.checkpoint-card ul{
+  margin:0;
+  padding-left:20px;
+  color:var(--ink);
+}
+.checkpoint-card li{
+  margin:6px 0;
+}
+@media(max-width:1000px){
+  .checkpoint-grid{
+    grid-template-columns:1fr;
+  }
+}
+
+
+.code-area{position:relative}
+.script-checkpoint-overlay{
+  position:absolute;
+  z-index:18;
+  inset:46px 10px auto 10px;
+  display:none;
+  pointer-events:none;
+}
+.script-checkpoint-overlay.active{display:block}
+.script-checkpoint-card{
+  display:grid;
+  grid-template-columns:auto 1fr;
+  gap:14px;
+  background:rgba(20,17,30,.96);
+  border:2px solid rgba(94,195,168,.88);
+  border-radius:16px;
+  padding:16px;
+  box-shadow:0 14px 40px rgba(0,0,0,.35);
+  animation:checkpointSlideIn .22s ease-out;
+}
+.script-checkmark{
+  width:46px;height:46px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(94,195,168,.18);
+  color:var(--cool);
+  font-size:32px;
+  font-weight:800;
+}
+.script-checkpoint-card h3{
+  margin:0 0 8px;
+  color:var(--accent);
+  font:700 18px ui-monospace,SFMono-Regular,Consolas,monospace;
+}
+.script-checkpoint-card p{
+  margin:0 0 8px;
+  color:var(--ink);
+  font:13px ui-monospace,SFMono-Regular,Consolas,monospace;
+}
+.script-checkpoint-card ul{
+  margin:0;
+  padding-left:18px;
+  color:var(--ink-dim);
+  font:12px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace;
+}
+.script-checkpoint-card li{margin:4px 0}
+.script-checkpoint-note{
+  margin-top:10px;
+  color:var(--ink-faint);
+  font:11px ui-monospace,SFMono-Regular,Consolas,monospace;
+}
+@keyframes checkpointSlideIn{
+  from{transform:translateX(22px);opacity:0}
+  to{transform:translateX(0);opacity:1}
+}
+@media(max-width:800px){
+  .script-checkpoint-overlay{
+    inset:54px 8px auto 8px;
+  }
+  .script-checkpoint-card{
+    padding:13px;
+    gap:10px;
+  }
+  .script-checkmark{
+    width:40px;height:40px;font-size:27px;
+  }
+  .script-checkpoint-card h3{font-size:15px}
+  .script-checkpoint-card p{font-size:12px}
+  .script-checkpoint-card ul{font-size:11px}
+}
+
+
+.center-code-panel{
+  position:absolute;
+  display:none;
+  z-index:34;
+  background:#0f0c17;
+  border:2px solid #3a3349;
+  border-radius:12px;
+  overflow:hidden;
+  box-shadow:0 18px 48px rgba(0,0,0,.32);
+  font-family:Consolas,"Liberation Mono",Menlo,monospace;
+}
+.lesson.code-focus .center-code-panel{
+  display:block;
+  left:18px;
+  right:18px;
+  top:58px;
+  bottom:18px;
+}
+.center-code-title{
+  height:38px;
+  display:flex;
+  align-items:center;
+  padding:0 16px;
+  background:#211b30;
+  color:var(--accent);
+  font:700 14px Consolas,"Liberation Mono",Menlo,monospace;
+  border-bottom:1px solid #3a3349;
+}
+.center-code-lines{
+  padding:22px 18px 18px;
+  font:600 17px/1.85 Consolas,"Liberation Mono",Menlo,monospace;
+  color:var(--ink);
+}
+.center-code-row{
+  display:grid;
+  grid-template-columns:34px 1fr;
+  gap:12px;
+  min-height:31px;
+  align-items:center;
+  border-left:3px solid transparent;
+  border-radius:0 7px 7px 0;
+  padding:0 10px 0 0;
+}
+.center-code-row.empty .center-code-text{opacity:.4}
+.center-code-row.hi{background:rgba(255,180,84,.16);border-left-color:var(--accent)}
+.center-code-row.glow{background:rgba(94,195,168,.16);border-left-color:var(--cool)}
+.center-code-num{color:#6b6478;text-align:right;user-select:none}
+.center-code-text{white-space:pre;overflow:visible}
+.code-token{
+  color:var(--ink);
+  text-decoration:underline;
+  text-decoration-color:rgba(94,195,168,.78);
+  text-decoration-thickness:2px;
+  text-underline-offset:4px;
+  cursor:pointer;
+  border-radius:4px;
+}
+.code-token:hover,.code-token.active{background:rgba(94,195,168,.18);color:#fff}
+/* Prose tokens (in the step card / explain text) use a lighter dashed underline so a sentence
+   with several jargon words doesn't feel visually loud. Same click behavior as code tokens. */
+.prose-token{
+  text-decoration-style:dashed;
+  text-decoration-thickness:1.5px;
+  text-underline-offset:3px;
+  text-decoration-color:rgba(94,195,168,.6);
+}
+.prose-token:hover,.prose-token.active{background:rgba(94,195,168,.15);color:var(--ink)}
+@media(max-width:800px){
+  .lesson.code-focus .center-code-panel{left:12px;right:12px;top:58px;bottom:54px}
+  .center-code-lines{font-size:13px;line-height:1.65;padding:14px 10px;overflow:auto}
+  .center-code-row{grid-template-columns:26px 1fr;gap:8px}
+  .center-code-text{overflow-x:auto}
+}
+
+
+/* Dedicated mobile layout for the GDScript step-through */
+@media(max-width:800px){
+  .lesson.code-focus .work{
+    display:block;
+    height:auto;
+    min-height:0;
+    overflow:visible;
+  }
+
+  .lesson.code-focus .visual{
+    height:auto;
+    min-height:0;
+    overflow:visible;
+    border-bottom:1px solid var(--line);
+  }
+
+  .lesson.code-focus .canvas-wrap{
+    height:520px;
+    min-height:520px;
+    overflow:hidden;
+    background:#0f0c17;
+  }
+
+  .lesson.code-focus canvas{
+    height:520px;
+    min-height:520px;
+    opacity:.18;
+  }
+
+  .lesson.code-focus .canvas-wrap::after{
+    inset:0;
+    background:rgba(15,12,23,.86);
+  }
+
+  .lesson.code-focus .center-code-panel{
+    display:block;
+    left:10px;
+    right:10px;
+    top:12px;
+    bottom:56px;
+    z-index:64;
+    border-radius:12px;
+  }
+
+  .lesson.code-focus .center-code-title{
+    height:34px;
+    font-size:13px;
+    padding:0 12px;
+  }
+
+  .lesson.code-focus .center-code-lines{
+    height:calc(100% - 34px);
+    overflow:auto;
+    padding:12px 8px 16px;
+    font-size:12px;
+    line-height:1.65;
+  }
+
+  .lesson.code-focus .center-code-row{
+    grid-template-columns:24px minmax(0,1fr);
+    gap:7px;
+    min-height:24px;
+    padding-right:4px;
+  }
+
+  .lesson.code-focus .center-code-text{
+    white-space:pre;
+    overflow-x:auto;
+    scrollbar-width:thin;
+  }
+
+  .lesson.code-focus .code-help-hint{
+    left:14px;
+    right:14px;
+    bottom:12px;
+    width:auto;
+    text-align:center;
+    justify-content:center;
+    font-size:10px;
+    padding:7px 8px;
+    z-index:70;
+  }
+
+  .lesson.code-focus .code-popover{
+    left:12px!important;
+    right:12px!important;
+    top:auto!important;
+    bottom:74px!important;
+    max-width:none;
+    z-index:90;
+  }
+
+  .lesson.code-focus .code-area{
+    height:auto;
+    min-height:0;
+    overflow:visible;
+    background:var(--bg-deeper);
+  }
+
+  .lesson.code-focus .explain{
+    min-height:0;
+    max-height:none;
+    overflow:visible;
+    padding:14px;
+    border-top:1px solid var(--line);
+  }
+
+  .lesson.code-focus .progress{
+    margin-bottom:4px;
+  }
+
+  .code-token{
+    padding:1px 2px;
+    margin:-1px -2px;
+  }
+}
+
+
+/* Mobile bug fix: keep GDScript rows vertical, not one long horizontal strip */
+@media(max-width:800px){
+  .lesson.code-focus .center-code-panel{
+    display:flex !important;
+    flex-direction:column;
+  }
+
+  .lesson.code-focus .center-code-lines{
+    display:block !important;
+    white-space:normal !important;
+    overflow-y:auto;
+    overflow-x:hidden;
+  }
+
+  .lesson.code-focus .center-code-row{
+    display:grid !important;
+    grid-template-columns:26px minmax(0,1fr) !important;
+    width:100%;
+    box-sizing:border-box;
+    margin:0 0 2px 0;
+    clear:both;
+  }
+
+  .lesson.code-focus .center-code-num,
+  .lesson.code-focus .center-code-text{
+    display:block;
+  }
+
+  .lesson.code-focus .center-code-text{
+    white-space:pre !important;
+    overflow-x:auto;
+    overflow-y:hidden;
+    min-width:0;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  .lesson.code-focus .center-code-row.hi,
+  .lesson.code-focus .center-code-row.glow{
+    overflow:hidden;
+  }
+}
+
+
+.mobile-code-lines{
+  display:none;
+}
+@media(max-width:800px){
+  .lesson.code-focus .center-code-lines{
+    display:block !important;
+  }
+
+  .lesson.code-focus .mobile-code-lines{
+    display:block !important;
+    height:calc(100% - 34px);
+    overflow:auto;
+    padding:14px 10px 16px;
+    font:600 13px/1.75 Consolas,"Liberation Mono",Menlo,monospace;
+    color:var(--ink);
+    white-space:normal;
+  }
+
+  .mobile-code-line{
+    display:flex;
+    align-items:flex-start;
+    gap:8px;
+    min-height:24px;
+    width:100%;
+    box-sizing:border-box;
+    border-left:3px solid transparent;
+    border-radius:0 6px 6px 0;
+    padding:0 6px 0 0;
+    margin:0 0 2px 0;
+  }
+
+  .mobile-code-line.hi{
+    background:rgba(255,180,84,.16);
+    border-left-color:var(--accent);
+  }
+
+  .mobile-code-line.glow{
+    background:rgba(94,195,168,.16);
+    border-left-color:var(--cool);
+  }
+
+  .mobile-code-num{
+    flex:0 0 24px;
+    color:#6b6478;
+    text-align:right;
+    user-select:none;
+  }
+
+  .mobile-code-text{
+    flex:1 1 auto;
+    min-width:0;
+    white-space:pre;
+    overflow-x:auto;
+    overflow-y:hidden;
+    -webkit-overflow-scrolling:touch;
+  }
+}
+
+
+/* FINAL mobile script override: force vertical code rows on phones */
+html.phone-layout .lesson.code-focus .center-code-lines{
+  display:block !important;
+}
+html.phone-layout .lesson.code-focus .mobile-code-lines{
+  display:block !important;
+  height:calc(100% - 34px) !important;
+  overflow-y:auto !important;
+  overflow-x:hidden !important;
+  padding:14px 10px 16px !important;
+  font:600 13px/1.75 Consolas,"Liberation Mono",Menlo,monospace !important;
+  white-space:normal !important;
+}
+html.phone-layout .lesson.code-focus .mobile-code-line{
+  display:flex !important;
+  flex-direction:row !important;
+  align-items:flex-start !important;
+  width:100% !important;
+  min-height:24px !important;
+  box-sizing:border-box !important;
+  margin:0 0 3px 0 !important;
+  padding:0 6px 0 0 !important;
+  border-left:3px solid transparent !important;
+  border-radius:0 6px 6px 0 !important;
+  float:none !important;
+  clear:both !important;
+}
+html.phone-layout .lesson.code-focus .mobile-code-line.hi{
+  background:rgba(255,180,84,.16) !important;
+  border-left-color:var(--accent) !important;
+}
+html.phone-layout .lesson.code-focus .mobile-code-line.glow{
+  background:rgba(94,195,168,.16) !important;
+  border-left-color:var(--cool) !important;
+}
+html.phone-layout .lesson.code-focus .mobile-code-num{
+  display:block !important;
+  flex:0 0 24px !important;
+  width:24px !important;
+  color:#6b6478 !important;
+  text-align:right !important;
+  user-select:none !important;
+}
+html.phone-layout .lesson.code-focus .mobile-code-text{
+  display:block !important;
+  flex:1 1 auto !important;
+  min-width:0 !important;
+  white-space:pre !important;
+  overflow-x:auto !important;
+  overflow-y:hidden !important;
+  -webkit-overflow-scrolling:touch !important;
+}
+html.phone-layout .lesson.code-focus .center-code-panel{
+  display:flex !important;
+  flex-direction:column !important;
+}
+
+
+/* Hard fix: script rows are vertical everywhere. Only individual long lines may scroll sideways. */
+.center-code-lines,
+.mobile-code-lines{
+  display:block !important;
+  white-space:normal !important;
+  overflow-y:auto !important;
+  overflow-x:hidden !important;
+}
+
+.center-code-row,
+.mobile-code-line{
+  display:grid !important;
+  grid-template-columns:34px minmax(0,1fr) !important;
+  width:100% !important;
+  box-sizing:border-box !important;
+  margin:0 0 3px 0 !important;
+  clear:both !important;
+  float:none !important;
+}
+
+.center-code-text,
+.mobile-code-text{
+  display:block !important;
+  min-width:0 !important;
+  white-space:pre !important;
+  overflow-x:auto !important;
+  overflow-y:hidden !important;
+  -webkit-overflow-scrolling:touch !important;
+}
+
+@media(max-width:1100px){
+  .center-code-lines{
+    display:block !important;
+    height:calc(100% - 34px) !important;
+    padding:14px 10px 16px !important;
+    font:600 13px/1.75 Consolas,"Liberation Mono",Menlo,monospace !important;
+  }
+
+  .center-code-row{
+    grid-template-columns:26px minmax(0,1fr) !important;
+    min-height:24px !important;
+    padding-right:4px !important;
+  }
+
+  .center-code-num{
+    width:26px !important;
+  }
+
+  .mobile-code-lines{
+    display:none !important;
+  }
+}
+
+
+/* Remove leftover horizontal script renderer under the vertical code block */
+.mobile-code-lines{
+  display:none !important;
+}
+.center-code-panel > .mobile-code-lines{
+  display:none !important;
+}
+.lesson.code-focus .center-code-panel{
+  overflow:hidden !important;
+}
+.lesson.code-focus .center-code-lines{
+  height:calc(100% - 38px) !important;
+  max-height:calc(100% - 38px) !important;
+}
+
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="eyebrow" id="mainEyebrow">A Godot Tutorial · Game Object Interaction</div>
+    <h1 id="mainH1">How game objects <span class="ac">communicate</span> in Godot</h1>
+    <p class="lede" id="mainLede1">In this guide, you'll build a coin in Godot. The coin isn't just one thing — it's made from a few nodes working together. One of those nodes wraps a special <strong>area</strong> around the coin. That area can notice when something touches it and announce when it happens. In Godot, that announcement is called a <strong>signal</strong>.</p>
+    <p class="lede" id="mainLede2">Then you'll write a short script that listens for the signal and decides what the coin should do next. In this example, we will keep it simple and just have the coin remove itself whenever a player touches it so that it feels like it's been collected.</p>
+    <p class="note" id="mainNote"><strong>Use Back and Next to move through the guide.</strong> Auto Play is optional.</p>
+  </header>
+
+  <section class="lesson" id="lesson" aria-label="Interactive signal walkthrough">
+    <div class="topbar">
+      <div class="chapter-indicator" id="chapterIndicator">
+        <span class="ch-num" id="chNum">Ch 1 / 4</span>
+        <strong class="ch-title" id="chTitle">Build the Coin scene</strong>
+      </div>
+      <span class="long" id="topText">Construct the coin scene first.</span>
+      <span class="spacer"></span>
+      <div class="lang-toggle" role="group" aria-label="Language / Idioma">
+        <button id="langEnBtn" class="active" aria-pressed="true">EN</button>
+        <button id="langEsBtn" aria-pressed="false">ES</button>
+      </div>
+      <button id="topBackBtn">← Back</button>
+      <button class="primary" id="topNextBtn">Next →</button>
+      <button id="autoBtn">Auto Play</button>
+    </div>
+
+    <div class="build-strip" aria-label="Build steps">
+      <span id="buildStep1">1 Coin Area2D</span>
+      <span id="buildStep2">2 Sprite2D</span>
+      <span id="buildStep3">3 CollisionShape2D</span>
+      <span id="buildStep4">4 Attach Script</span>
+      <span id="buildStep5">5 Add Signal Code</span>
+      <span id="buildStep6">6 Test Level</span>
+      <span id="buildStep7">7 Test Pickup</span>
+    </div>
+
+    <div class="work">
+      <div class="visual" id="visualPanel">
+        <div class="canvas-wrap">
+          <canvas id="stage"></canvas>
+          <div class="mode" id="modeTag">GODOT EDITOR</div>
+          <div class="code-help-hint" id="codeHelpHint">Click or tap highlighted code to learn more</div>
+          <div class="center-code-panel" id="centerCodePanel" aria-label="Script preview"><div class="center-code-title">coin.gd</div><div class="center-code-lines" id="centerCodeLines"></div></div>
+          <div class="code-popover" id="codePopover" aria-live="polite">
+            <button id="codePopoverClose" aria-label="Close">×</button>
+            <h3 id="codePopoverTitle"></h3>
+            <p id="codePopoverText"></p>
+          </div>
+          <div class="visual-step-card" id="visualStepCard" aria-live="polite">
+            <div class="visual-step-kicker" id="visualStepKicker">Part 1</div>
+            <h2 id="visualStepTitle">Build the Coin scene</h2>
+            <p id="visualStepText">First, create the game object. Then we'll give it behavior with code.</p>
+          </div>
+        </div>
+        <div class="mobile-pad" id="pad">
+          <div class="pad-label">Player controls</div>
+          <div class="pair">
+            <button id="padL" aria-label="Move left">◀</button>
+            <button id="padR" aria-label="Move right">▶</button>
+          </div>
+          <button id="padJ" aria-label="Jump">↑</button>
+        </div>
+      </div>
+
+      <div class="code-area" id="codePanelWrap">
+        <div class="script-checkpoint-overlay" id="scriptCheckpointOverlay" aria-hidden="true">
+          <div class="script-checkpoint-card">
+            <div class="script-checkmark">✓</div>
+            <div>
+              <h3 id="scriptCheckpointTitle">Signal script ready!</h3>
+              <p id="scriptCheckpointYouShould">You should now have:</p>
+              <ul id="scriptCheckpointList"></ul>
+              <div class="script-checkpoint-note" id="scriptCheckpointPressNext">Press Next when this matches your project.</div>
+            </div>
+          </div>
+        </div>
+        <div class="file">coin.gd</div>
+        <pre id="codePanel" aria-label="Godot script">
+<span class="code-line" id="line1"></span>
+<span class="code-line" id="line2"></span>
+<span class="code-line" id="line3"></span>
+<span class="code-line" id="line4"></span>
+<span class="code-line" id="line5"></span>
+<span class="code-line" id="line6"></span>
+<span class="code-line" id="line7"></span>
+<span class="code-line" id="line8"></span>
+<span class="code-line" id="line9"></span></pre>
+        <div class="explain">
+          <div class="explain-label" id="explainLabel">What's happening</div>
+          <h2 id="explainTitle">Start with the scene</h2>
+          <p id="explainText">Before we write code, build a Coin scene. The root node is Area2D because the coin needs to sense when the player enters its space.</p>
+          <div class="progress" id="progress"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="left-controls">
+        <button id="backBtn">← Back</button>
+        <button class="primary" id="nextBtn">Next →</button>
+      </div>
+      <div class="right-controls">
+        <button id="playBtn">Play Test</button>
+        <span class="counter" id="counter"></span>
+      </div>
+    </div>
+  </section>
+
+  <p class="post-guide-hint" id="postGuideHint">Complete the guide to unlock the reference materials below.</p>
+
+  <div class="post-guide" id="postGuide">
+    <div class="completion-banner">
+      <div class="banner-eyebrow" data-i18n="completion.eyebrow">Guide complete</div>
+      <h2 data-i18n="completion.title">You've made your first Godot signal work.</h2>
+      <p data-i18n="completion.text">The reference material below is here to help you rebuild this in your own project. Use the quick checklist, then keep the final script handy.</p>
+    </div>
+
+    <section class="quick-build">
+      <h2 data-i18n="quickBuild.title">Quick rebuild checklist</h2>
+      <ol>
+        <li data-i18n-html="quickBuild.items.0">Create <strong>Coin</strong> as an <strong>Area2D</strong>.</li>
+        <li data-i18n-html="quickBuild.items.1">Add <strong>Sprite2D</strong> for the coin image.</li>
+        <li data-i18n-html="quickBuild.items.2">Add <strong>CollisionShape2D</strong> for the coin hitbox boundary.</li>
+        <li data-i18n-html="quickBuild.items.3">Attach <strong>coin.gd</strong> to the <strong>Coin Area2D</strong>.</li>
+        <li data-i18n-html="quickBuild.items.4">Use the final script below.</li>
+        <li data-i18n-html="quickBuild.items.5">Create or open a test level.</li>
+        <li data-i18n-html="quickBuild.items.6">Add the existing <strong>Player</strong> scene.</li>
+        <li data-i18n-html="quickBuild.items.7">Paint or place a simple floor with collision.</li>
+        <li data-i18n-html="quickBuild.items.8">Add one or more <strong>Coin</strong> instances to the level.</li>
+        <li data-i18n-html="quickBuild.items.9">Run the game and move the player into the coin.</li>
+      </ol>
+    </section>
+
+    <section class="copy-code">
+      <h2 data-i18n="finalScript.title">Final coin script</h2>
+      <p data-i18n-html="finalScript.desc">When you recreate this in Godot, attach this script to the <strong>Coin Area2D</strong> node. If your template creates extra unused lines, your final coin script can be this simple.</p>
+      <pre><code># coin.gd
+extends Area2D
+
+func _ready():
+    body_entered.connect(_on_body_entered)
+
+func _on_body_entered(body):
+    queue_free()
+</code></pre>
+    </section>
+  </div>
+
+</main>
+
+<script>
+const canvas = document.getElementById("stage");
+const ctx = canvas.getContext("2d");
+if(!CanvasRenderingContext2D.prototype.roundRect){
+  CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){
+    this.beginPath();
+    this.moveTo(x+r,y);
+    this.lineTo(x+w-r,y);
+    this.quadraticCurveTo(x+w,y,x+w,y+r);
+    this.lineTo(x+w,y+h-r);
+    this.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+    this.lineTo(x+r,y+h);
+    this.quadraticCurveTo(x,y+h,x,y+h-r);
+    this.lineTo(x,y+r);
+    this.quadraticCurveTo(x,y,x+r,y);
+    this.closePath();
+    return this;
+  }
+}
+const chapterIndicator = document.getElementById("chapterIndicator");
+const chNum = document.getElementById("chNum");
+const chTitle = document.getElementById("chTitle");
+const postGuide = document.getElementById("postGuide");
+const postGuideHint = document.getElementById("postGuideHint");
+const topText = document.getElementById("topText");
+const explainTitle = document.getElementById("explainTitle");
+const explainText = document.getElementById("explainText");
+const modeTag = document.getElementById("modeTag");
+const codePopover = document.getElementById("codePopover");
+const codePopoverTitle = document.getElementById("codePopoverTitle");
+const codePopoverText = document.getElementById("codePopoverText");
+const codePopoverClose = document.getElementById("codePopoverClose");
+const visualStepCard = document.getElementById("visualStepCard");
+const visualStepKicker = document.getElementById("visualStepKicker");
+const visualStepTitle = document.getElementById("visualStepTitle");
+const visualStepText = document.getElementById("visualStepText");
+const lessonEl = document.getElementById("lesson");
+const visualPanel = document.getElementById("visualPanel");
+const codePanelWrap = document.getElementById("codePanelWrap");
+const scriptCheckpointOverlay = document.getElementById("scriptCheckpointOverlay");
+const scriptCheckpointTitle = document.getElementById("scriptCheckpointTitle");
+const scriptCheckpointList = document.getElementById("scriptCheckpointList");
+const counter = document.getElementById("counter");
+const progress = document.getElementById("progress");
+const buildSteps = [1,2,3,4,5,6,7].map(n=>document.getElementById("buildStep"+n));
+const backBtn = document.getElementById("backBtn");
+const nextBtn = document.getElementById("nextBtn");
+const topBackBtn = document.getElementById("topBackBtn");
+const topNextBtn = document.getElementById("topNextBtn");
+const playBtn = document.getElementById("playBtn");
+const autoBtn = document.getElementById("autoBtn");
+const pad = document.getElementById("pad");
+const centerCodePanel = document.getElementById("centerCodePanel");
+const centerCodeLines = document.getElementById("centerCodeLines");
+
+const lineEls = Array.from({length:9},(_,i)=>document.getElementById("line"+(i+1)));
+const fullLines = [
+  "# coin.gd",
+  "extends Area2D",
+  "",
+  "func _ready():",
+  "    body_entered.connect(_on_body_entered)",
+  "",
+  "func _on_body_entered(body):",
+  "    queue_free()",
+  ""
+];
+
+let codeHelp_en = {
+  "extends Area2D": {
+    title: "extends Area2D",
+    text: "This tells Godot that this script belongs to an Area2D. That matters because Area2D has the body_entered signal we use later."
+  },
+  "func _ready()": {
+    title: "func _ready()",
+    text: "_ready() runs once when the coin is added to the scene. This is a good place to connect the signal."
+  },
+  "body_entered": {
+    title: "body_entered",
+    text: "A built-in signal on Area2D. It fires whenever a physics body — a player, an enemy, a bullet, any moving object — enters the area. Any code connected to it can react at that moment. Used for pickups, damage, triggers, checkpoints, and much more."
+  },
+  "connect": {
+    title: "connect()",
+    text: "connect() links the signal to your function. It tells Godot what code to run when the signal fires."
+  },
+  "_on_body_entered": {
+    title: "_on_body_entered",
+    text: "This is the function we want Godot to run later. Writing the name inside connect() does not run it right away."
+  },
+  "queue_free": {
+    title: "queue_free()",
+    text: "queue_free() removes this coin from the scene. In this guide, that is the action we chose for the pickup."
+  },
+  // ---- Prose terms below. These are beginner definitions for the jargon that shows up in
+  // ---- the step card text, so a learner who has never used Godot can click any of them to
+  // ---- get the meaning without having to leave the guide.
+  "Area2D": {
+    title: "Area2D",
+    text: "A node that defines an invisible 2D area of space and notices when other things enter or leave it. It has many uses — collectible pickups, damage zones, trigger areas, hazards like lava, camera zones, and more. In this guide we happen to use it for the coin, but Area2D isn't specific to coins."
+  },
+  "Sprite2D": {
+    title: "Sprite2D",
+    text: "A node that displays a 2D image. Most things you see on screen in a 2D Godot game — players, enemies, coins, props, backgrounds — are drawn with a Sprite2D (or a similar drawing node). It just shows a picture at a spot in the scene; it doesn't detect anything on its own."
+  },
+  "CollisionShape2D": {
+    title: "CollisionShape2D",
+    text: "A node that defines a 2D shape used for collision or overlap detection. It sits under a parent like an Area2D or a physics body and tells that parent the exact outline to use. Used all over a game — player hitboxes, enemy attacks, trigger zones, walls, doorways, and more."
+  },
+  "parent node": {
+    title: "Parent node",
+    text: "A node that has other nodes attached beneath it. The attached nodes are called its children. Scenes are built as trees of parent-child relationships. In this guide, the Coin Area2D is the parent of Sprite2D and CollisionShape2D."
+  },
+  "signal": {
+    title: "Signal",
+    text: "An announcement a node can broadcast when something happens. Other code can listen for a signal and run when it fires. Nodes come with many built-in signals for common events, and you can also make your own custom ones. body_entered is one example of a built-in signal."
+  },
+  "hitbox": {
+    title: "Hitbox",
+    text: "The invisible shape that decides what counts as touching or colliding with something. Hitboxes show up everywhere in game design — pickups, damage areas, character bodies, projectiles, buttons that react to being stood on, and more."
+  },
+  "hitbox boundary": {
+    title: "Hitbox boundary",
+    text: "The invisible outline that decides what counts as touching an object. When something crosses that outline, the object it belongs to can react. Used for pickups, damage zones, buttons, trigger areas, and many other things."
+  },
+  "node": {
+    title: "Node",
+    text: "The basic building block of any Godot scene. Everything in a Godot game — a player, a coin, a button, a camera, a piece of UI — is a node. Nodes are arranged in a tree."
+  },
+  "scene": {
+    title: "Scene",
+    text: "A saved group of nodes that acts as one reusable thing. A Coin scene is one coin you can drop into any level. A Level scene might contain many Coin scenes plus a Player scene. Almost anything reusable in a Godot game is built as a scene."
+  },
+  "GDScript": {
+    title: "GDScript",
+    text: "Godot's built-in programming language. It looks a lot like Python and is designed to work naturally with nodes and signals."
+  },
+  "physics body": {
+    title: "Physics body",
+    text: "A node that acts like a solid object in the game world — it can move, bump into things, and be pushed around. Players, enemies, bullets, boxes, and vehicles are commonly built as physics bodies. When one enters an Area2D, that's what fires the body_entered signal."
+  }
+};
+
+// Runtime reference the popover reads from. Rebuilt from codeHelp_en + Spanish overrides
+// when the language switches. Existing code still just reads codeHelp[key].
+let codeHelp = codeHelp_en;
+
+let activeCodeKey = null;
+
+function hideCodePopover(){
+  if(codePopover) codePopover.classList.remove("active");
+  activeCodeKey = null;
+  document.querySelectorAll(".code-token.active").forEach(el=>el.classList.remove("active"));
+}
+function showCodePopoverForElement(el){
+  const key = el.dataset.key;
+  if(!codePopover || !codeHelp[key]) return;
+
+  if(activeCodeKey === key && codePopover.classList.contains("active")){
+    hideCodePopover();
+    return;
+  }
+
+  document.querySelectorAll(".code-token.active").forEach(node=>node.classList.remove("active"));
+  el.classList.add("active");
+  activeCodeKey = key;
+
+  codePopoverTitle.textContent = codeHelp[key].title;
+  codePopoverText.textContent = codeHelp[key].text;
+
+  const wrap = canvas.getBoundingClientRect();
+  const elRect = el.getBoundingClientRect();
+  const left = elRect.left - wrap.left;
+  const top = elRect.bottom - wrap.top + 10;
+  codePopover.style.left = Math.min(wrap.width - 340, Math.max(12,left)) + "px";
+  codePopover.style.top = Math.min(wrap.height - 160, Math.max(12,top)) + "px";
+  codePopover.classList.add("active");
+}
+function codeToken(key, text){
+  return `<span class="code-token" data-key="${key}">${text}</span>`;
+}
+function safeHTML(s){
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+// Turn a prose string containing [[term]] or [[term|display]] markers into HTML with
+// clickable definition tokens. Used in the visual step card and the explain block so
+// beginner-jargon words can pop up a small definition without leaving the guide.
+function renderProseWithTokens(text){
+  if(text == null) return "";
+  const safe = safeHTML(text);
+  return safe.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (m, key, display) => {
+    const label = display || key;
+    const safeKey = String(key).replace(/"/g,"&quot;");
+    return `<span class="code-token prose-token" data-key="${safeKey}">${label}</span>`;
+  });
+}
+function renderCodeLineHTML(text){
+  if(text==="extends Area2D") return codeToken("extends Area2D","extends Area2D");
+  if(text==="func _ready():") return codeToken("func _ready()","func _ready()") + ":";
+  if(text==="    body_entered.connect(_on_body_entered)"){
+    return "    " + codeToken("body_entered","body_entered") + "." + codeToken("connect","connect") + "(" + codeToken("_on_body_entered","_on_body_entered") + ")";
+  }
+  if(text==="func _on_body_entered(body):"){
+    return "func " + codeToken("_on_body_entered","_on_body_entered") + "(body):";
+  }
+  if(text==="    queue_free()") return "    " + codeToken("queue_free","queue_free") + "()";
+  return safeHTML(text);
+}
+function updateCenterCodePanel(){
+  if(!centerCodeLines || !centerCodePanel) return;
+  const s=steps[stepIndex];
+  const visible = s.phase==="code" || s.phase==="summary";
+  centerCodePanel.style.display = visible ? "" : "none";
+  if(!visible) return;
+
+  centerCodeLines.innerHTML = "";
+
+  for(let i=0;i<8;i++){
+    const lineNum = i + 1;
+    const text = typed[i] || typeTarget[i] || "";
+
+    const row = document.createElement("div");
+    row.className = "center-code-row";
+    if(!text) row.classList.add("empty");
+    if((s.hi||[]).includes(lineNum)) row.classList.add("hi");
+    if((s.glow||[]).includes(lineNum)) row.classList.add("glow");
+
+    const num = document.createElement("div");
+    num.className = "center-code-num";
+    num.textContent = String(lineNum);
+
+    const code = document.createElement("div");
+    code.className = "center-code-text";
+    code.innerHTML = renderCodeLineHTML(text);
+
+    row.appendChild(num);
+    row.appendChild(code);
+    centerCodeLines.appendChild(row);
+  }
+
+  centerCodeLines.querySelectorAll(".code-token").forEach(el=>{
+    if(activeCodeKey && el.dataset.key === activeCodeKey && codePopover && codePopover.classList.contains("active")){
+      el.classList.add("active");
+    }
+    el.addEventListener("click", e=>{
+      e.stopPropagation();
+      showCodePopoverForElement(el);
+    });
+  });
+}
+
+if(codePopoverClose) codePopoverClose.addEventListener("click", hideCodePopover);
+
+// Delegated click handler for any prose tokens rendered inside the visual step card or the
+// explain block. The per-token handlers on code tokens in the center code panel use
+// stopPropagation, so they win for their own tokens — delegation only fires for the rest.
+lessonEl.addEventListener("click", e => {
+  const token = e.target.closest(".code-token");
+  if(!token) return;
+  if(centerCodeLines && centerCodeLines.contains(token)) return;
+  e.stopPropagation();
+  showCodePopoverForElement(token);
+});
+let W=600,H=440,dpr=1;
+let stepIndex=0;
+let typed = Array(9).fill("");
+let typeTarget = Array(9).fill("");
+let typeSpeed = 1.8;
+let typingLine = 0;
+let typeCursor = 0;
+let auto=false;
+let autoTimer=null;
+let tick=0;
+let stepTick=0;
+let player={x:40,y:0,w:30,h:40,vx:0,vy:0,on:true};
+let coin={x:0,y:0,r:18,alive:true};
+let particles=[];
+let input={};
+let freeze=false;
+
+// Four real chapters. Each step falls into exactly one chapter, and the chapter indicator
+// in the topbar stays stable while the learner works within that chapter.
+// Titles get rebuilt from i18n when the language switches; startIdx/endIdx are stable.
+let chapters = [
+  {num:1, title:"Build the Coin scene",     startIdx:0,  endIdx:6},
+  {num:2, title:"Write the signal code",    startIdx:7,  endIdx:17},
+  {num:3, title:"Build a test scene",       startIdx:18, endIdx:22},
+  {num:4, title:"See the signal in action", startIdx:23, endIdx:28}
+];
+const chapterTotal = chapters.length;
+function getChapter(idx){
+  return chapters.find(c => idx >= c.startIdx && idx <= c.endIdx) || chapters[0];
+}
+let currentChapterNum = 1;
+let postGuideRevealed = false;
+
+const steps_en = [
+  {
+    phase:"scene", mode:"GODOT EDITOR", title:"Chapter 1: Build the Coin scene",
+    top:"First build the object, then give it behavior.",
+    text:"Before writing logic, build a reusable Coin scene from nodes. Area2D is the main node because it can detect when something enters it.",
+    visualText:"First, create the game object. Then we'll give it behavior with code. The Coin [[scene]] is a small reusable object made from [[node|nodes]].",
+    lines:[], hi:[], tree:0
+  },
+  {
+    phase:"scene", mode:"GODOT EDITOR", title:"Do this: open a new blank scene",
+    top:"Open a new scene tab to start fresh.",
+    text:"You may already have another scene open. To build the Coin, start with a fresh, empty scene. Look at the tabs just above the viewport. Click the + tab to open a new blank scene, or use Scene > New Scene from the menu.",
+    visualText:"Look above the viewport for the [[scene]] tabs. Click the + tab to open a fresh, empty [[scene]] where the Coin will be built.",
+    lines:[], hi:[], tree:0, newSceneStep:true
+  },
+  {
+    phase:"scene", mode:"GODOT EDITOR", title:"Do this: create a Coin Area2D",
+    top:"Use the + button to add the main node.",
+    text:"Area2D is the parent node. It can detect when another body enters its space, so it is the right root node for a collectible coin.",
+    visualText:"[[Area2D]] is the [[parent node]]. It owns the [[body_entered]] [[signal]] we will connect later.",
+    lines:[], hi:[], tree:1
+  },
+  {
+    phase:"scene", mode:"GODOT EDITOR", title:"Do this: add Sprite2D",
+    top:"Add Sprite2D as a child.",
+    text:"[[Sprite2D]] is only the picture. It makes the coin visible, but it does not detect the player by itself.",
+    visualText:"[[Sprite2D]] is just the picture. It makes the coin visible but doesn't detect the player on its own.",
+    lines:[], hi:[], tree:2
+  },
+  {
+    phase:"scene", mode:"GODOT EDITOR", title:"Do this: add CollisionShape2D",
+    top:"Add CollisionShape2D as a child.",
+    text:"[[CollisionShape2D]] is the coin's [[hitbox boundary]]. It gives the Coin a physical shape the [[Area2D]] can use. The [[Area2D]] still owns the [[body_entered]] [[signal]].",
+    visualText:"[[CollisionShape2D]] is the coin's [[hitbox boundary]] — the invisible shape that decides what counts as touching the coin.",
+    lines:[], hi:[], tree:3
+  },
+  {
+    phase:"attach", mode:"ATTACH SCRIPT", title:"Do this: attach a script, then click it open",
+    top:"Attach a script, then click the script icon to open it.",
+    text:"Select the Coin [[node]] and click the attach-script button. Choose [[GDScript]] as the language. A small script icon appears next to Coin in the Scene panel — click that icon to open the script in the Script editor. The Script editor is where we'll write the code in the next chapter. You can switch between the level view and the Script editor using the 2D / Script tabs at the top of the editor.",
+    visualText:"Attach a [[GDScript]] script to Coin. Then click the small script icon that appears next to Coin to open it in the Script editor — that's where the code goes next.",
+    lines:[], hi:[], tree:3
+  },
+  {
+    phase:"checkpoint", mode:"CHECKPOINT", checkpointGroup:"scene", title:"Checkpoint: Coin scene ready!",
+    top:"You built the Coin scene.",
+    text:"You should now have a Coin Area2D with Sprite2D, CollisionShape2D, and a script attached to the Coin node. Next, we'll open the coin.gd script (by clicking its icon next to Coin) and write the code that makes the coin react when the player touches it.",
+    lines:[], hi:[], tree:3,
+    checklist:["Coin is an Area2D","Sprite2D is inside Coin","CollisionShape2D is inside Coin","coin.gd is attached to Coin"]
+  },
+  {
+    phase:"code", mode:"SCRIPT EDITOR", title:"Line 1: a note to yourself",
+    top:"You're in the Script editor now — start with a comment.",
+    text:"You're now in the Script editor working on coin.gd. This first line starts with # which makes it a comment. Godot ignores comments — they're notes for humans. A comment like this helps you remember which file you're looking at.",
+    lines:[1], hi:[1], tree:3
+  },
+  {
+    phase:"code", mode:"SCRIPT EDITOR", title:"Keep this: extends Area2D",
+    top:"Keep extends Area2D.",
+    text:"Godot may already write extends Area2D for you. Keep it. It means this script belongs to an Area2D, so it can use Area2D features like body_entered.",
+    lines:[1,2], hi:[2], tree:3
+  },
+  {
+    phase:"code", mode:"SCRIPT EDITOR", title:"Add or use func _ready()",
+    top:"Add or use func _ready():",
+    text:"Some templates may already include _ready(). If it is already there, use it. If not, add it. _ready() runs once when this coin enters the scene.",
+    lines:[1,2,3,4], hi:[4], tree:3
+  },
+  {
+    phase:"code", mode:"SCRIPT EDITOR", title:"Type this: body_entered",
+    top:"Type body_entered.",
+    text:"body_entered is a built-in signal on Area2D. Think of it like an alarm bell. It rings when another physics body, like the player, enters the coin's hitbox boundary.",
+    customLine5:"    body_entered", lines:[1,2,3,4,5], hi:[5], tree:3
+  },
+  {
+    phase:"code", mode:"SCRIPT EDITOR", title:"Add this: .connect",
+    top:"Add .connect",
+    text:"The dot means: use something that belongs to body_entered. connect is a built-in method, which means an action you can use in code. Here, connect is one action you can take with a signal.",
+    customLine5:"    body_entered.connect", lines:[1,2,3,4,5], hi:[5], tree:3
+  },
+  {
+    phase:"code", mode:"SCRIPT EDITOR", title:"Add this: parentheses",
+    top:"Add the parentheses.",
+    text:"Parentheses are where we give information to the method. That information is called an argument. connect() needs one important argument: the function name it should call later.",
+    customLine5:"    body_entered.connect(", lines:[1,2,3,4,5], hi:[5], tree:3
+  },
+  {
+    phase:"code", mode:"SCRIPT EDITOR", title:"Add this: _on_body_entered",
+    top:"Put _on_body_entered inside connect().",
+    text:"This part is easy to mix up. We are not running _on_body_entered yet. We are dropping the function name into connect() so Godot knows which recipe to use when body_entered fires.",
+    lines:[1,2,3,4,5], hi:[5], tree:3
+  },
+  {
+    phase:"code", mode:"SCRIPT EDITOR", title:"Write this function header",
+    top:"Write func _on_body_entered(body):",
+    text:"Now we write the recipe itself. The name _on_body_entered is chosen because good function names explain their job. You could technically name it something else, but this name tells us: this function runs when a body enters.",
+    lines:[1,2,3,4,5,6,7], hi:[7], tree:3
+  },
+  {
+    phase:"code", mode:"SCRIPT EDITOR", title:"Type this: queue_free()",
+    top:"Type queue_free().",
+    text:"queue_free() is the one instruction inside this recipe. When the connected function finally runs, it tells Godot to remove this coin from the scene.",
+    lines:[1,2,3,4,5,6,7,8], hi:[8], tree:3
+  },
+  {
+    phase:"summary", mode:"SCRIPT EDITOR", title:"Pause and read the whole pattern",
+    top:"The script is ready.",
+    text:"The signal and the function are two separate things. body_entered is the alarm. _on_body_entered is the recipe. connect() is the link that tells the alarm which recipe to run.",
+    lines:[1,2,3,4,5,6,7,8], hi:[5,7,8], tree:3
+  },
+  {
+    phase:"checkpoint", mode:"CHECKPOINT", checkpointGroup:"script", title:"Checkpoint: Signal script ready!",
+    top:"You connected your first signal.",
+    text:"You should now have a working coin script. The signal body_entered is connected to a small function, and that function removes the coin.",
+    lines:[1,2,3,4,5,6,7,8], hi:[5,7,8], tree:3,
+    checklist:["body_entered.connect(_on_body_entered) is in _ready()","_on_body_entered(body) is written below","queue_free() is inside the function"]
+  },
+  {
+    phase:"testSetup", mode:"TEST SCENE", title:"Do this: open a new blank scene for the test",
+    top:"Open a new scene tab for the test level.",
+    text:"Just like the Coin, the test level lives in its own [[scene]]. Click the + tab above the viewport to open a fresh, blank scene. You'll add the floor, the Player, and the Coin into this scene in the next steps.",
+    visualText:"Just like the Coin, the test level lives in its own [[scene]]. Click the + tab above the viewport to open a fresh, blank scene for the test.",
+    lines:[1,2,3,4,5,6,7,8], hi:[], tree:3, testStage:0, newSceneStep:true
+  },
+  {
+    phase:"testSetup", mode:"TEST SCENE", title:"Do this: add a TestLevel root node",
+    top:"Add a Node2D as the root of the test scene.",
+    text:"In the empty Scene panel, add a Node2D and name it TestLevel. This is the [[parent node]] that will hold the floor, the Player, and the Coin.",
+    visualText:"Add a Node2D as the root and name it TestLevel. It will be the [[parent node]] that holds the floor, Player, and Coin.",
+    lines:[1,2,3,4,5,6,7,8], hi:[], tree:3, testStage:1
+  },
+  {
+    phase:"testSetup", mode:"TEST SCENE", title:"Do this: add a floor",
+    top:"Add a floor so the player has somewhere to stand.",
+    text:"Under TestLevel, add a TileMap, TileMapLayer, or any simple floor / collision setup your project already uses. The player needs somewhere to stand and run before we drop them in.",
+    visualText:"Under TestLevel, add a floor. A TileMapLayer works, or any simple floor with collision your project already uses.",
+    lines:[1,2,3,4,5,6,7,8], hi:[], tree:3, testStage:2
+  },
+  {
+    phase:"testSetup", mode:"TEST SCENE", title:"Do this: add the existing Player",
+    top:"Add the Player scene as a child of TestLevel.",
+    text:"Add your existing Player [[scene]] as a child of TestLevel. This guide is about the coin [[signal]], not building player movement from scratch — reuse whatever Player you already have.",
+    visualText:"Add the existing Player [[scene]] as a child of TestLevel. It needs to be able to walk over to the Coin.",
+    lines:[1,2,3,4,5,6,7,8], hi:[], tree:3, testStage:3
+  },
+  {
+    phase:"testSetup", mode:"TEST SCENE", title:"Do this: add the Coin scene",
+    top:"Add one or more Coins to the level.",
+    text:"Add the Coin [[scene]] to the level as a child of TestLevel. Place one or more Coins where the Player can reach them. Now the [[signal]] script has something to test.",
+    visualText:"Add the Coin [[scene]] as a child of TestLevel. Place it where the Player can reach it. Now the [[signal]] script has something to test.",
+    lines:[1,2,3,4,5,6,7,8], hi:[], tree:3, testStage:4
+  },
+  {
+    phase:"play", mode:"PLAY TEST", title:"Do this: test the pickup",
+    top:"Move the player into the coin.",
+    text:"Now the player controls appear. Use the arrow keys, WASD, or the mobile buttons. Jump into the coin. The game will freeze at the moment the Area2D detects the player.",
+    lines:[1,2,3,4,5,6,7,8], hi:[], tree:3
+  },
+  {
+    phase:"fired", mode:"SIGNAL FIRED", title:"The Area2D signal fires",
+    top:"body_entered fires.",
+    text:"The player entered the coin's Area2D zone. That makes the built-in body_entered signal fire, like an alarm bell going off.",
+    lines:[1,2,3,4,5,6,7,8], hi:[5], glow:[5], tree:3
+  },
+  {
+    phase:"fired", mode:"SIGNAL FIRED", title:"connect() points to the recipe",
+    top:"Godot checks the connected function.",
+    text:"Because connect() was given _on_body_entered inside its parentheses, Godot knows which function to call. The function name is the argument we passed into connect().",
+    lines:[1,2,3,4,5,6,7,8], hi:[5,7], glow:[7], tree:3
+  },
+  {
+    phase:"fired", mode:"FUNCTION RUNS", title:"The function runs its one instruction",
+    top:"_on_body_entered runs queue_free().",
+    text:"Now the recipe runs. It contains one instruction: queue_free(). That instruction removes the coin from the scene.",
+    lines:[1,2,3,4,5,6,7,8], hi:[8], glow:[8], tree:3
+  },
+  {
+    phase:"gone", mode:"COIN REMOVED", title:"The coin disappears",
+    top:"queue_free removed the coin.",
+    text:"That is the whole loop: the Area2D detects the player, the body_entered signal fires, connect() points to the function, and the function runs queue_free(). The full script on screen is the script you can use in Godot.",
+    lines:[1,2,3,4,5,6,7,8], hi:[], tree:3
+  },
+  {
+    phase:"checkpoint", mode:"CHECKPOINT", checkpointGroup:"test", title:"Checkpoint: Pickup works!",
+    top:"You tested the interaction.",
+    text:"You should now have a simple test level where the player can touch a coin and the coin disappears.",
+    lines:[1,2,3,4,5,6,7,8], hi:[5,7,8], tree:3,
+    checklist:["Test level has a Player","Test level has a floor","Test level has at least one Coin","The Coin disappears when the Player touches it"]
+  }
+];
+
+// `steps` is the runtime array the rest of the code reads. It starts pointed at the English
+// definitions and gets rebuilt from steps_en + Spanish overrides when the learner toggles ES.
+let steps = steps_en;
+
+steps.forEach((_,i)=>{
+  const s=document.createElement("span");
+  progress.appendChild(s);
+});
+
+function updateMobileMode(){
+  document.documentElement.classList.toggle("phone-layout", window.innerWidth <= 800);
+}
+
+function resize(){
+  const r=canvas.getBoundingClientRect();
+  dpr=Math.max(1,window.devicePixelRatio||1);
+  W=Math.max(300,Math.floor(r.width));
+  H=Math.max(300,Math.floor(r.height));
+  canvas.width=W*dpr;
+  canvas.height=H*dpr;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  resetPlayer(false);
+}
+window.addEventListener("resize",resize);
+
+// Watch the canvas itself for any size change (CSS-driven layout shifts, not just window resize).
+// This fixes the stretched/distorted editor text behind the script-focus overlay, which happened
+// because the .work grid changes column widths when code-focus mode toggles but the canvas
+// internal pixel dimensions stayed at the old size until the next window resize.
+if(typeof ResizeObserver !== "undefined"){
+  const canvasObserver = new ResizeObserver(entries=>{
+    for(const entry of entries){
+      const w = Math.floor(entry.contentRect.width);
+      const h = Math.floor(entry.contentRect.height);
+      if(w !== W || h !== H){
+        resize();
+        return;
+      }
+    }
+  });
+  canvasObserver.observe(canvas);
+}
+
+
+function getBuildStage(){
+  const s=steps[stepIndex];
+  // Checkpoints don't have their own pill — they confirm the last thing the learner did.
+  // Keep the active pill on whichever chapter just wrapped up, rather than letting these
+  // phases fall through to the pill-7 fallback below.
+  if(s.phase==="checkpoint"){
+    if(s.checkpointGroup==="scene")  return 4;   // just finished attach-script
+    if(s.checkpointGroup==="script") return 5;   // just finished writing code
+    if(s.checkpointGroup==="test")   return 7;   // just finished play-test
+  }
+  if(s.phase==="scene"){
+    if((s.tree||0)<=1) return 1;
+    if((s.tree||0)===2) return 2;
+    return 3;
+  }
+  if(s.phase==="attach") return 4;
+  if(s.phase==="code" || s.phase==="summary") return 5;
+  if(s.phase==="testSetup") return 6;
+  return 7;
+}
+function renderBuildStrip(){
+  if(!buildSteps || !buildSteps.length) return;
+  const stage=getBuildStage();
+  buildSteps.forEach((el,i)=>{
+    const n=i+1;
+    el.className = n<stage ? "done" : n===stage ? "active" : "";
+  });
+}
+
+const buildJumpSteps = [0,3,4,5,10,18,23];
+buildSteps.forEach((el,i)=>{
+  el.addEventListener("click", ()=>{
+    const targetStep = buildJumpSteps[i] ?? 0;
+    stepIndex = Math.min(steps.length-1, targetStep);
+    lastFocusGroup = null;
+    applyStep(true);
+    const s = steps[stepIndex];
+    const group = getFocusGroup(s);
+    const target = group==="script" ? codePanelWrap : visualPanel;
+    if(window.innerWidth<=820){
+      setTimeout(()=>{
+        const stickyOffset = 104;
+        const rect = target.getBoundingClientRect();
+        window.scrollTo({top: Math.max(0, window.pageYOffset + rect.top - stickyOffset), behavior: "smooth"});
+      }, 80);
+    }
+  });
+});
+
+function renderProgress(){
+  [...progress.children].forEach((s,i)=>{
+    s.className=i<stepIndex?"done":i===stepIndex?"now":"";
+  });
+  counter.textContent = t("ui","stepXofY")(stepIndex+1, steps.length);
+  renderBuildStrip();
+}
+
+function getLineText(lineNum, step){
+  if(lineNum===5 && step.customLine5 !== undefined) return step.customLine5;
+  return fullLines[lineNum-1] || "";
+}
+
+
+let lastFocusGroup = null;
+
+function getFocusGroup(s){
+  if(s.phase==="checkpoint"){
+    return s.checkpointGroup==="script" ? "script" : s.checkpointGroup==="test" ? "test" : "scene";
+  }
+  if(s.phase==="code" || s.phase==="summary" || s.phase==="fired" || s.phase==="gone") return "script";
+  if(s.phase==="testSetup" || s.phase==="play") return "test";
+  return "scene";
+}
+
+function guideScrollToStep(s){
+  if(window.innerWidth>820) return;
+
+  const group = getFocusGroup(s);
+
+  if(lastFocusGroup === null){
+    lastFocusGroup = group;
+    return;
+  }
+  if(group === lastFocusGroup) return;
+  lastFocusGroup = group;
+
+  clearTimeout(window.__guideScrollTimer);
+  window.__guideScrollTimer = setTimeout(()=>{
+    const target = group==="script" ? codePanelWrap : visualPanel;
+    const stickyOffset = 104;
+    const rect = target.getBoundingClientRect();
+    const top = window.pageYOffset + rect.top - stickyOffset;
+    window.scrollTo({top: Math.max(0, top), behavior: "smooth"});
+  }, 90);
+}
+
+
+function updateVisualStepCard(s){
+  const show = s.phase==="scene" || s.phase==="attach" || s.phase==="testSetup";
+  visualStepCard.classList.toggle("active", show);
+  visualStepCard.setAttribute("aria-hidden", show ? "false" : "true");
+  if(!show) return;
+  const chapter = getChapter(stepIndex);
+  // Chapter 1's first step is a chapter-intro overview, not an action step.
+  // Label it "Overview" instead of "Step 1", and renumber the action steps starting at 1.
+  const isOverview = chapter.num === 1 && stepIndex === chapter.startIdx;
+  if(isOverview){
+    visualStepKicker.textContent = t("ui","overview");
+  } else {
+    // Count only actionable steps within this chapter — skip the overview (if any) and checkpoints.
+    let stepNum = 0, total = 0;
+    for(let i = chapter.startIdx; i <= chapter.endIdx; i++){
+      const st = steps[i];
+      if(st.phase === "checkpoint") continue;
+      if(chapter.num === 1 && i === chapter.startIdx) continue;
+      total++;
+      if(i === stepIndex) stepNum = total;
+    }
+    visualStepKicker.textContent = total > 0 ? t("ui","stepXofY")(stepNum, total) : `Chapter ${chapter.num}`;
+  }
+  // Strip the "Chapter N:" / "Capítulo N:" prefixes and "Do this:" / "Haz esto:" /
+  // "Checkpoint:" / "Punto de control:" prefixes from titles here — the chapter is already
+  // shown in the topbar, and the prefixes just add noise inside the card.
+  visualStepTitle.textContent = s.title
+    .replace(/^Chapter \d+:\s*/, "")
+    .replace(/^Cap[ií]tulo \d+:\s*/i, "")
+    .replace(/^Do this:\s*/i, "")
+    .replace(/^Haz esto:\s*/i, "")
+    .replace(/^Checkpoint:\s*/i, "")
+    .replace(/^Punto de control:\s*/i, "");
+  visualStepText.innerHTML = renderProseWithTokens(s.visualText || s.text);
+}
+
+function updateScriptCheckpointOverlay(s){
+  const isScriptCheckpoint = s.phase==="checkpoint" && s.checkpointGroup==="script";
+  scriptCheckpointOverlay.classList.toggle("active", isScriptCheckpoint);
+  scriptCheckpointOverlay.setAttribute("aria-hidden", isScriptCheckpoint ? "false" : "true");
+  if(isScriptCheckpoint){
+    scriptCheckpointTitle.textContent = s.title
+      .replace(/^Checkpoint:\s*/i,"")
+      .replace(/^Punto de control:\s*/i,"");
+    scriptCheckpointList.innerHTML = "";
+    (s.checklist || []).forEach(item=>{
+      const li = document.createElement("li");
+      li.textContent = item;
+      scriptCheckpointList.appendChild(li);
+    });
+  }
+}
+
+function applyStep(instant=false){
+  stepTick=0;
+  const s=steps[stepIndex];
+
+  // Update the chapter indicator. When crossing a chapter boundary, flash the indicator
+  // briefly so the learner notices they've moved into a new chapter.
+  const chapter = getChapter(stepIndex);
+  if(chapter.num !== currentChapterNum){
+    currentChapterNum = chapter.num;
+    chapterIndicator.classList.remove("chapter-flash");
+    // Force reflow so the animation can replay on subsequent chapter crossings.
+    void chapterIndicator.offsetWidth;
+    chapterIndicator.classList.add("chapter-flash");
+  }
+  chNum.textContent = t("ui","chXofY")(chapter.num, chapterTotal);
+  chTitle.textContent = chapter.title;
+
+  // Reveal the reference material below the guide once the learner reaches the final step.
+  // Once revealed, it stays revealed even if they navigate back (learners often want to
+  // check the reference while re-reading earlier steps).
+  if(stepIndex === steps.length - 1 && !postGuideRevealed){
+    postGuideRevealed = true;
+    postGuide.classList.add("revealed");
+    if(postGuideHint) postGuideHint.classList.add("hidden");
+  }
+
+  topText.textContent=s.top;
+  explainTitle.textContent=s.title;
+  explainText.innerHTML=renderProseWithTokens(s.text);
+  modeTag.textContent=s.mode;
+  updateVisualStepCard(s);
+  playBtn.textContent = s.phase==="play" || s.phase==="fired" || s.phase==="gone" ? t("ui","resetPlay") : t("ui","playTest");
+  pad.classList.toggle("active", ["play","fired","gone"].includes(s.phase));
+  backBtn.disabled = stepIndex===0;
+  topBackBtn.disabled = stepIndex===0;
+  nextBtn.textContent = stepIndex===steps.length-1 ? t("ui","restart") : t("ui","next");
+  topNextBtn.textContent = stepIndex===steps.length-1 ? t("ui","restart") : t("ui","next");
+  renderProgress();
+  updateScriptCheckpointOverlay(s);
+  hideCodePopover();
+  const wasCodeFocus = lessonEl.classList.contains("code-focus");
+  const willBeCodeFocus = s.phase==="code" || s.phase==="summary";
+  lessonEl.classList.toggle("code-focus", willBeCodeFocus);
+  // Chapter 1 has no script yet, so hide the whole code column and let the visual take
+  // the full width of the lesson. Removes the "coin.gd" label + empty pre + duplicated
+  // explain block that were creating visual noise.
+  const wasNoCodePanel = lessonEl.classList.contains("no-code-panel");
+  const willBeNoCodePanel = chapter.num === 1;
+  lessonEl.classList.toggle("no-code-panel", willBeNoCodePanel);
+  // Chapter 3 keeps the finished coin.gd as a reference but hides the explain block
+  // below it (which would otherwise just repeat the visual step card).
+  lessonEl.classList.toggle("hide-explain", chapter.num === 3);
+  // If any layout-affecting class changed, resync the canvas pixel size on the next frame
+  // so the Godot editor render doesn't appear stretched or distorted.
+  if(wasCodeFocus !== willBeCodeFocus || wasNoCodePanel !== willBeNoCodePanel){
+    requestAnimationFrame(resize);
+  }
+
+  typeTarget = Array(9).fill("");
+  for(let i=1;i<=9;i++){
+    typeTarget[i-1] = s.lines.includes(i) ? getLineText(i,s) : "";
+  }
+  if(instant){
+    typed = typeTarget.slice();
+    typeLineClasses();
+    updateCenterCodePanel();
+  }else{
+    startTypingFromCurrent();
+    updateCenterCodePanel();
+  }
+
+  if(s.phase==="play"){
+    resetPlayer(true);
+    freeze=false;
+    particles=[];
+  }
+  if(s.phase==="gone" && coin.alive){
+    coin.alive=false;
+    burst();
+  }
+  guideScrollToStep(s);
+}
+
+function startTypingFromCurrent(){
+  typingLine = 0;
+  typeCursor = 0;
+  for(let i=0;i<9;i++){
+    if(!typeTarget[i]){
+      typed[i]="";
+    }else if(!typeTarget[i].startsWith(typed[i]) || typed[i]===typeTarget[i]){
+      const s=steps[stepIndex];
+      if((s.hi||[]).includes(i+1)) typed[i]="";
+      else typed[i]=typeTarget[i];
+    }
+  }
+  typeLineClasses();
+}
+
+function typeLineClasses(){
+  const s=steps[stepIndex];
+  lineEls.forEach((el,i)=>{
+    el.textContent=typed[i];
+    const n=i+1;
+    let cls="code-line";
+    if(typed[i] || typeTarget[i]) cls+=" visible";
+    if((s.hi||[]).includes(n)) cls+=" hi";
+    if((s.glow||[]).includes(n)) cls+=" glow";
+    el.className=cls;
+  });
+}
+
+function typingLoop(){
+  const s=steps[stepIndex];
+  let changed=false;
+  for(let pass=0; pass<Math.ceil(typeSpeed); pass++){
+    let idx = -1;
+    for(let i=0;i<9;i++){
+      if(typed[i].length < typeTarget[i].length){ idx=i; break; }
+    }
+    if(idx>=0){
+      typed[idx] += typeTarget[idx][typed[idx].length];
+      changed=true;
+    }
+  }
+  if(changed){ typeLineClasses(); updateCenterCodePanel(); }
+}
+
+function nextStep(){
+  if(stepIndex===steps.length-1){
+    stepIndex=0; resetPlayer(true); particles=[]; coin.alive=true; freeze=false; applyStep();
+    return;
+  }
+  stepIndex++;
+  applyStep();
+}
+function backStep(){
+  if(stepIndex>0){ stepIndex--; applyStep(true); }
+}
+backBtn.onclick=backStep;
+nextBtn.onclick=nextStep;
+topBackBtn.onclick=backStep;
+topNextBtn.onclick=nextStep;
+playBtn.onclick=()=>{
+  stepIndex=steps.findIndex(s=>s.phase==="play");
+  resetPlayer(true);
+  freeze=false;
+  particles=[];
+  applyStep(true);
+};
+autoBtn.onclick=()=>{
+  auto=!auto;
+  autoBtn.classList.toggle("on",auto);
+  autoBtn.textContent=auto?t("ui","autoOn"):t("ui","autoPlay");
+  if(auto) scheduleAuto();
+  else clearTimeout(autoTimer);
+};
+function scheduleAuto(){
+  clearTimeout(autoTimer);
+  if(!auto)return;
+  autoTimer=setTimeout(()=>{
+    if(steps[stepIndex].phase==="play" && coin.alive){ scheduleAuto(); return; }
+    nextStep();
+    scheduleAuto();
+  }, stepIndex<4?3300:stepIndex<14?5600:4200);
+}
+
+function resetPlayer(resetCoin=true){
+  const floor=H-92;
+  player.x=W*.08;
+  player.y=floor-player.h;
+  player.vx=0; player.vy=0; player.on=true;
+  coin.x=W*.68;
+  coin.y=floor-70;
+  if(resetCoin) coin.alive=true;
+}
+function burst(){
+  for(let i=0;i<22;i++){
+    const a=Math.random()*Math.PI*2, sp=1.2+Math.random()*3.4;
+    particles.push({x:coin.x,y:coin.y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-2,life:55});
+  }
+}
+function keyDown(k){return input[k] || input[k.toLowerCase()] || input[k.toUpperCase()];}
+window.addEventListener("keydown",e=>{
+  if(["ArrowLeft","ArrowRight","ArrowUp"," ","a","d","w","A","D","W"].includes(e.key)) e.preventDefault();
+  if(!input[e.key] && ["ArrowUp"," ","w","W"].includes(e.key)) input.jumpPressed=true;
+  input[e.key]=true;
+});
+window.addEventListener("keyup",e=>{input[e.key]=false;});
+function bindPad(id,key){
+  const el=document.getElementById(id);
+  const down=e=>{e.preventDefault();input[key]=true;if(key==="jump")input.jumpPressed=true;el.classList.add("on");};
+  const up=e=>{e.preventDefault();input[key]=false;el.classList.remove("on");};
+  el.addEventListener("pointerdown",down);
+  el.addEventListener("pointerup",up);
+  el.addEventListener("pointerleave",up);
+  el.addEventListener("pointercancel",up);
+}
+bindPad("padL","left");
+bindPad("padR","right");
+bindPad("padJ","jump");
+
+function updatePlayer(){
+  const floor=H-92;
+  const left=keyDown("ArrowLeft")||keyDown("a")||input.left;
+  const right=keyDown("ArrowRight")||keyDown("d")||input.right;
+  const jump=input.jumpPressed||keyDown("ArrowUp")||keyDown("w")||keyDown(" ");
+  if(left) player.vx=-3.4;
+  else if(right) player.vx=3.4;
+  else player.vx*=.78;
+  if(jump && player.on){player.vy=-10.6; player.on=false;}
+  input.jumpPressed=false;
+  player.vy+=.55;
+  player.x+=player.vx;
+  player.y+=player.vy;
+  if(player.y+player.h>=floor){player.y=floor-player.h;player.vy=0;player.on=true;}
+  player.x=Math.max(0,Math.min(W-player.w,player.x));
+
+  const cy=coin.y+Math.sin(tick*.05)*4;
+  const touching = Math.hypot(player.x+player.w/2-coin.x, player.y+player.h/2-cy) < 40;
+  if(steps[stepIndex].phase==="play" && coin.alive && touching){
+    freeze=true;
+    stepIndex=steps.findIndex(s=>s.phase==="fired");
+    applyStep(true);
+  }
+}
+
+function update(){
+  tick++;
+  stepTick++;
+  typingLoop();
+  const s=steps[stepIndex];
+  if(s.phase==="play" && !freeze) updatePlayer();
+  particles=particles.filter(p=>{
+    p.x+=p.vx; p.y+=p.vy; p.vy+=.13; p.life--;
+    return p.life>0;
+  });
+  draw();
+  requestAnimationFrame(update);
+}
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  const s=steps[stepIndex];
+  if(["play","fired","gone"].includes(s.phase)) drawGame();
+  else if(s.phase==="testSetup") drawTestSetup(s);
+  else if(s.phase==="checkpoint") drawCheckpoint(s);
+  else drawEditor(s);
+}
+
+
+function drawScriptMarker(panelW){
+  const scriptX = panelW-30;
+  const scriptY = W<500?142:132;
+  ctx.fillStyle="rgba(255,180,84,.18)";
+  ctx.beginPath();
+  ctx.roundRect(scriptX-11,scriptY-17,26,23,6);
+  ctx.fill();
+  ctx.strokeStyle="rgba(255,180,84,.78)";
+  ctx.lineWidth=1.5;
+  ctx.stroke();
+  ctx.fillStyle="#ffb454";
+  ctx.font=(W<500?"16px":"14px")+" sans-serif";
+  ctx.textAlign="center";
+  ctx.fillText("📄",scriptX+2,scriptY);
+}
+function drawEditor(s){
+  ctx.fillStyle="#202127"; ctx.fillRect(0,0,W,H);
+
+  ctx.fillStyle="#24262e"; ctx.fillRect(0,0,W,30);
+  ctx.fillStyle="#b8b8c0"; ctx.font=(W<500?"12px":"11px")+" ui-monospace,monospace"; ctx.textAlign="left";
+  ctx.fillText(t("ui","fileMenu"),12,19);
+
+  const panelW=(s.phase==="code" || s.phase==="summary") ? Math.min(180,W*.28) : Math.min(260,W*.48);
+  ctx.fillStyle="#17181d"; ctx.fillRect(0,30,panelW,H-30);
+  ctx.fillStyle="#3a3a44"; ctx.fillRect(panelW,30,1,H-30);
+
+  ctx.fillStyle="#2b2d35"; ctx.fillRect(0,30,panelW,42);
+  ctx.fillStyle="#3a3a44"; ctx.fillRect(0,71,panelW,1);
+  ctx.fillStyle="#f4ecd8"; ctx.font=(W<500?"13px":"12px")+" ui-monospace,monospace";
+  ctx.fillText(t("ui","panelScene"),14,56);
+  ctx.fillStyle="#858593";
+  ctx.fillText(t("ui","panelImport"),86,56);
+
+  const addPulse = s.phase==="scene" ? (Math.sin(tick*.025)+1)/2 : 0;
+  const addX = 22, addY = 88;
+  ctx.fillStyle=s.phase==="scene" ? "rgba(255,180,84,.12)" : "rgba(255,255,255,.04)";
+  ctx.beginPath();ctx.roundRect(addX-10,addY-12,24,24,5);ctx.fill();
+  ctx.strokeStyle=s.phase==="scene" ? "rgba(255,180,84,.75)" : "rgba(255,255,255,.18)";
+  ctx.lineWidth=s.phase==="scene" ? 1.8 : 1;
+  ctx.stroke();
+  ctx.fillStyle=s.phase==="scene" ? "#ffb454" : "#b3a98f";
+  ctx.font="700 18px ui-monospace,monospace";
+  ctx.textAlign="center";
+  ctx.fillText("+",addX+2,addY+7);
+  if(s.phase==="scene"){
+    ctx.strokeStyle=`rgba(255,180,84,${.14+.20*addPulse})`;
+    ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(addX+2,addY,17+2.5*addPulse,0,Math.PI*2);ctx.stroke();
+  }
+
+  ctx.fillStyle="#b3a98f";
+  ctx.font="700 16px ui-monospace,monospace";
+  ctx.fillText("🔗",58,addY+6);
+
+  const filterX = 92;
+  const filterW = Math.max(70, panelW-filterX-12);
+  ctx.fillStyle="#11131a";
+  ctx.beginPath();ctx.roundRect(filterX,74,filterW,30,7);ctx.fill();
+  ctx.strokeStyle="rgba(255,255,255,.08)";ctx.stroke();
+  ctx.fillStyle="#858593";
+  ctx.font=(W<500?"11px":"10px")+" ui-monospace,monospace";
+  ctx.textAlign="left";
+  ctx.fillText(t("ui","filterNodes"),filterX+10,94);
+
+  ctx.textAlign="left";
+
+  const nodes=[
+    {name:"Coin",type:"Area2D",icon:"●",indent:0,color:"#ffb454"},
+    {name:"Sprite2D",type:t("ui","rowType_visibleImage"),icon:"▣",indent:1,color:"#c39bd3"},
+    {name:"CollisionShape2D",type:t("ui","rowType_hitboxBoundary"),icon:"○",indent:1,color:"#5ec3a8"}
+  ];
+  const visibleCount=s.tree||0;
+  nodes.forEach((n,i)=>{
+    if(i>=visibleCount) return;
+    const y=(W<500?142:132)+i*(W<500?48:44);
+    const selected = (s.phase==="attach" && i===0) || (stepIndex<=3 && i===visibleCount-1);
+    if(selected){
+      const rowH = W<500 ? 46 : 42;
+      const rowY = y-22;
+      ctx.fillStyle="rgba(93,173,226,.28)";
+      ctx.fillRect(10,rowY,panelW-20,rowH);
+    }
+    ctx.fillStyle=n.color; ctx.font="700 12px ui-monospace,monospace";
+    ctx.fillText(" ".repeat(n.indent*2)+n.icon+" "+n.name,18+n.indent*22,y);
+    ctx.fillStyle="#858593"; ctx.font=(W<500?"11px":"9px")+" ui-monospace,monospace";
+    ctx.fillText(n.type,42+n.indent*22,y+17);
+  });
+
+  if(stepIndex>3){
+    drawScriptMarker(panelW);
+  }
+
+  ctx.fillStyle="#101116"; ctx.fillRect(panelW+1,32,W-panelW-1,H-32);
+  ctx.strokeStyle="rgba(255,255,255,.04)";
+  for(let x=panelW+10;x<W;x+=32){ctx.beginPath();ctx.moveTo(x,32);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=42;y<H;y+=32){ctx.beginPath();ctx.moveTo(panelW+1,y);ctx.lineTo(W,y);ctx.stroke();}
+
+  const cx=panelW+(W-panelW)/2;
+  const cy=H*.52;
+  if(visibleCount>=1){
+    ctx.strokeStyle="rgba(255,180,84,.34)";ctx.lineWidth=2;ctx.setLineDash([5,5]);
+    ctx.beginPath();ctx.arc(cx,cy,62,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
+  }
+  if(!(s.phase==="code" || s.phase==="summary") && visibleCount>=2){
+    ctx.fillStyle="#ffb454";ctx.beginPath();ctx.arc(cx,cy,32,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle="rgba(0,0,0,.25)";ctx.font="700 30px sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("◎",cx,cy);ctx.textBaseline="alphabetic";
+  }
+  if(!(s.phase==="code" || s.phase==="summary") && visibleCount>=3){
+    ctx.strokeStyle="rgba(94,195,168,.82)";ctx.lineWidth=3;ctx.setLineDash([7,5]);
+    ctx.beginPath();ctx.arc(cx,cy,56,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle="#5ec3a8";ctx.font=(W<500?"13px":"11px")+" ui-monospace,monospace";ctx.textAlign="center";
+    ctx.fillText(t("ui","hitboxLabel"),cx,cy+82);
+  }
+  if(s.phase==="attach"){
+    const pulse = (Math.sin(tick*.06)+1)/2;
+    const p = Math.min(1, stepTick/90);
+
+    const buttonX = Math.max(18, panelW - 58);
+    const buttonY = 50;
+    ctx.fillStyle="rgba(255,180,84,.10)";
+    ctx.beginPath();
+    ctx.arc(buttonX+18,buttonY+7,22+4*pulse,0,Math.PI*2);
+    ctx.fill();
+
+    ctx.strokeStyle="rgba(255,180,84,.95)";
+    ctx.lineWidth=3;
+    ctx.beginPath();
+    ctx.arc(buttonX+18,buttonY+7,24,0,Math.PI*2);
+    ctx.stroke();
+
+    ctx.fillStyle="#f4ecd8";
+    ctx.font=(W<500?"18px":"16px")+" sans-serif";
+    ctx.textAlign="center";
+    ctx.fillText("📄+",buttonX+18,buttonY+13);
+
+    const startX = buttonX+18;
+    const startY = buttonY+7;
+    const endX = panelW-30;
+    const endY = W<500?142:132;
+    const ease = p*p*(3-2*p);
+    const iconX = startX + (endX-startX)*ease;
+    const iconY = startY + (endY-startY)*ease;
+
+    ctx.strokeStyle="rgba(255,180,84,.55)";
+    ctx.lineWidth=2;
+    ctx.setLineDash([6,5]);
+    ctx.beginPath();
+    ctx.moveTo(startX,startY+8);
+    ctx.quadraticCurveTo(panelW*.72,42,endX,endY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.fillStyle="rgba(255,180,84,.24)";
+    ctx.beginPath();
+    ctx.arc(iconX,iconY,21+3*pulse,0,Math.PI*2);
+    ctx.fill();
+
+    ctx.fillStyle="#ffb454";
+    ctx.font=(W<500?"20px":"18px")+" sans-serif";
+    ctx.textAlign="center";
+    ctx.fillText("📄",iconX,iconY+7);
+
+    if(p>=.94){
+      const scriptX = panelW-30;
+      const scriptY = W<500?142:132;
+      ctx.fillStyle="rgba(255,180,84,.22)";
+      ctx.beginPath();
+      ctx.roundRect(scriptX-12,scriptY-18,28,25,6);
+      ctx.fill();
+
+      ctx.strokeStyle="rgba(255,180,84,.95)";
+      ctx.lineWidth=2;
+      ctx.stroke();
+
+      ctx.fillStyle="#ffb454";
+      ctx.font=(W<500?"17px":"15px")+" sans-serif";
+      ctx.textAlign="center";
+      ctx.fillText("📄",scriptX+2,scriptY);
+
+      // Pulsing ring around the landed script icon to invite the click — the user should
+      // recognize this as the target to open the script for the next chapter.
+      const clickPulse = (Math.sin(tick*.08)+1)/2;
+      ctx.strokeStyle=`rgba(255,180,84,${0.55*(1-clickPulse)})`;
+      ctx.lineWidth=2;
+      ctx.beginPath();
+      ctx.roundRect(
+        scriptX-14 - 4*clickPulse,
+        scriptY-20 - 4*clickPulse,
+        32 + 8*clickPulse,
+        29 + 8*clickPulse,
+        8
+      );
+      ctx.stroke();
+
+      // Small arrow pointing to the script icon from the callout body, so the "click the
+      // script icon" instruction has a visible referent.
+      const arrowStartX = panelW + 24;
+      const arrowStartY = 82;
+      const arrowEndX = scriptX + 8;
+      const arrowEndY = scriptY - 8;
+      ctx.strokeStyle="rgba(255,180,84,.7)";
+      ctx.lineWidth=1.8;
+      ctx.setLineDash([4,3]);
+      ctx.beginPath();
+      ctx.moveTo(arrowStartX, arrowStartY);
+      ctx.quadraticCurveTo(arrowStartX-30, arrowStartY-6, arrowEndX, arrowEndY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      // Arrowhead pointing at the icon
+      const ang = Math.atan2(arrowEndY - (arrowStartY-6), arrowEndX - (arrowStartX-30));
+      ctx.beginPath();
+      ctx.moveTo(arrowEndX, arrowEndY);
+      ctx.lineTo(arrowEndX - 6*Math.cos(ang - Math.PI/7), arrowEndY - 6*Math.sin(ang - Math.PI/7));
+      ctx.moveTo(arrowEndX, arrowEndY);
+      ctx.lineTo(arrowEndX - 6*Math.cos(ang + Math.PI/7), arrowEndY - 6*Math.sin(ang + Math.PI/7));
+      ctx.stroke();
+
+      ctx.fillStyle="rgba(20,17,30,.92)";
+      const calloutW = Math.min(W-panelW-30, 310);
+      const calloutX = panelW+18;
+      const calloutY = 52;
+      ctx.beginPath();
+      ctx.roundRect(calloutX,calloutY,calloutW,58,10);
+      ctx.fill();
+      ctx.strokeStyle="rgba(255,180,84,.65)";
+      ctx.stroke();
+
+      ctx.fillStyle="#ffb454";
+      ctx.font=(W<500?"13px":"12px")+" ui-monospace,monospace";
+      ctx.textAlign="left";
+      ctx.fillText(t("ui","scriptAttached"),calloutX+12,calloutY+24);
+
+      ctx.fillStyle="#b3a98f";
+      ctx.font=(W<500?"11px":"11px")+" ui-monospace,monospace";
+      ctx.fillText(t("ui","clickToOpen"),calloutX+12,calloutY+43);
+    }
+  }
+
+  if(s.phase==="code" || s.phase==="summary"){
+    const editX = panelW + 8;
+    const editY = 44;
+    const editW = W - panelW - 16;
+    const editH = H - 62;
+
+    ctx.fillStyle="#0f0c17";
+    ctx.beginPath();
+    ctx.roundRect(editX,editY,editW,editH,10);
+    ctx.fill();
+
+    ctx.strokeStyle="#3a3349";
+    ctx.lineWidth=2;
+    ctx.stroke();
+
+    ctx.fillStyle="rgba(15,12,23,.72)";
+    ctx.fillRect(panelW+1,30,W-panelW-1,H-30);
+  }
+
+  // Scene tabs overlay for the "open a new blank scene" step. This lives above the viewport
+  // in real Godot — the strip where each open scene has a tab, plus a + button for a fresh one.
+  // Learners often start the guide with another scene already open, so this reminds them where
+  // to find the button that gives them the empty scene the Coin will live in.
+  if(s.newSceneStep){
+    const tabsY = 32;
+    const tabsH = Math.min(28, Math.max(22, H*0.055));
+    const tabsX = panelW + 1;
+    const tabsW = W - tabsX;
+
+    // Strip background — sits above the viewport area, doesn't touch the scene dock.
+    ctx.fillStyle="#1a1c22";
+    ctx.fillRect(tabsX, tabsY, tabsW, tabsH);
+    ctx.fillStyle="#3a3a44";
+    ctx.fillRect(tabsX, tabsY+tabsH, tabsW, 1);
+
+    // A representative "already open" scene tab, so learners recognize the pattern from
+    // whatever project they came in with.
+    const existingTabW = Math.min(130, tabsW*0.42);
+    const existingTabX = tabsX + 6;
+    const existingTabY = tabsY + 3;
+    const existingTabH = tabsH - 6;
+    ctx.fillStyle="#2b2d35";
+    ctx.beginPath();
+    ctx.roundRect(existingTabX, existingTabY, existingTabW, existingTabH, 4);
+    ctx.fill();
+    ctx.fillStyle="#5ec3a8";
+    ctx.font=(W<500?"11px":"12px")+" ui-monospace,monospace";
+    ctx.textAlign="left";
+    ctx.fillText("▮", existingTabX+8, existingTabY+existingTabH*0.68);
+    ctx.fillStyle="#c8c8d0";
+    ctx.fillText("level.tscn", existingTabX+22, existingTabY+existingTabH*0.68);
+
+    // The + button — the actual target of this step. Pulses to draw the eye.
+    const plusW = Math.min(30, tabsH+2);
+    const plusX = existingTabX + existingTabW + 6;
+    const plusY = existingTabY;
+    const plusH = existingTabH;
+    const pulse = (Math.sin(tick*.05)+1)/2;
+
+    ctx.fillStyle=`rgba(255,180,84,${0.18 + 0.10*pulse})`;
+    ctx.beginPath();
+    ctx.roundRect(plusX, plusY, plusW, plusH, 4);
+    ctx.fill();
+    ctx.strokeStyle=`rgba(255,180,84,${0.75 + 0.20*pulse})`;
+    ctx.lineWidth=2;
+    ctx.stroke();
+
+    ctx.fillStyle="#ffb454";
+    ctx.font="700 "+(W<500?"16px":"18px")+" ui-monospace,monospace";
+    ctx.textAlign="center";
+    ctx.textBaseline="middle";
+    ctx.fillText("+", plusX + plusW/2, plusY + plusH/2 + 1);
+    ctx.textBaseline="alphabetic";
+
+    // Outer pulse ring to make the target unmistakable.
+    ctx.strokeStyle=`rgba(255,180,84,${0.22*(1-pulse)})`;
+    ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.roundRect(plusX-4-pulse*3, plusY-4-pulse*3, plusW+8+pulse*6, plusH+8+pulse*6, 7);
+    ctx.stroke();
+
+    // Small down-arrow callout inside the viewport pointing back up at the + button, so the
+    // relationship between the arrow-label and the highlighted button reads at a glance.
+    const arrowX = plusX + plusW/2;
+    const arrowTopY = plusY + plusH + 6;
+    const arrowBottomY = arrowTopY + 26;
+    ctx.strokeStyle="#ffb454";
+    ctx.lineWidth=2;
+    ctx.setLineDash([5,4]);
+    ctx.beginPath();
+    ctx.moveTo(arrowX, arrowBottomY);
+    ctx.lineTo(arrowX, arrowTopY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.moveTo(arrowX-5, arrowTopY+5);
+    ctx.lineTo(arrowX, arrowTopY);
+    ctx.lineTo(arrowX+5, arrowTopY+5);
+    ctx.stroke();
+
+    // Label beside the arrow so learners know what the + does.
+    const labelX = arrowX + 10;
+    const labelY = arrowTopY + 16;
+    ctx.fillStyle="rgba(20,17,30,.88)";
+    const labelText = t("ui","opensNewScene");
+    ctx.font="700 "+(W<500?"10px":"11px")+" ui-monospace,monospace";
+    const labelW = ctx.measureText(labelText).width + 16;
+    if(labelX + labelW < W - 8){
+      ctx.beginPath();
+      ctx.roundRect(labelX, labelY-12, labelW, 20, 4);
+      ctx.fill();
+      ctx.fillStyle="#ffb454";
+      ctx.textAlign="left";
+      ctx.fillText(labelText, labelX+8, labelY+2);
+    }
+    ctx.textAlign="left";
+  }
+
+}
+
+function drawCheckpoint(s){
+  const group = s.checkpointGroup || "scene";
+
+  if(group==="script"){
+    drawEditor({...s, phase:"summary", tree:3});
+    return;
+  }
+
+  if(group==="test"){
+    drawGame();
+  }else{
+    drawEditor({...s, phase:"attach", tree:3});
+  }
+
+  let w = Math.min(W-34, 430);
+  let h = Math.min(H-70, 270);
+  let x = (W-w)/2;
+  let y = Math.max(38, (H-h)/2);
+
+  ctx.fillStyle="rgba(20,17,30,.96)";
+  ctx.beginPath();ctx.roundRect(x,y,w,h,16);ctx.fill();
+  ctx.strokeStyle="rgba(94,195,168,.85)";
+  ctx.lineWidth=2.5;ctx.stroke();
+
+  ctx.fillStyle="rgba(94,195,168,.18)";
+  ctx.beginPath();ctx.arc(x+38,y+38,24,0,Math.PI*2);ctx.fill();
+
+  ctx.fillStyle="#5ec3a8";
+  ctx.font=(W<500?"27px":"30px")+" sans-serif";
+  ctx.textAlign="center";
+  ctx.fillText("✓",x+38,y+48);
+
+  ctx.textAlign="left";
+  ctx.fillStyle="#ffb454";
+  ctx.font=(W<500?"15px":"18px")+" ui-monospace,monospace";
+  ctx.fillText(s.title.replace("Checkpoint: ",""),x+74,y+34);
+
+  ctx.fillStyle="#f4ecd8";
+  ctx.font=(W<500?"12px":"13px")+" ui-monospace,monospace";
+  ctx.fillText(t("ui","checkpointYouShouldHave"),x+20,y+78);
+
+  const list = s.checklist || [];
+  ctx.font=(W<500?"11px":"12px")+" ui-monospace,monospace";
+  const itemSpacing = W < 500 ? 24 : 28;
+  list.forEach((item,i)=>{
+    const yy = y+98+i*itemSpacing;
+    ctx.fillStyle="#5ec3a8";
+    ctx.fillText("✓",x+24,yy);
+    ctx.fillStyle="#b3a98f";
+    const maxLen = W < 500 ? 42 : 52;
+    const text = item.length > maxLen ? item.slice(0,maxLen-2)+"..." : item;
+    ctx.fillText(text,x+48,yy);
+  });
+
+  ctx.fillStyle="#6b6478";
+  ctx.font=(W<500?"10px":"11px")+" ui-monospace,monospace";
+  ctx.fillText(t("ui","checkpointPressNext"),x+20,y+h-16);
+}
+
+function drawTestSetup(s){
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle="#11101a";ctx.fillRect(0,0,W,H);
+
+  ctx.fillStyle="#24262e";ctx.fillRect(0,0,W,30);
+  ctx.fillStyle="#b8b8c0";ctx.font=(W<500?"12px":"11px")+" ui-monospace,monospace";ctx.textAlign="left";
+  ctx.fillText(t("ui","workspaceTabs"),12,19);
+
+  const panelW=Math.min(260,W*.46);
+  ctx.fillStyle="#17181d";ctx.fillRect(0,30,panelW,H-30);
+  ctx.fillStyle="#3a3a44";ctx.fillRect(panelW,30,1,H-30);
+
+  ctx.fillStyle="#2b2d35";ctx.fillRect(0,30,panelW,42);
+  ctx.fillStyle="#3a3a44";ctx.fillRect(0,71,panelW,1);
+  ctx.fillStyle="#f4ecd8";ctx.font=(W<500?"13px":"12px")+" ui-monospace,monospace";
+  ctx.fillText(t("ui","panelScene"),14,56);
+  ctx.fillStyle="#858593";
+  ctx.fillText(t("ui","panelImport"),86,56);
+
+  const addX = 22, addY = 88;
+  ctx.fillStyle="rgba(255,255,255,.04)";
+  ctx.beginPath();ctx.roundRect(addX-10,addY-12,24,24,5);ctx.fill();
+  ctx.strokeStyle="rgba(255,255,255,.18)";ctx.lineWidth=1;ctx.stroke();
+  ctx.fillStyle="#b3a98f";ctx.font="700 18px ui-monospace,monospace";ctx.textAlign="center";
+  ctx.fillText("+",addX+2,addY+7);
+  ctx.fillStyle="#b3a98f";ctx.font="700 16px ui-monospace,monospace";
+  ctx.fillText("🔗",58,addY+6);
+
+  const filterX = 92;
+  const filterW = Math.max(70, panelW-filterX-12);
+  ctx.fillStyle="#11131a";
+  ctx.beginPath();ctx.roundRect(filterX,74,filterW,30,7);ctx.fill();
+  ctx.strokeStyle="rgba(255,255,255,.08)";ctx.stroke();
+  ctx.fillStyle="#858593";
+  ctx.font=(W<500?"11px":"10px")+" ui-monospace,monospace";
+  ctx.textAlign="left";
+  ctx.fillText(t("ui","filterNodes"),filterX+10,94);
+
+  const rows=[
+    {name:"TestLevel", type:"Node2D", icon:"▦", indent:0},
+    {name:"TileMap/Floor", type:t("ui","rowType_basicFloor"), icon:"▤", indent:1},
+    {name:"Player", type:t("ui","rowType_existingScene"), icon:"▮", indent:1},
+    {name:"Coin", type:t("ui","rowType_coinInstance"), icon:"●", indent:1},
+    {name:"Coin2", type:t("ui","rowType_optionalCopy"), icon:"●", indent:1}
+  ];
+  const stage = s.testStage != null ? s.testStage : 1;
+  // Only draw scene-tree rows once TestLevel exists (stage >= 1). During the "open a new
+  // blank scene" step (stage 0), the Scene panel is intentionally empty — the learner
+  // hasn't added anything yet.
+  if(stage >= 1){
+    rows.forEach((r,i)=>{
+      if(i>stage) return;
+      const y=(W<500?142:132)+i*(W<500?48:44);
+      const selected=i===stage;
+      if(selected){
+        const rowH = W<500 ? 46 : 42;
+        const rowY = y-22;
+        ctx.fillStyle="rgba(93,173,226,.28)";
+        ctx.fillRect(10,rowY,panelW-20,rowH);
+      }
+      const x = 18 + r.indent*24;
+      ctx.fillStyle = r.name.startsWith("Coin") ? "#ffb454" : selected ? "#ffb454" : "#f4ecd8";
+      ctx.font=(W<500?"12px":"12px")+" ui-monospace,monospace";
+      ctx.fillText(r.icon+" "+r.name,x,y);
+      ctx.fillStyle="#858593";
+      ctx.font=(W<500?"10px":"9px")+" ui-monospace,monospace";
+      ctx.fillText(r.type,x+22,y+17);
+    });
+  }
+
+  ctx.fillStyle="#101116";ctx.fillRect(panelW+1,30,W-panelW-1,H-30);
+  ctx.strokeStyle="rgba(255,255,255,.035)";
+  for(let x=panelW+10;x<W;x+=32){ctx.beginPath();ctx.moveTo(x,30);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=40;y<H;y+=32){ctx.beginPath();ctx.moveTo(panelW+1,y);ctx.lineTo(W,y);ctx.stroke();}
+
+  // (The previous compact "TEST SCENE" title card that used to be drawn here has been removed
+  // — it was drawn onto the canvas underneath the HTML visualStepCard overlay, showing through
+  // at the edges. The HTML card now carries all the step title/description text.)
+
+  const floorY=H-72;
+  // Floor is now row index 1 in the reordered tree, so it becomes visible starting at stage 2.
+  if(stage>=2){
+    ctx.fillStyle="#2d2640";
+    ctx.fillRect(panelW+20,floorY,W-panelW-40,34);
+    ctx.fillStyle="#5a5378";
+    ctx.fillRect(panelW+20,floorY,W-panelW-40,4);
+    for(let x=panelW+20;x<W-20;x+=28){
+      ctx.strokeStyle="rgba(255,255,255,.08)";
+      ctx.strokeRect(x,floorY,28,34);
+    }
+  }
+
+  // Player is now row index 2, so it becomes visible starting at stage 3 (after the floor).
+  if(stage>=3){
+    const px=panelW+72, py=floorY-42;
+    ctx.fillStyle="#5ec3a8";ctx.fillRect(px,py,30,40);
+    ctx.fillStyle="#11101a";ctx.fillRect(px+7,py+10,5,5);ctx.fillRect(px+18,py+10,5,5);
+    ctx.fillStyle="#5ec3a8";ctx.font=(W<500?"10px":"10px")+" ui-monospace,monospace";
+    ctx.fillText(t("ui","playerLabel"),px-8,py-10);
+  }
+
+  if(stage>=4){
+    const c1x=panelW+186, c2x=panelW+246, cy=floorY-34;
+    [c1x,c2x].forEach((cx,idx)=>{
+      ctx.fillStyle="#ffb454";ctx.beginPath();ctx.arc(cx,cy,16,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle="rgba(0,0,0,.25)";ctx.font="700 16px sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("◎",cx,cy);ctx.textBaseline="alphabetic";
+    });
+    ctx.fillStyle="#ffb454";ctx.font=(W<500?"10px":"10px")+" ui-monospace,monospace";ctx.textAlign="left";
+    ctx.fillText(t("ui","coinScenesLabel"),c1x-22,cy-26);
+  }
+
+  // Scene tabs overlay for the "open a new blank scene for the test" step. Same treatment as
+  // Chapter 1's blank-scene step so the two moments echo each other visually — a pulsing +
+  // tab above the viewport, with a dashed arrow labeling it "Opens a new blank scene."
+  if(s.newSceneStep){
+    const tabsY = 32;
+    const tabsH = Math.min(28, Math.max(22, H*0.055));
+    const tabsX = panelW + 1;
+    const tabsW = W - tabsX;
+
+    ctx.fillStyle="#1a1c22";
+    ctx.fillRect(tabsX, tabsY, tabsW, tabsH);
+    ctx.fillStyle="#3a3a44";
+    ctx.fillRect(tabsX, tabsY+tabsH, tabsW, 1);
+
+    const existingTabW = Math.min(130, tabsW*0.42);
+    const existingTabX = tabsX + 6;
+    const existingTabY = tabsY + 3;
+    const existingTabH = tabsH - 6;
+    ctx.fillStyle="#2b2d35";
+    ctx.beginPath();
+    ctx.roundRect(existingTabX, existingTabY, existingTabW, existingTabH, 4);
+    ctx.fill();
+    ctx.fillStyle="#5ec3a8";
+    ctx.font=(W<500?"11px":"12px")+" ui-monospace,monospace";
+    ctx.textAlign="left";
+    ctx.fillText("▮", existingTabX+8, existingTabY+existingTabH*0.68);
+    ctx.fillStyle="#c8c8d0";
+    ctx.fillText("coin.tscn", existingTabX+22, existingTabY+existingTabH*0.68);
+
+    const plusW = Math.min(30, tabsH+2);
+    const plusX = existingTabX + existingTabW + 6;
+    const plusY = existingTabY;
+    const plusH = existingTabH;
+    const pulse = (Math.sin(tick*.05)+1)/2;
+
+    ctx.fillStyle=`rgba(255,180,84,${0.18 + 0.10*pulse})`;
+    ctx.beginPath();
+    ctx.roundRect(plusX, plusY, plusW, plusH, 4);
+    ctx.fill();
+    ctx.strokeStyle=`rgba(255,180,84,${0.75 + 0.20*pulse})`;
+    ctx.lineWidth=2;
+    ctx.stroke();
+
+    ctx.fillStyle="#ffb454";
+    ctx.font="700 "+(W<500?"16px":"18px")+" ui-monospace,monospace";
+    ctx.textAlign="center";
+    ctx.textBaseline="middle";
+    ctx.fillText("+", plusX + plusW/2, plusY + plusH/2 + 1);
+    ctx.textBaseline="alphabetic";
+
+    ctx.strokeStyle=`rgba(255,180,84,${0.22*(1-pulse)})`;
+    ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.roundRect(plusX-4-pulse*3, plusY-4-pulse*3, plusW+8+pulse*6, plusH+8+pulse*6, 7);
+    ctx.stroke();
+
+    const arrowX = plusX + plusW/2;
+    const arrowTopY = plusY + plusH + 6;
+    const arrowBottomY = arrowTopY + 26;
+    ctx.strokeStyle="#ffb454";
+    ctx.lineWidth=2;
+    ctx.setLineDash([5,4]);
+    ctx.beginPath();
+    ctx.moveTo(arrowX, arrowBottomY);
+    ctx.lineTo(arrowX, arrowTopY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.moveTo(arrowX-5, arrowTopY+5);
+    ctx.lineTo(arrowX, arrowTopY);
+    ctx.lineTo(arrowX+5, arrowTopY+5);
+    ctx.stroke();
+
+    const labelX = arrowX + 10;
+    const labelY = arrowTopY + 16;
+    ctx.font="700 "+(W<500?"10px":"11px")+" ui-monospace,monospace";
+    const labelText = t("ui","opensNewScene");
+    const labelW = ctx.measureText(labelText).width + 16;
+    if(labelX + labelW < W - 8){
+      ctx.fillStyle="rgba(20,17,30,.88)";
+      ctx.beginPath();
+      ctx.roundRect(labelX, labelY-12, labelW, 20, 4);
+      ctx.fill();
+      ctx.fillStyle="#ffb454";
+      ctx.textAlign="left";
+      ctx.fillText(labelText, labelX+8, labelY+2);
+    }
+    ctx.textAlign="left";
+  }
+}
+
+function drawGame(){
+  const floor=H-92;
+  ctx.fillStyle="#11101a";ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle="rgba(255,255,255,.035)";
+  for(let x=0;x<W;x+=32){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=0;y<H;y+=32){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+  ctx.fillStyle="#2d2640";ctx.fillRect(0,floor,W,H-floor);
+  ctx.fillStyle="#5a5378";ctx.fillRect(0,floor,W,3);
+
+  const cy=coin.y+Math.sin(tick*.05)*4;
+  if(coin.alive){
+    ctx.strokeStyle="rgba(94,195,168,.55)";ctx.lineWidth=2;ctx.setLineDash([6,5]);
+    ctx.beginPath();ctx.arc(coin.x,cy,31,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle="#ffb454";ctx.beginPath();ctx.arc(coin.x,cy,18,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle="rgba(0,0,0,.26)";ctx.font="700 18px sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("◎",coin.x,cy);ctx.textBaseline="alphabetic";
+  }
+  particles.forEach(p=>{
+    ctx.fillStyle=`rgba(255,180,84,${p.life/55})`;
+    ctx.beginPath();ctx.arc(p.x,p.y,3,0,Math.PI*2);ctx.fill();
+  });
+  ctx.fillStyle="#5ec3a8";ctx.fillRect(player.x,player.y,player.w,player.h);
+  ctx.fillStyle="#11101a";ctx.fillRect(player.x+7,player.y+10,5,5);ctx.fillRect(player.x+18,player.y+10,5,5);
+  ctx.fillRect(player.x+9,player.y+25,13,3);
+
+  const s=steps[stepIndex];
+  ctx.fillStyle="rgba(20,17,30,.88)";ctx.fillRect(10,10,Math.min(260,W-20),46);
+  ctx.strokeStyle=s.phase==="fired"?"rgba(94,195,168,.9)":"rgba(255,180,84,.48)";
+  ctx.strokeRect(10,10,Math.min(260,W-20),46);
+  ctx.fillStyle=s.phase==="fired"?"#5ec3a8":"#ffb454";
+  ctx.font="700 11px ui-monospace,monospace";ctx.textAlign="left";
+  ctx.fillText(s.phase==="fired"?t("ui","signalMomentBadge"):t("ui","playTestBadge"),20,28);
+  ctx.fillStyle="#b3a98f";ctx.font="10px ui-monospace,monospace";
+  ctx.fillText(s.phase==="play"?t("ui","playInstruction"):t("ui","stepThroughInstruction"),20,44);
+
+  if(s.phase==="fired"){
+    ctx.strokeStyle="rgba(94,195,168,.9)";ctx.lineWidth=3;
+    ctx.beginPath();ctx.arc(coin.x,cy,44+Math.sin(tick*.12)*3,0,Math.PI*2);ctx.stroke();
+  }
+  if(s.phase==="gone"){
+    ctx.fillStyle="#b3a98f";ctx.font=(W<500?"13px":"11px")+" ui-monospace,monospace";ctx.fillText(t("ui","coinGone"),20,H-16);
+  }else{
+    ctx.fillStyle="#b3a98f";ctx.font=(W<500?"13px":"11px")+" ui-monospace,monospace";ctx.fillText(t("ui","controlsHelp"),20,H-16);
+  }
+}
+
+// =============================================================================
+// LANGUAGE SUPPORT (EN / ES)
+// =============================================================================
+// Full Spanish translation of the guide + the plumbing that swaps text when the
+// learner clicks the ES toggle. Design notes:
+//
+// 1. Code identifiers stay in English (Area2D, Sprite2D, body_entered, coin.gd,
+//    queue_free, _on_body_entered) — those are literal code the user types.
+// 2. Godot concept words are translated (nodo, escena, señal, nodo padre).
+// 3. Prose [[token]] markers keep their ENGLISH key so codeHelp lookups stay
+//    stable across languages. Display labels can be Spanish via [[key|display]].
+// 4. Non-text step fields (phase, tree, lines, hi, testStage, checkpointGroup,
+//    newSceneStep, customLine5) inherit from steps_en — Spanish overrides only
+//    replace title, top, text, visualText, mode, and (where present) checklist.
+// =============================================================================
+
+const i18n = {
+  en: {
+    header: {
+      eyebrow: "A Godot Tutorial · Game Object Interaction",
+      titleHtml: 'How game objects <span class="ac">communicate</span> in Godot',
+      lede1Html: "In this guide, you'll build a coin in Godot. The coin isn't just one thing — it's made from a few nodes working together. One of those nodes wraps a special <strong>area</strong> around the coin. That area can notice when something touches it and announce when it happens. In Godot, that announcement is called a <strong>signal</strong>.",
+      lede2: "Then you'll write a short script that listens for the signal and decides what the coin should do next. In this example, we will keep it simple and just have the coin remove itself whenever a player touches it so that it feels like it's been collected.",
+      noteHtml: "<strong>Use Back and Next to move through the guide.</strong> Auto Play is optional."
+    },
+    ui: {
+      back: "← Back",
+      next: "Next →",
+      restart: "Restart",
+      autoPlay: "Auto Play",
+      autoOn: "Auto On",
+      playTest: "Play Test",
+      resetPlay: "Reset Play",
+      overview: "Overview",
+      stepXofY: (n,t)=>`Step ${n} of ${t}`,
+      chXofY: (n,t)=>`Ch ${n} / ${t}`,
+      whatsHappening: "What's happening",
+      postGuideHint: "Complete the guide to unlock the reference materials below.",
+      scriptCheckpointYouShould: "You should now have:",
+      scriptCheckpointPressNext: "Press Next when this matches your project.",
+      // canvas-drawn strings
+      fileMenu: "Scene   Project   Debug   Editor   Help",
+      workspaceTabs: "2D   Script   AssetLib",
+      panelScene: "Scene",
+      panelImport: "Import",
+      filterNodes: "Filter Nodes",
+      opensNewScene: "Opens a new blank scene",
+      scriptAttached: "Script attached to Coin",
+      clickToOpen: "Click the script icon to open it.",
+      checkpointYouShouldHave: "You should now have:",
+      checkpointPressNext: "Press Next when this matches your project.",
+      playTestBadge: "PLAY TEST",
+      signalMomentBadge: "SIGNAL MOMENT",
+      playInstruction: "Move into the coin.",
+      stepThroughInstruction: "Use Next to step through the code path.",
+      coinGone: "The coin is gone.",
+      controlsHelp: "Keyboard: arrows/WASD. Mobile: buttons below.",
+      hitboxLabel: "Coin hitbox boundary",
+      rowType_visibleImage: "visible image",
+      rowType_hitboxBoundary: "hitbox boundary",
+      rowType_basicFloor: "basic floor",
+      rowType_existingScene: "existing scene",
+      rowType_coinInstance: "coin instance",
+      rowType_optionalCopy: "optional copy",
+      playerLabel: "Player",
+      coinScenesLabel: "Coin scenes"
+    },
+    chapterTitles: {
+      1: "Build the Coin scene",
+      2: "Write the signal code",
+      3: "Build a test scene",
+      4: "See the signal in action"
+    },
+    pills: [
+      "1 Coin Area2D",
+      "2 Sprite2D",
+      "3 CollisionShape2D",
+      "4 Attach Script",
+      "5 Add Signal Code",
+      "6 Test Level",
+      "7 Test Pickup"
+    ],
+    quickBuild: {
+      title: "Quick rebuild checklist",
+      items: [
+        "Create <strong>Coin</strong> as an <strong>Area2D</strong>.",
+        "Add <strong>Sprite2D</strong> for the coin image.",
+        "Add <strong>CollisionShape2D</strong> for the coin hitbox boundary.",
+        "Attach <strong>coin.gd</strong> to the <strong>Coin Area2D</strong>.",
+        "Use the final script below.",
+        "Create or open a test level.",
+        "Add the existing <strong>Player</strong> scene.",
+        "Paint or place a simple floor with collision.",
+        "Add one or more <strong>Coin</strong> instances to the level.",
+        "Run the game and move the player into the coin."
+      ]
+    },
+    finalScript: {
+      title: "Final coin script",
+      desc: "When you recreate this in Godot, attach this script to the <strong>Coin Area2D</strong> node. If your template creates extra unused lines, your final coin script can be this simple."
+    },
+    completion: {
+      eyebrow: "Guide complete",
+      title: "You've made your first Godot signal work.",
+      text: "The reference material below is here to help you rebuild this in your own project. Use the quick checklist, then keep the final script handy."
+    }
+  },
+
+  es: {
+    header: {
+      eyebrow: "Un tutorial de Godot · Interacción entre objetos del juego",
+      titleHtml: 'Cómo se <span class="ac">comunican</span> los objetos del juego en Godot',
+      lede1Html: "En esta guía vas a construir una moneda en Godot. La moneda no es una sola cosa: se hace con varios nodos que trabajan juntos. Uno de esos nodos rodea a la moneda con una <strong>área</strong> especial. Esa área nota cuando algo la toca y avisa cuando eso pasa. En Godot, ese aviso se llama <strong>señal</strong>.",
+      lede2: "Después escribirás un script corto que escucha la señal y decide qué debe hacer la moneda a continuación. En este ejemplo lo haremos simple: la moneda se elimina a sí misma cuando el jugador la toca, para que se sienta como si la hubieran recogido.",
+      noteHtml: "<strong>Usa Atrás y Siguiente para avanzar por la guía.</strong> Reprod. auto es opcional."
+    },
+    ui: {
+      back: "← Atrás",
+      next: "Siguiente →",
+      restart: "Reiniciar",
+      autoPlay: "Reprod. auto",
+      autoOn: "Auto activa",
+      playTest: "Probar",
+      resetPlay: "Reiniciar prueba",
+      overview: "Introducción",
+      stepXofY: (n,t)=>`Paso ${n} de ${t}`,
+      chXofY: (n,t)=>`Cap ${n} / ${t}`,
+      whatsHappening: "Qué está pasando",
+      postGuideHint: "Completa la guía para desbloquear el material de referencia abajo.",
+      scriptCheckpointYouShould: "Ahora deberías tener:",
+      scriptCheckpointPressNext: "Presiona Siguiente cuando esto coincida con tu proyecto.",
+      fileMenu: "Escena   Proyecto   Depurar   Editor   Ayuda",
+      workspaceTabs: "2D   Script   AssetLib",
+      panelScene: "Escena",
+      panelImport: "Importar",
+      filterNodes: "Filtrar nodos",
+      opensNewScene: "Abre una escena en blanco",
+      scriptAttached: "Script adjuntado a Coin",
+      clickToOpen: "Haz clic en el ícono del script para abrirlo.",
+      checkpointYouShouldHave: "Ahora deberías tener:",
+      checkpointPressNext: "Presiona Siguiente cuando esto coincida con tu proyecto.",
+      playTestBadge: "PRUEBA DE JUEGO",
+      signalMomentBadge: "MOMENTO DE LA SEÑAL",
+      playInstruction: "Muévete hacia la moneda.",
+      stepThroughInstruction: "Usa Siguiente para recorrer la ruta del código.",
+      coinGone: "La moneda desapareció.",
+      controlsHelp: "Teclado: flechas/WASD. Móvil: botones abajo.",
+      hitboxLabel: "Límite de hitbox",
+      rowType_visibleImage: "imagen visible",
+      rowType_hitboxBoundary: "límite de hitbox",
+      rowType_basicFloor: "piso básico",
+      rowType_existingScene: "escena existente",
+      rowType_coinInstance: "instancia de Coin",
+      rowType_optionalCopy: "copia opcional",
+      playerLabel: "Player",
+      coinScenesLabel: "Escenas Coin"
+    },
+    chapterTitles: {
+      1: "Construye la escena Coin",
+      2: "Escribe el código de la señal",
+      3: "Construye una escena de prueba",
+      4: "Ve la señal en acción"
+    },
+    pills: [
+      "1 Coin Area2D",
+      "2 Sprite2D",
+      "3 CollisionShape2D",
+      "4 Adjuntar script",
+      "5 Código de señal",
+      "6 Nivel de prueba",
+      "7 Probar recogida"
+    ],
+    quickBuild: {
+      title: "Lista rápida para reconstruir",
+      items: [
+        "Crea <strong>Coin</strong> como un <strong>Area2D</strong>.",
+        "Añade <strong>Sprite2D</strong> para la imagen de la moneda.",
+        "Añade <strong>CollisionShape2D</strong> para el límite de la hitbox.",
+        "Adjunta <strong>coin.gd</strong> al <strong>Coin Area2D</strong>.",
+        "Usa el script final de abajo.",
+        "Crea o abre un nivel de prueba.",
+        "Añade la escena <strong>Player</strong> existente.",
+        "Pinta o coloca un piso simple con colisión.",
+        "Añade una o más instancias de <strong>Coin</strong> al nivel.",
+        "Ejecuta el juego y mueve al jugador hacia la moneda."
+      ]
+    },
+    finalScript: {
+      title: "Script final de la moneda",
+      desc: "Cuando recrees esto en Godot, adjunta este script al nodo <strong>Coin Area2D</strong>. Si tu plantilla crea líneas extras sin usar, tu script final de la moneda puede ser así de simple."
+    },
+    completion: {
+      eyebrow: "Guía completada",
+      title: "¡Hiciste que funcione tu primera señal de Godot!",
+      text: "El material de referencia de abajo está aquí para ayudarte a reconstruir esto en tu propio proyecto. Usa la lista rápida y guarda el script final a mano."
+    }
+  }
+};
+
+// Per-step Spanish overrides. Only translatable fields — other props inherit from steps_en.
+const steps_es_overrides = [
+  // 0 Chapter 1 overview
+  { mode:"EDITOR DE GODOT",
+    title:"Capítulo 1: Construye la escena Coin",
+    top:"Primero construye el objeto, luego dale comportamiento.",
+    text:"Antes de escribir lógica, construye una escena Coin reutilizable con nodos. Area2D es el nodo principal porque puede detectar cuando algo entra.",
+    visualText:"Primero crea el objeto del juego. Luego le daremos comportamiento con código. La [[scene|escena]] Coin es un objeto pequeño y reutilizable hecho de [[node|nodos]]." },
+  // 1 Open blank scene
+  { mode:"EDITOR DE GODOT",
+    title:"Haz esto: abre una escena nueva en blanco",
+    top:"Abre una pestaña de escena nueva para empezar de cero.",
+    text:"Puede que ya tengas otra escena abierta. Para construir la Coin, empieza con una escena fresca y vacía. Mira las pestañas justo arriba del viewport. Haz clic en la pestaña + para abrir una escena nueva en blanco, o usa Escena > Nueva Escena desde el menú.",
+    visualText:"Mira arriba del viewport las pestañas de [[scene|escena]]. Haz clic en la pestaña + para abrir una [[scene|escena]] fresca y vacía donde vivirá la Coin." },
+  // 2 Create Coin Area2D
+  { mode:"EDITOR DE GODOT",
+    title:"Haz esto: crea un Coin Area2D",
+    top:"Usa el botón + para añadir el nodo principal.",
+    text:"Area2D es el nodo padre. Puede detectar cuando otro cuerpo entra en su espacio, así que es el nodo raíz adecuado para una moneda coleccionable.",
+    visualText:"[[Area2D]] es el [[parent node|nodo padre]]. Es dueño de la [[signal|señal]] [[body_entered]] que conectaremos después." },
+  // 3 Add Sprite2D
+  { mode:"EDITOR DE GODOT",
+    title:"Haz esto: añade Sprite2D",
+    top:"Añade Sprite2D como hijo.",
+    text:"[[Sprite2D]] es solo la imagen. Hace visible a la moneda, pero no detecta al jugador por sí solo.",
+    visualText:"[[Sprite2D]] es solo la imagen. Hace visible a la moneda pero no detecta al jugador por sí solo." },
+  // 4 Add CollisionShape2D
+  { mode:"EDITOR DE GODOT",
+    title:"Haz esto: añade CollisionShape2D",
+    top:"Añade CollisionShape2D como hijo.",
+    text:"[[CollisionShape2D]] es el [[hitbox boundary|límite de la hitbox]] de la moneda. Le da a la Coin una forma física que el [[Area2D]] puede usar. El [[Area2D]] sigue siendo dueño de la [[signal|señal]] [[body_entered]].",
+    visualText:"[[CollisionShape2D]] es el [[hitbox boundary|límite de la hitbox]] de la moneda: la forma invisible que decide qué cuenta como tocar la moneda." },
+  // 5 Attach script and open
+  { mode:"ADJUNTAR SCRIPT",
+    title:"Haz esto: adjunta un script y ábrelo",
+    top:"Adjunta un script y haz clic en su ícono para abrirlo.",
+    text:"Selecciona el [[node|nodo]] Coin y haz clic en el botón de adjuntar script. Elige [[GDScript]] como lenguaje. Aparece un pequeño ícono de script junto a Coin en el panel de Escena: haz clic en ese ícono para abrir el script en el Editor de Scripts. El Editor de Scripts es donde escribiremos el código en el próximo capítulo. Puedes cambiar entre la vista de nivel y el Editor de Scripts usando las pestañas 2D / Script arriba del editor.",
+    visualText:"Adjunta un script de [[GDScript]] a Coin. Después haz clic en el pequeño ícono de script que aparece junto a Coin para abrirlo en el Editor de Scripts: ahí es donde va el código a continuación." },
+  // 6 Scene checkpoint
+  { mode:"PUNTO DE CONTROL",
+    title:"Punto de control: ¡Escena Coin lista!",
+    top:"Construiste la escena Coin.",
+    text:"Ahora deberías tener un Coin Area2D con Sprite2D, CollisionShape2D y un script adjunto al nodo Coin. A continuación abriremos el script coin.gd (haciendo clic en su ícono junto a Coin) y escribiremos el código que hace que la moneda reaccione cuando el jugador la toca.",
+    checklist:["Coin es un Area2D","Sprite2D está dentro de Coin","CollisionShape2D está dentro de Coin","coin.gd está adjunto a Coin"] },
+  // 7 Line 1 comment
+  { mode:"EDITOR DE SCRIPT",
+    title:"Línea 1: una nota para ti",
+    top:"Ya estás en el Editor de Scripts: empieza con un comentario.",
+    text:"Ahora estás en el Editor de Scripts trabajando en coin.gd. Esta primera línea empieza con # lo que la hace un comentario. Godot ignora los comentarios: son notas para humanos. Un comentario como este te ayuda a recordar qué archivo estás viendo." },
+  // 8 extends Area2D
+  { mode:"EDITOR DE SCRIPT",
+    title:"Mantén esto: extends Area2D",
+    top:"Mantén extends Area2D.",
+    text:"Godot puede haber escrito extends Area2D por ti. Mantenlo. Significa que este script pertenece a un Area2D, así que puede usar características de Area2D como body_entered." },
+  // 9 func _ready()
+  { mode:"EDITOR DE SCRIPT",
+    title:"Añade o usa func _ready()",
+    top:"Añade o usa func _ready():",
+    text:"Algunas plantillas ya incluyen _ready(). Si ya está ahí, úsala. Si no, añádela. _ready() se ejecuta una vez cuando esta moneda entra en la escena." },
+  // 10 body_entered
+  { mode:"EDITOR DE SCRIPT",
+    title:"Escribe esto: body_entered",
+    top:"Escribe body_entered.",
+    text:"body_entered es una señal integrada en Area2D. Piénsala como una campana de alarma. Suena cuando otro cuerpo físico, como el jugador, entra en el límite de la hitbox de la moneda." },
+  // 11 .connect
+  { mode:"EDITOR DE SCRIPT",
+    title:"Añade esto: .connect",
+    top:"Añade .connect",
+    text:"El punto significa: usa algo que pertenece a body_entered. connect es un método integrado, es decir, una acción que puedes usar en el código. Aquí, connect es una acción que puedes tomar con una señal." },
+  // 12 parentheses
+  { mode:"EDITOR DE SCRIPT",
+    title:"Añade esto: paréntesis",
+    top:"Añade los paréntesis.",
+    text:"Los paréntesis son donde le damos información al método. Esa información se llama argumento. connect() necesita un argumento importante: el nombre de la función que debe llamar después." },
+  // 13 _on_body_entered inside connect
+  { mode:"EDITOR DE SCRIPT",
+    title:"Añade esto: _on_body_entered",
+    top:"Pon _on_body_entered dentro de connect().",
+    text:"Esta parte es fácil de confundir. Todavía no estamos ejecutando _on_body_entered. Estamos poniendo el nombre de la función dentro de connect() para que Godot sepa qué receta usar cuando body_entered se dispare." },
+  // 14 function header
+  { mode:"EDITOR DE SCRIPT",
+    title:"Escribe este encabezado de función",
+    top:"Escribe func _on_body_entered(body):",
+    text:"Ahora escribimos la receta. El nombre _on_body_entered se eligió porque los buenos nombres de función explican su trabajo. Técnicamente podrías nombrarla diferente, pero este nombre nos dice: esta función se ejecuta cuando un cuerpo entra." },
+  // 15 queue_free()
+  { mode:"EDITOR DE SCRIPT",
+    title:"Escribe esto: queue_free()",
+    top:"Escribe queue_free().",
+    text:"queue_free() es la única instrucción dentro de esta receta. Cuando la función conectada finalmente se ejecute, le dice a Godot que elimine esta moneda de la escena." },
+  // 16 Summary
+  { mode:"EDITOR DE SCRIPT",
+    title:"Pausa y lee el patrón completo",
+    top:"El script está listo.",
+    text:"La señal y la función son dos cosas separadas. body_entered es la alarma. _on_body_entered es la receta. connect() es el enlace que le dice a la alarma qué receta debe ejecutar." },
+  // 17 Script checkpoint
+  { mode:"PUNTO DE CONTROL",
+    title:"Punto de control: ¡Script de señal listo!",
+    top:"Conectaste tu primera señal.",
+    text:"Ahora deberías tener un script de moneda que funciona. La señal body_entered está conectada a una función pequeña, y esa función elimina la moneda.",
+    checklist:["body_entered.connect(_on_body_entered) está en _ready()","_on_body_entered(body) está escrito abajo","queue_free() está dentro de la función"] },
+  // 18 Open blank scene for test
+  { mode:"ESCENA DE PRUEBA",
+    title:"Haz esto: abre una escena nueva en blanco para la prueba",
+    top:"Abre una pestaña de escena nueva para el nivel de prueba.",
+    text:"Igual que la Coin, el nivel de prueba vive en su propia [[scene|escena]]. Haz clic en la pestaña + arriba del viewport para abrir una escena fresca y en blanco. En los próximos pasos añadirás el piso, el Player y la Coin en esta escena.",
+    visualText:"Igual que la Coin, el nivel de prueba vive en su propia [[scene|escena]]. Haz clic en la pestaña + arriba del viewport para abrir una escena fresca y en blanco para la prueba." },
+  // 19 Add TestLevel root
+  { mode:"ESCENA DE PRUEBA",
+    title:"Haz esto: añade un nodo raíz TestLevel",
+    top:"Añade un Node2D como raíz de la escena de prueba.",
+    text:"En el panel de Escena vacío, añade un Node2D y llámalo TestLevel. Este es el [[parent node|nodo padre]] que contendrá el piso, el Player y la Coin.",
+    visualText:"Añade un Node2D como raíz y llámalo TestLevel. Será el [[parent node|nodo padre]] que contiene el piso, el Player y la Coin." },
+  // 20 Add floor
+  { mode:"ESCENA DE PRUEBA",
+    title:"Haz esto: añade un piso",
+    top:"Añade un piso para que el jugador tenga dónde pararse.",
+    text:"Bajo TestLevel, añade un TileMap, TileMapLayer o cualquier configuración simple de piso / colisión que tu proyecto ya use. El jugador necesita un lugar para pararse y correr antes de que lo pongamos ahí.",
+    visualText:"Bajo TestLevel, añade un piso. Un TileMapLayer funciona, o cualquier piso simple con colisión que tu proyecto ya use." },
+  // 21 Add Player
+  { mode:"ESCENA DE PRUEBA",
+    title:"Haz esto: añade el Player existente",
+    top:"Añade la escena Player como hijo de TestLevel.",
+    text:"Añade tu [[scene|escena]] Player existente como hijo de TestLevel. Esta guía es sobre la [[signal|señal]] de la moneda, no sobre construir el movimiento del jugador desde cero: reutiliza el Player que ya tengas.",
+    visualText:"Añade la [[scene|escena]] Player existente como hijo de TestLevel. Necesita poder caminar hasta la Coin." },
+  // 22 Add Coin scene
+  { mode:"ESCENA DE PRUEBA",
+    title:"Haz esto: añade la escena Coin",
+    top:"Añade una o más Coins al nivel.",
+    text:"Añade la [[scene|escena]] Coin al nivel como hija de TestLevel. Coloca una o más Coins donde el Player pueda alcanzarlas. Ahora el script de la [[signal|señal]] tiene algo que probar.",
+    visualText:"Añade la [[scene|escena]] Coin como hija de TestLevel. Colócala donde el Player pueda alcanzarla. Ahora el script de la [[signal|señal]] tiene algo que probar." },
+  // 23 Play test
+  { mode:"PRUEBA DE JUEGO",
+    title:"Haz esto: prueba la recogida",
+    top:"Mueve al jugador hacia la moneda.",
+    text:"Ahora aparecen los controles del jugador. Usa las flechas, WASD o los botones móviles. Salta hacia la moneda. El juego se congelará en el momento en que el Area2D detecte al jugador." },
+  // 24 Signal fires
+  { mode:"SEÑAL DISPARADA",
+    title:"La señal de Area2D se dispara",
+    top:"body_entered se dispara.",
+    text:"El jugador entró en la zona Area2D de la moneda. Eso hace que la señal integrada body_entered se dispare, como una campana de alarma que suena." },
+  // 25 connect points to recipe
+  { mode:"SEÑAL DISPARADA",
+    title:"connect() apunta a la receta",
+    top:"Godot revisa la función conectada.",
+    text:"Como a connect() se le pasó _on_body_entered dentro de sus paréntesis, Godot sabe qué función llamar. El nombre de la función es el argumento que le pasamos a connect()." },
+  // 26 Function runs
+  { mode:"SE EJECUTA LA FUNCIÓN",
+    title:"La función ejecuta su única instrucción",
+    top:"_on_body_entered ejecuta queue_free().",
+    text:"Ahora la receta se ejecuta. Contiene una instrucción: queue_free(). Esa instrucción elimina la moneda de la escena." },
+  // 27 Coin gone
+  { mode:"MONEDA ELIMINADA",
+    title:"La moneda desaparece",
+    top:"queue_free eliminó la moneda.",
+    text:"Ese es el bucle completo: el Area2D detecta al jugador, la señal body_entered se dispara, connect() apunta a la función, y la función ejecuta queue_free(). El script completo en pantalla es el script que puedes usar en Godot." },
+  // 28 Test checkpoint
+  { mode:"PUNTO DE CONTROL",
+    title:"Punto de control: ¡La recogida funciona!",
+    top:"Probaste la interacción.",
+    text:"Ahora deberías tener un nivel de prueba simple donde el jugador puede tocar una moneda y la moneda desaparece.",
+    checklist:["El nivel de prueba tiene un Player","El nivel de prueba tiene un piso","El nivel de prueba tiene al menos una Coin","La Coin desaparece cuando el Player la toca"] }
+];
+
+// Spanish translations of the jargon-definition popovers. Keys stay in English so
+// [[token]] lookups resolve identically in both languages.
+const codeHelp_es = {
+  "extends Area2D":   { title: "extends Area2D",   text: "Le dice a Godot que este script pertenece a un Area2D. Eso importa porque Area2D tiene la señal body_entered que usaremos después." },
+  "func _ready()":    { title: "func _ready()",    text: "_ready() se ejecuta una vez cuando la moneda se añade a la escena. Es un buen lugar para conectar la señal." },
+  "body_entered":     { title: "body_entered",     text: "Una señal integrada en Area2D. Se dispara cuando un cuerpo físico —un jugador, un enemigo, una bala, cualquier objeto en movimiento— entra en el área. Cualquier código conectado a ella puede reaccionar en ese momento. Se usa para recogidas, daño, disparadores, puntos de control y mucho más." },
+  "connect":          { title: "connect()",        text: "connect() enlaza la señal con tu función. Le dice a Godot qué código ejecutar cuando la señal se dispara." },
+  "_on_body_entered": { title: "_on_body_entered", text: "Esta es la función que queremos que Godot ejecute más tarde. Escribir el nombre dentro de connect() no la ejecuta ahora mismo." },
+  "queue_free":       { title: "queue_free()",     text: "queue_free() elimina esta moneda de la escena. En esta guía, esa es la acción que elegimos para la recogida." },
+  "Area2D":           { title: "Area2D",           text: "Un nodo que define un área invisible de espacio en 2D y nota cuando otras cosas entran o salen. Tiene muchos usos: recogidas de coleccionables, zonas de daño, áreas de disparador, peligros como lava, zonas de cámara y más. En esta guía la usamos para la moneda, pero Area2D no es específica para monedas." },
+  "Sprite2D":         { title: "Sprite2D",         text: "Un nodo que muestra una imagen 2D. La mayoría de las cosas que ves en pantalla en un juego 2D de Godot —jugadores, enemigos, monedas, decoraciones, fondos— se dibujan con un Sprite2D (o un nodo de dibujo similar). Solo muestra una imagen en un lugar de la escena; no detecta nada por sí solo." },
+  "CollisionShape2D": { title: "CollisionShape2D", text: "Un nodo que define una forma 2D usada para detectar colisiones o superposiciones. Se coloca bajo un padre como un Area2D o un cuerpo físico y le dice a ese padre el contorno exacto que debe usar. Se usa por todo el juego: hitboxes de jugadores, ataques de enemigos, zonas de disparador, paredes, puertas y más." },
+  "parent node":      { title: "Nodo padre",      text: "Un nodo que tiene otros nodos adjuntos debajo de él. Los nodos adjuntos se llaman sus hijos. Las escenas se construyen como árboles de relaciones padre-hijo. En esta guía, el Coin Area2D es el padre de Sprite2D y CollisionShape2D." },
+  "signal":           { title: "Señal",            text: "Un anuncio que un nodo puede transmitir cuando algo sucede. Otro código puede escuchar una señal y ejecutarse cuando se dispara. Los nodos vienen con muchas señales integradas para eventos comunes, y también puedes crear las tuyas. body_entered es un ejemplo de señal integrada." },
+  "hitbox":           { title: "Hitbox",           text: "La forma invisible que decide qué cuenta como tocar o chocar con algo. Las hitboxes aparecen por todas partes en el diseño de juegos: recogidas, áreas de daño, cuerpos de personajes, proyectiles, botones que reaccionan al ser pisados y más." },
+  "hitbox boundary":  { title: "Límite de hitbox", text: "El contorno invisible que decide qué cuenta como tocar un objeto. Cuando algo cruza ese contorno, el objeto al que pertenece puede reaccionar. Se usa para recogidas, zonas de daño, botones, áreas de disparador y muchas cosas más." },
+  "node":             { title: "Nodo",             text: "El bloque básico de construcción de cualquier escena de Godot. Todo en un juego de Godot —un jugador, una moneda, un botón, una cámara, un elemento de UI— es un nodo. Los nodos se organizan en un árbol." },
+  "scene":            { title: "Escena",           text: "Un grupo guardado de nodos que actúa como una sola cosa reutilizable. Una escena Coin es una moneda que puedes soltar en cualquier nivel. Una escena Level puede contener muchas escenas Coin más una escena Player. Casi cualquier cosa reutilizable en un juego de Godot se construye como una escena." },
+  "GDScript":         { title: "GDScript",         text: "El lenguaje de programación integrado de Godot. Se parece mucho a Python y está diseñado para funcionar naturalmente con nodos y señales." },
+  "physics body":     { title: "Cuerpo físico",    text: "Un nodo que actúa como un objeto sólido en el mundo del juego: puede moverse, chocar contra cosas y ser empujado. Los jugadores, enemigos, balas, cajas y vehículos suelen construirse como cuerpos físicos. Cuando uno entra en un Area2D, eso es lo que dispara la señal body_entered." }
+};
+
+let currentLang = (typeof localStorage !== "undefined" && localStorage.getItem("godot-guide-lang")) || "en";
+if(currentLang !== "en" && currentLang !== "es") currentLang = "en";
+
+// Lookup helper for canvas draws and anywhere else that needs a translated string.
+// Falls back to English if the current-language path resolves to null/undefined.
+function t(...path){
+  let result = i18n[currentLang];
+  for(const key of path){
+    if(result == null) break;
+    result = result[key];
+  }
+  if(result == null){
+    result = i18n.en;
+    for(const key of path){
+      if(result == null) break;
+      result = result[key];
+    }
+  }
+  return result;
+}
+
+function rebuildStepsForLang(){
+  if(currentLang === "en"){
+    steps = steps_en;
+    return;
+  }
+  const overrides = steps_es_overrides;
+  steps = steps_en.map((s, i) => ({ ...s, ...(overrides[i] || {}) }));
+}
+
+function rebuildCodeHelpForLang(){
+  if(currentLang === "en"){
+    codeHelp = codeHelp_en;
+    return;
+  }
+  const overrides = codeHelp_es;
+  const merged = {};
+  for(const key in codeHelp_en){
+    merged[key] = overrides[key] || codeHelp_en[key];
+  }
+  codeHelp = merged;
+}
+
+function rebuildChapterTitles(){
+  const titles = i18n[currentLang].chapterTitles;
+  chapters.forEach(c => { c.title = titles[c.num] || i18n.en.chapterTitles[c.num]; });
+}
+
+function applyStaticTranslations(){
+  const L = i18n[currentLang];
+
+  // Header
+  document.getElementById("mainEyebrow").textContent = L.header.eyebrow;
+  document.getElementById("mainH1").innerHTML = L.header.titleHtml;
+  document.getElementById("mainLede1").innerHTML = L.header.lede1Html;
+  document.getElementById("mainLede2").textContent = L.header.lede2;
+  document.getElementById("mainNote").innerHTML = L.header.noteHtml;
+
+  // Buttons — nav labels default here; per-step logic in applyStep can override
+  // (e.g. Next → Restart on the final step; Play Test → Reset Play once fired).
+  if(typeof backBtn !== "undefined")    backBtn.textContent = L.ui.back;
+  if(typeof topBackBtn !== "undefined") topBackBtn.textContent = L.ui.back;
+  if(typeof nextBtn !== "undefined")    nextBtn.textContent = L.ui.next;
+  if(typeof topNextBtn !== "undefined") topNextBtn.textContent = L.ui.next;
+  if(typeof autoBtn !== "undefined")    autoBtn.textContent = (typeof auto !== "undefined" && auto) ? L.ui.autoOn : L.ui.autoPlay;
+  if(typeof playBtn !== "undefined")    playBtn.textContent = L.ui.playTest;
+
+  // Explain block label
+  const explainLabelEl = document.getElementById("explainLabel");
+  if(explainLabelEl) explainLabelEl.textContent = L.ui.whatsHappening;
+
+  // Script checkpoint chrome ("You should now have:" / "Press Next…")
+  const ck1 = document.getElementById("scriptCheckpointYouShould");
+  const ck2 = document.getElementById("scriptCheckpointPressNext");
+  if(ck1) ck1.textContent = L.ui.scriptCheckpointYouShould;
+  if(ck2) ck2.textContent = L.ui.scriptCheckpointPressNext;
+
+  // Locked-panel hint
+  if(typeof postGuideHint !== "undefined" && postGuideHint) postGuideHint.textContent = L.ui.postGuideHint;
+
+  // Build-strip pills
+  if(typeof buildSteps !== "undefined"){
+    L.pills.forEach((label, i) => { if(buildSteps[i]) buildSteps[i].textContent = label; });
+  }
+
+  // Everything tagged with data-i18n / data-i18n-html (cards, "next" and quick-build items,
+  // completion banner, final script section).
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    const path = el.getAttribute("data-i18n").split(".");
+    const value = t(...path);
+    if(typeof value === "string") el.textContent = value;
+  });
+  document.querySelectorAll("[data-i18n-html]").forEach(el => {
+    const path = el.getAttribute("data-i18n-html").split(".");
+    const value = t(...path);
+    if(typeof value === "string") el.innerHTML = value;
+  });
+}
+
+function applyLanguage(){
+  rebuildStepsForLang();
+  rebuildCodeHelpForLang();
+  rebuildChapterTitles();
+  applyStaticTranslations();
+  if(typeof applyStep === "function") applyStep(true);
+}
+
+function setLanguage(lang){
+  if(lang !== "en" && lang !== "es") return;
+  if(lang === currentLang) return;
+  currentLang = lang;
+  try{ localStorage.setItem("godot-guide-lang", lang); }catch(_){}
+  const enBtn = document.getElementById("langEnBtn");
+  const esBtn = document.getElementById("langEsBtn");
+  enBtn.classList.toggle("active", lang === "en");
+  esBtn.classList.toggle("active", lang === "es");
+  enBtn.setAttribute("aria-pressed", lang === "en" ? "true" : "false");
+  esBtn.setAttribute("aria-pressed", lang === "es" ? "true" : "false");
+  applyLanguage();
+}
+
+document.getElementById("langEnBtn").addEventListener("click", () => setLanguage("en"));
+document.getElementById("langEsBtn").addEventListener("click", () => setLanguage("es"));
+
+// If a previous session left the user on Spanish, apply it before the first render.
+if(currentLang === "es"){
+  document.getElementById("langEnBtn").classList.remove("active");
+  document.getElementById("langEsBtn").classList.add("active");
+  document.getElementById("langEnBtn").setAttribute("aria-pressed","false");
+  document.getElementById("langEsBtn").setAttribute("aria-pressed","true");
+  rebuildStepsForLang();
+  rebuildCodeHelpForLang();
+  rebuildChapterTitles();
+  applyStaticTranslations();
+}
+
+resize();
+applyStep(true);
+update();
+</script>
+</body>
+</html>
