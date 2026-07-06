@@ -45,15 +45,16 @@
     transition:background .18s,box-shadow .18s}
   .size.active{background:var(--teal-fill);border-color:var(--teal);box-shadow:0 0 14px var(--teal-glow)}
   /* toolbar */
-  .toolbar{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;overflow:hidden}
-  .tool{width:46px;height:46px;flex:0 0 auto;border-radius:10px;background:#0a1030;
+  .toolbar{overflow:hidden}
+  .toolbar-inner{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;width:max-content;transform-origin:left center}
+  .tool{width:42px;height:42px;flex:0 0 auto;border-radius:10px;background:#0a1030;
     border:1px solid var(--border);display:flex;align-items:center;justify-content:center;
     color:#d6d8f2;transition:background .18s,box-shadow .18s}
-  .tool svg{width:20px;height:20px}
+  .tool svg{width:18px;height:18px}
   .tool.active{background:var(--teal-fill);border-color:var(--teal);box-shadow:0 0 12px var(--teal-glow);color:#fff}
   .tool.txt{font-weight:700;font-size:13px;color:#cfd2ee}
   .divider{width:1px;height:30px;background:var(--border);flex:0 0 auto;margin:0 2px}
-  .save{margin-left:6px;display:flex;align-items:center;gap:9px;padding:0 20px;height:46px;flex:0 0 auto;
+  .save{margin-left:4px;display:flex;align-items:center;gap:8px;padding:0 16px;height:42px;flex:0 0 auto;
     border-radius:10px;background:var(--teal-fill);border:1px solid var(--teal);color:#fff;
     font-weight:700;font-size:15px;white-space:nowrap;box-shadow:0 0 12px var(--teal-glow)}
   .save svg{width:18px;height:18px}
@@ -195,6 +196,7 @@
   <!-- toolbar -->
   <div class="card">
     <div class="toolbar">
+     <div class="toolbar-inner">
       <div class="tool active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="M14 5l3 3"/></svg></div>
       <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15l7-7 6 6-5 5H8z"/><path d="M4 20h16"/></svg></div>
       <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 11l6-6 7 7-6 6a2 2 0 0 1-3 0l-4-4a2 2 0 0 1 0-3z"/><path d="M20 16c0 1.5-1 3-1 3s-1-1.5-1-3a1 1 0 0 1 2 0z" fill="currentColor"/></svg></div>
@@ -214,10 +216,13 @@
       <div class="tool active" data-tour="grid"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg></div>
       <div class="tool" data-tour="import"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v11"/><path d="M8 10l4 4 4-4"/><path d="M5 19h14"/></svg></div>
       <div class="tool" data-tour="export"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15V4"/><path d="M8 8l4-4 4 4"/><path d="M5 19h14"/></svg></div>
-      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="9" cy="9" r="1.5"/><path d="M6 18l4-4 3 3 2-2 3 3"/></svg></div>
+      <div class="tool" data-tour="gif"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="9" cy="9" r="1.5"/><path d="M6 18l4-4 3 3 2-2 3 3"/></svg></div>
       <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg></div>
       <div class="divider"></div>
+      <div class="tool" data-tour="spritesheet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="3" width="6" height="6" rx="1"/><rect x="2.5" y="11" width="6" height="6" rx="1"/><rect x="10.5" y="3" width="6" height="6" rx="1"/><path d="M19 21v-9"/><path d="M15.5 15.5 19 12l3.5 3.5"/></svg></div>
+      <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="3" width="6" height="6" rx="1"/><rect x="2.5" y="11" width="6" height="6" rx="1"/><rect x="10.5" y="3" width="6" height="6" rx="1"/><path d="M19 12v9"/><path d="M15.5 17.5 19 21l3.5-3.5"/></svg></div>
       <div class="save" data-tour="save"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3L11 14M22 3l-7 18-4-7-7-4z"/></svg> <span data-i18n="saveSubmit">Save &amp; Submit</span></div>
+     </div>
     </div>
   </div>
   <!-- zoom -->
@@ -371,10 +376,18 @@ const STEPS=[
   d:"Press play to watch your frames loop into a simple idle motion. Slide the FPS control to speed it up or slow it down.",
   d2:"Toca reproducir para ver tus cuadros en bucle con un leve movimiento. Usa el control de FPS para acelerarlo o hacerlo más lento.",
   size:"64", frames:["f1","f2","f1","f4"], sel:3, onion:false, target:"play", preview:true, walk:true},
- {t:"Save and share",t2:"Guarda y comparte",
-  d:"Happy with it? 'Export as PNG' saves the image to your computer. 'Save & Submit' does that and opens the platform so you can post your creation. Now try it with something of your own.",
-  d2:"¿Contento? 'Exportar como PNG' guarda la imagen en tu computadora. 'Guardar y enviar' hace eso y abre la plataforma para publicar tu creación. Ahora inténtalo con algo tuyo.",
-  size:"64", frames:["f1","f2","f1","f4"], sel:3, onion:false, target:"export", tip:"Export as PNG", tip2:"Exportar como PNG"}
+ {t:"Export as a sprite sheet",t2:"Exporta como hoja de sprites",
+  d:"Click 'Export all frames as sprite sheet' to save every frame laid out side by side in one image. That's the format a game engine like Godot reads to play your animation.",
+  d2:"Toca 'Exportar todos los cuadros como hoja de sprites' para guardar todos los cuadros juntos en una sola imagen. Es el formato que un motor como Godot lee para reproducir tu animación.",
+  size:"64", frames:["f1","f2","f1","f4"], sel:3, onion:false, target:"spritesheet", tip:"Export all frames as sprite sheet", tip2:"Exportar cuadros como hoja de sprites"},
+ {t:"Export as an animated GIF",t2:"Exporta como GIF animado",
+  d:"Want a version that actually moves? Click 'Export animation as GIF' to save the whole loop as a GIF you can preview or share just about anywhere.",
+  d2:"¿Quieres una versión que se mueva? Toca 'Exportar animación como GIF' para guardar todo el bucle como un GIF que puedes ver o compartir casi donde sea.",
+  size:"64", frames:["f1","f2","f1","f4"], sel:3, onion:false, target:"gif", tip:"Export animation as GIF", tip2:"Exportar animación como GIF"},
+ {t:"Submit it to the platform",t2:"Envíala a la plataforma",
+  d:"Want to share it on Endless? Click 'Save & Submit'. It saves your animation file and opens the Endless platform in your browser, ready for you to post your creation. That's it — now try it with something of your own.",
+  d2:"¿Quieres compartirla en Endless? Toca 'Guardar y enviar'. Guarda tu archivo de animación y abre la plataforma Endless en tu navegador para publicar tu creación. ¡Listo! Ahora inténtalo con algo tuyo.",
+  size:"64", frames:["f1","f2","f1","f4"], sel:3, onion:false, target:"save"}
 ];
 let lang="en";
 const LANG={
@@ -432,8 +445,12 @@ function moveCursorTo(sel){
     cursor.style.transform=`translate(${cx-2}px, ${cy-2}px)`;
     cursor.classList.remove("click"); void cursor.offsetWidth; cursor.classList.add("click");
     const tt = lang==="es" ? STEPS[cur].tip2 : STEPS[cur].tip;
-    if(tt){ tip.textContent=tt; tip.style.left=(r.left)+"px"; tip.style.top=(r.top-42)+"px"; tip.classList.add("on"); }
-    else tip.classList.remove("on");
+    if(tt){ tip.textContent=tt; tip.classList.add("on"); tip.style.top=(r.top-42)+"px";
+      const tw=tip.offsetWidth; let tl=r.left;
+      if(tl+tw>window.innerWidth-10) tl=window.innerWidth-tw-10;
+      if(tl<8) tl=8;
+      tip.style.left=tl+"px";
+    } else tip.classList.remove("on");
   };
   if(el.closest(".panel")){ el.scrollIntoView({block:"center"}); setTimeout(place,400); }
   else place();
@@ -495,8 +512,15 @@ document.getElementById("nextBtn").onclick=()=>{ cur = (cur+1)%STEPS.length; ren
 document.getElementById("backBtn").onclick=()=>{ if(cur>0){cur--;render();} };
 document.addEventListener("keydown",e=>{ if(e.key==="ArrowRight")document.getElementById("nextBtn").click();
   if(e.key==="ArrowLeft")document.getElementById("backBtn").click(); });
-window.addEventListener("resize",()=>render());
-applyLang(); render();
+function fitToolbar(){
+  const tb=document.querySelector(".toolbar"), inner=document.querySelector(".toolbar-inner");
+  if(!tb||!inner) return;
+  inner.style.transform="scale(1)";
+  const s=Math.min(1, tb.clientWidth/inner.scrollWidth);
+  inner.style.transform="scale("+s+")";
+}
+window.addEventListener("resize",()=>{ fitToolbar(); render(); });
+fitToolbar(); applyLang(); render();
 </script>
 </body>
 </html>
