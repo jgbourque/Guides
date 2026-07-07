@@ -936,8 +936,8 @@ html.phone-layout .lesson.code-focus .center-code-panel{
   <header>
     <div class="eyebrow" id="mainEyebrow">A Godot Tutorial · Game Object Interaction</div>
     <h1 id="mainH1">How game objects <span class="ac">communicate</span> in Godot</h1>
-    <p class="lede" id="mainLede1">In this guide, you'll build a coin in Godot. The coin isn't just one thing — it's made from a few nodes working together. One of those nodes wraps a special <strong>area</strong> around the coin. That area can notice when something touches it and announce when it happens. In Godot, that announcement is called a <strong>signal</strong>.</p>
-    <p class="lede" id="mainLede2">Then you'll write a short script that listens for the signal and decides what the coin should do next. In this example, we will keep it simple and just have the coin remove itself whenever a player touches it so that it feels like it's been collected.</p>
+    <p class="lede" id="mainLede1">In this guide, you'll build a collectible coin in Godot. Making it is a small project on its own — but it's also a first look at how game objects can notice each other and react. In Godot, that kind of communication happens through a <strong>signal</strong>.</p>
+    <p class="lede" id="mainLede2">This is one of the simplest uses of signals. There's a lot more you can do with them, but building the coin gives you enough of the shape to start exploring on your own.</p>
     <p class="note" id="mainNote"><strong>Use Back and Next to move through the guide.</strong> Auto Play is optional.</p>
   </header>
 
@@ -2697,8 +2697,8 @@ const i18n = {
     header: {
       eyebrow: "A Godot Tutorial · Game Object Interaction",
       titleHtml: 'How game objects <span class="ac">communicate</span> in Godot',
-      lede1Html: "In this guide, you'll build a coin in Godot. The coin isn't just one thing — it's made from a few nodes working together. One of those nodes wraps a special <strong>area</strong> around the coin. That area can notice when something touches it and announce when it happens. In Godot, that announcement is called a <strong>signal</strong>.",
-      lede2: "Then you'll write a short script that listens for the signal and decides what the coin should do next. In this example, we will keep it simple and just have the coin remove itself whenever a player touches it so that it feels like it's been collected.",
+      lede1Html: "In this guide, you'll build a collectible coin in Godot. Making it is a small project on its own — but it's also a first look at how game objects can notice each other and react. In Godot, that kind of communication happens through a <strong>signal</strong>.",
+      lede2: "This is one of the simplest uses of signals. There's a lot more you can do with them, but building the coin gives you enough of the shape to start exploring on your own.",
       noteHtml: "<strong>Use Back and Next to move through the guide.</strong> Auto Play is optional."
     },
     ui: {
@@ -2788,8 +2788,8 @@ const i18n = {
     header: {
       eyebrow: "Un tutorial de Godot · Interacción entre objetos del juego",
       titleHtml: 'Cómo se <span class="ac">comunican</span> los objetos del juego en Godot',
-      lede1Html: "En esta guía vas a construir una moneda en Godot. La moneda no es una sola cosa: se hace con varios nodos que trabajan juntos. Uno de esos nodos rodea a la moneda con una <strong>área</strong> especial. Esa área nota cuando algo la toca y avisa cuando eso pasa. En Godot, ese aviso se llama <strong>señal</strong>.",
-      lede2: "Después escribirás un script corto que escucha la señal y decide qué debe hacer la moneda a continuación. En este ejemplo lo haremos simple: la moneda se elimina a sí misma cuando el jugador la toca, para que se sienta como si la hubieran recogido.",
+      lede1Html: "En esta guía vas a construir una moneda coleccionable en Godot. Hacerla es un proyecto pequeño en sí mismo, pero también es una primera mirada a cómo los objetos del juego pueden notarse y reaccionar entre sí. En Godot, ese tipo de comunicación pasa a través de una <strong>señal</strong>.",
+      lede2: "Este es uno de los usos más simples de las señales. Hay mucho más que puedes hacer con ellas, pero construir la moneda te da suficiente forma para empezar a explorar por tu cuenta.",
       noteHtml: "<strong>Usa Atrás y Siguiente para avanzar por la guía.</strong> Reprod. auto es opcional."
     },
     ui: {
