@@ -85,13 +85,61 @@
   }
 
   /* === HEADER === */
+  .page-header-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
   .eyebrow {
     font-family: 'JetBrains Mono', monospace;
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 3px;
     color: var(--accent);
-    margin-bottom: 12px;
+    /* margin now handled by the row for the eyebrow's vertical alignment */
+    margin-bottom: 0;
+    align-self: center;
+  }
+  /* Segmented EN / ES language toggle */
+  .lang-toggle {
+    display: inline-flex;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .lang-toggle button {
+    border: none;
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--ink-dim);
+    padding: 8px 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 12px;
+    cursor: pointer;
+    min-width: 40px;
+    letter-spacing: 1px;
+  }
+  .lang-toggle button + button {
+    border-left: 1px solid var(--line);
+  }
+  .lang-toggle button.active {
+    background: rgba(255, 180, 84, 0.18);
+    color: var(--accent);
+  }
+  .lang-toggle button:not(.active):hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--ink);
+  }
+  @media (max-width: 720px) {
+    .lang-toggle button {
+      padding: 6px 10px;
+      font-size: 11px;
+      min-width: 34px;
+    }
   }
 
   h1 {
@@ -1231,26 +1279,32 @@
   <!-- ============================================== -->
   <!-- HEADER                                          -->
   <!-- ============================================== -->
-  <div class="eyebrow">Godot Modding · Tutorial 02</div>
-  <h1>What is a <em>scene</em>? Build one and find out.</h1>
+  <div class="page-header-row">
+    <div class="eyebrow" data-i18n="eyebrow">Godot Modding · Tutorial 02</div>
+    <div class="lang-toggle" role="group" aria-label="Language / Idioma">
+      <button id="langEnBtn" class="active" aria-pressed="true">EN</button>
+      <button id="langEsBtn" aria-pressed="false">ES</button>
+    </div>
+  </div>
+  <h1 data-i18n-html="h1">What is a <em>scene</em>? Build one and find out.</h1>
 
   <!-- ============================================== -->
   <!-- STEP 1 - What is a scene, really?               -->
   <!-- ============================================== -->
   <div class="step" data-step="1">
-    <p class="lede">
+    <p class="lede" data-i18n-html="step1.lede">
       A scene in Godot is a <strong>reusable game component</strong> — something you build once and use as many times as you want. It can be huge, like a whole level. Or tiny, like a single coin. Scenes are made out of <em class="kw">nodes</em> (Godot's built-in components) and sometimes other, smaller scenes you've already built. The fastest way to understand them is to build one. Let's do that.
     </p>
 
-    <div class="step-num">Step 1 of 4</div>
-    <h2>What's inside a scene?</h2>
+    <div class="step-num" data-i18n="step1.num">Step 1 of 4</div>
+    <h2 data-i18n="step1.h2">What's inside a scene?</h2>
 
     <div class="explain-grid">
 
       <!-- ===== ROW 1: Hundreds of node types ===== -->
       <div class="explain-row">
         <div class="explain-text">
-          <p>
+          <p data-i18n-html="step1.row1.text">
             Every scene is a tree of <em class="kw">nodes</em>. Godot has hundreds of node types, and each one already knows how to do its job. A <em class="kw">Sprite2D</em> displays an image. An <em class="kw">AudioStreamPlayer</em> plays a sound. No code needed — though you can attach a script later for custom behavior.
           </p>
         </div>
@@ -1266,11 +1320,11 @@
             <rect x="14" y="14" width="352" height="22" fill="#1a1920"/>
             <circle cx="26" cy="25" r="5" fill="#57b3ff"/>
             <text x="26" y="28" font-family="Inter, sans-serif" font-size="7" fill="#fff" text-anchor="middle" font-weight="700">G</text>
-            <text x="38" y="29" font-family="Inter, sans-serif" font-size="9" fill="#d4d4d4" font-weight="600">Create New Node</text>
+            <text x="38" y="29" font-family="Inter, sans-serif" font-size="9" fill="#d4d4d4" font-weight="600" data-i18n-svg="gd.createNewNode">Create New Node</text>
             <text x="354" y="29" font-family="Inter, sans-serif" font-size="11" fill="#888" text-anchor="middle">×</text>
 
             <!-- Search row -->
-            <text x="22" y="50" font-family="Inter, sans-serif" font-size="7" fill="#888" font-weight="600">Search:</text>
+            <text x="22" y="50" font-family="Inter, sans-serif" font-size="7" fill="#888" font-weight="600" data-i18n-svg="gd.search">Search:</text>
             <rect x="22" y="54" width="232" height="16" rx="2" fill="#1a1920" stroke="#3a3845" stroke-width="0.5"/>
             <text x="28" y="65" font-family="JetBrains Mono, monospace" font-size="8" fill="#d4d4d4">
               <tspan>node</tspan>
@@ -1281,7 +1335,7 @@
             </text>
 
             <!-- Matches label -->
-            <text x="22" y="84" font-family="Inter, sans-serif" font-size="7" fill="#888" font-weight="600">Matches:</text>
+            <text x="22" y="84" font-family="Inter, sans-serif" font-size="7" fill="#888" font-weight="600" data-i18n-svg="gd.matches">Matches:</text>
 
             <!-- Node tree list -->
             <g font-family="Inter, sans-serif" font-size="8.5" fill="#d4d4d4">
@@ -1332,7 +1386,7 @@
       <!-- ===== ROW 2: Pick nodes, arrange in a tree, save ===== -->
       <div class="explain-row">
         <div class="explain-text">
-          <p>
+          <p data-i18n-html="step1.row2.text">
             To build one, you pick the nodes you need, arrange them in a tree, and save the file. A scene can also contain <em>other</em> scenes you've made — that's how bigger ones (like whole levels) get put together: nodes plus smaller scenes as building blocks.
           </p>
         </div>
@@ -1341,13 +1395,13 @@
             <!-- Scene panel mock -->
             <rect x="0" y="0" width="380" height="220" fill="#21202a"/>
             <rect x="0" y="0" width="380" height="22" fill="#1a1920"/>
-            <text x="14" y="14" font-family="Inter, sans-serif" font-size="9" font-weight="600" fill="#d4d4d4">Scene</text>
+            <text x="14" y="14" font-family="Inter, sans-serif" font-size="9" font-weight="600" fill="#d4d4d4" data-i18n-svg="gd.scene">Scene</text>
 
             <!-- + button and search box -->
             <rect x="8" y="30" width="22" height="22" rx="3" fill="#2a2832"/>
             <text x="19" y="46" font-family="Inter, sans-serif" font-size="14" font-weight="700" fill="#5ec3a8" text-anchor="middle">+</text>
             <rect x="34" y="30" width="120" height="22" rx="3" fill="#1a1920"/>
-            <text x="40" y="44" font-family="Inter, sans-serif" font-size="8" fill="#666">Filter Nodes</text>
+            <text x="40" y="44" font-family="Inter, sans-serif" font-size="8" fill="#666" data-i18n-svg="gd.filterNodes">Filter Nodes</text>
 
             <!-- Tree rows that appear one by one in a loop -->
             <!-- The whole animation cycle is 8s -->
@@ -1391,7 +1445,7 @@
             </g>
 
             <!-- Caption at bottom -->
-            <text x="190" y="200" font-family="Inter, sans-serif" font-size="9" fill="#888" font-style="italic" text-anchor="middle">Pick, arrange, save.</text>
+            <text x="190" y="200" font-family="Inter, sans-serif" font-size="9" fill="#888" font-style="italic" text-anchor="middle" data-i18n-svg="svg.row2.caption">Pick, arrange, save.</text>
           </svg>
         </div>
       </div>
@@ -1399,7 +1453,7 @@
       <!-- ===== ROW 3: Reuse — drop multiple copies ===== -->
       <div class="explain-row">
         <div class="explain-text">
-          <p>
+          <p data-i18n-html="step1.row3.text">
             Once you save it, you can use it over and over without rebuilding. Need ten platforms? Drag your platform scene into the level ten times. Each one is an <em>instance</em> of the same saved scene.
           </p>
         </div>
@@ -1479,7 +1533,7 @@
             <!-- Counter (stacked-text approach for cross-browser SMIL compatibility) -->
             <g>
               <rect x="146" y="186" width="88" height="22" rx="11" fill="#1a1920" stroke="#5ec3a8" stroke-width="0.8"/>
-              <text x="158" y="200" font-family="JetBrains Mono, monospace" font-size="10" fill="#5ec3a8">copies:</text>
+              <text x="158" y="200" font-family="JetBrains Mono, monospace" font-size="10" fill="#5ec3a8" data-i18n-svg="svg.row3.copies">copies:</text>
               <!-- Each digit is its own text element, opacity-animated for its time slice -->
               <g font-family="JetBrains Mono, monospace" font-size="11" fill="#fff" font-weight="700" text-anchor="middle">
                 <text x="216" y="200">0<animate attributeName="opacity" values="1;0;0;0;0;0;0;0;1" dur="8s" repeatCount="indefinite"/></text>
@@ -1498,7 +1552,7 @@
       <!-- ===== ROW 4: Edit source → all instances update ===== -->
       <div class="explain-row">
         <div class="explain-text">
-          <p>
+          <p data-i18n-html="step1.row4.text">
             Change the saved scene later — like swapping a coin's collision shape — and every copy you've already placed updates too.
           </p>
         </div>
@@ -1655,7 +1709,7 @@
             </g>
 
             <!-- Caption -->
-            <text x="190" y="200" font-family="Inter, sans-serif" font-size="9" fill="#888" font-style="italic" text-anchor="middle">Edit once, all copies update.</text>
+            <text x="190" y="200" font-family="Inter, sans-serif" font-size="9" fill="#888" font-style="italic" text-anchor="middle" data-i18n-svg="svg.row4.caption">Edit once, all copies update.</text>
           </svg>
         </div>
       </div>
@@ -1663,8 +1717,8 @@
     </div>
 
     <div class="callout">
-      <div class="callout-label">Remember</div>
-      <p>A scene can be as <strong>small</strong> as a single platform, or as <strong>big</strong> as a whole level.</p>
+      <div class="callout-label" data-i18n="step1.remember.label">Remember</div>
+      <p data-i18n-html="step1.remember.body">A scene can be as <strong>small</strong> as a single platform, or as <strong>big</strong> as a whole level.</p>
     </div>
 
     <div class="scene-types">
@@ -1683,7 +1737,7 @@
 
           <!-- Inventory strip (160-200) -->
           <rect x="0" y="160" width="280" height="40" fill="#1a1920"/>
-          <text x="8" y="174" font-family="JetBrains Mono, monospace" font-size="6.5" fill="#888" letter-spacing="0.5">CONTAINS</text>
+          <text x="8" y="174" font-family="JetBrains Mono, monospace" font-size="6.5" fill="#888" letter-spacing="0.5" data-i18n-svg="svg.contains">CONTAINS</text>
           <!-- Three node pills -->
           <g font-family="Inter, sans-serif" font-size="7.5">
             <rect x="8" y="180" width="76" height="14" rx="3" fill="#2a2832" stroke="#5cb0f5" stroke-width="0.6"/>
@@ -1698,10 +1752,10 @@
             <path d="M 192 186 Q 193 184 195 184 Q 197 184 197 186 Q 195 187 194 188 Q 192 187 192 186 Z" fill="#8a7cff"/>
             <text x="201" y="190" fill="#d4d4d4">Sprite2D</text>
 
-            <text x="250" y="190" fill="#666" font-size="6.5">3 nodes</text>
+            <text x="250" y="190" fill="#666" font-size="6.5" data-i18n-svg="svg.threeNodes">3 nodes</text>
           </g>
         </svg>
-        <div class="scene-card-caption">
+        <div class="scene-card-caption" data-i18n-html="step1.small.caption">
           One scene with three <em class="kw">nodes</em> inside. Saved as <em class="kw">OurPlatform.tscn</em>. This is what we'll build.
         </div>
       </div>
@@ -1771,7 +1825,7 @@
 
           <!-- Inventory strip (160-200) -->
           <rect x="0" y="160" width="280" height="40" fill="#1a1920"/>
-          <text x="8" y="174" font-family="JetBrains Mono, monospace" font-size="6.5" fill="#888" letter-spacing="0.5">CONTAINS</text>
+          <text x="8" y="174" font-family="JetBrains Mono, monospace" font-size="6.5" fill="#888" letter-spacing="0.5" data-i18n-svg="svg.contains">CONTAINS</text>
           <g font-family="Inter, sans-serif" font-size="7">
             <!-- Scene pills (teal/cyan, dashed border to match the in-image outlines) -->
             <rect x="8" y="180" width="60" height="14" rx="3" fill="#2a2832" stroke="#5ec3a8" stroke-width="0.6" stroke-dasharray="2 1.5"/>
@@ -1788,10 +1842,10 @@
 
             <!-- Additional-nodes pill (grey, solid border distinguishes from dashed scene pills) -->
             <rect x="200" y="180" width="72" height="14" rx="3" fill="#2a2832" stroke="#666" stroke-width="0.6"/>
-            <text x="236" y="190" fill="#d4d4d4" text-anchor="middle">additional nodes</text>
+            <text x="236" y="190" fill="#d4d4d4" text-anchor="middle" data-i18n-svg="svg.additional">additional nodes</text>
           </g>
         </svg>
-        <div class="scene-card-caption">
+        <div class="scene-card-caption" data-i18n-html="step1.big.caption">
           One big scene made up of smaller scenes (the dashed outlines) and a few extra nodes for things like the sky and ground. Saved as <em class="kw">main.tscn</em>.
         </div>
       </div>
@@ -1799,26 +1853,26 @@
 
     <details class="deep-dive">
       <summary>
-        Want to know more about how the pieces fit together?
-        <span class="summary-hint">click to expand — otherwise, on to building</span>
+        <span data-i18n="step1.accordion.summary.main">Want to know more about how the pieces fit together?</span>
+        <span class="summary-hint" data-i18n="step1.accordion.summary.hint">click to expand — otherwise, on to building</span>
       </summary>
       <div class="deep-dive-body">
-        <p>
+        <p data-i18n-html="step1.accordion.p1">
           Every node lives inside one other node — its <strong>parent</strong>. A parent can hold any number of nodes inside it — those are its <strong>children</strong>. The node at the top of the whole tree, the one that holds everything else, is called the <strong>root</strong>. (The root doesn't have a parent — it's at the top.)
         </p>
-        <p>
+        <p data-i18n-html="step1.accordion.p2">
           This isn't just a way of organizing things. It changes how the nodes behave together.
         </p>
 
         <div class="tree-diagram">
           <svg viewBox="0 0 480 240" xmlns="http://www.w3.org/2000/svg">
             <!-- Left side: the tree hierarchy -->
-            <text x="20" y="22" font-family="JetBrains Mono, monospace" font-size="11" fill="#888" letter-spacing="1">THE TREE</text>
+            <text x="20" y="22" font-family="JetBrains Mono, monospace" font-size="11" fill="#888" letter-spacing="1" data-i18n-svg="svg.theTree">THE TREE</text>
 
             <!-- Root: OurPlatform -->
             <rect x="20" y="36" width="180" height="26" rx="3" fill="#2a2832" stroke="#5cb0f5" stroke-width="1"/>
             <circle cx="36" cy="49" r="5" fill="none" stroke="#5cb0f5" stroke-width="1.4"/>
-            <text x="50" y="53" font-family="Inter, sans-serif" font-size="12" fill="#d4d4d4">OurPlatform (root)</text>
+            <text x="50" y="53" font-family="Inter, sans-serif" font-size="12" fill="#d4d4d4" data-i18n-svg="svg.rootSuffix">OurPlatform (root)</text>
 
             <!-- Connecting line down -->
             <line x1="36" y1="62" x2="36" y2="94" stroke="#666" stroke-width="1"/>
@@ -1845,10 +1899,10 @@
             <!-- Child 2: Sprite2D -->
             <rect x="48" y="156" width="152" height="26" rx="3" fill="#2a2832" stroke="#8a7cff" stroke-width="0.8"/>
             <path d="M 60 167 Q 64 162 69 163 Q 73 162 76 165 Q 73 169 69 173 Q 64 169 60 167 Z" fill="#8a7cff"/>
-            <text x="82" y="173" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4">Sprite2D (heart)</text>
+            <text x="82" y="173" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4" data-i18n-svg="svg.spriteHeart">Sprite2D (heart)</text>
 
             <!-- Right side: the viewport showing what's drawn -->
-            <text x="260" y="22" font-family="JetBrains Mono, monospace" font-size="11" fill="#888" letter-spacing="1">WHAT YOU SEE</text>
+            <text x="260" y="22" font-family="JetBrains Mono, monospace" font-size="11" fill="#888" letter-spacing="1" data-i18n-svg="svg.whatYouSee">WHAT YOU SEE</text>
 
             <!-- Viewport frame -->
             <rect x="260" y="36" width="200" height="146" fill="#2a2832" stroke="#3a3845" stroke-width="0.5" rx="3"/>
@@ -1864,16 +1918,16 @@
           </svg>
         </div>
 
-        <p>
+        <p data-i18n-html="step1.accordion.p3">
           <strong>Parent moves, children follow.</strong> Children inherit a lot from their parent. Move the parent, and the children move with it. Rotate or scale the parent, the children do the same. Hide the parent, the children disappear too. That's why putting the heart sprite <em>inside</em> the platform (as a child of it) means the heart automatically rides along when you move the platform around. You don't have to move them separately. The same rule applies when one scene is nested inside another — the whole nested scene moves as one piece along with its parent.
         </p>
       </div>
     </details>
 
     <nav class="step-nav">
-      <button class="step-nav-btn step-nav-btn-prev" disabled>← Back</button>
-      <div class="step-nav-indicator">Step 1 of 4</div>
-      <button class="step-nav-btn step-nav-btn-next" data-goto="2">Next: Let's build one →</button>
+      <button class="step-nav-btn step-nav-btn-prev" disabled data-i18n="nav.back">← Back</button>
+      <div class="step-nav-indicator" data-i18n="step1.num">Step 1 of 4</div>
+      <button class="step-nav-btn step-nav-btn-next" data-goto="2" data-i18n="step1.nextbtn">Next: Let's build one →</button>
     </nav>
   </div>
 
@@ -1881,14 +1935,14 @@
   <!-- STEP 2 - Build it                               -->
   <!-- ============================================== -->
   <div class="step" data-step="2">
-    <div class="step-num">Step 2 of 4</div>
-    <h2>Let's build one.</h2>
+    <div class="step-num" data-i18n="step2.num">Step 2 of 4</div>
+    <h2 data-i18n="step2.h2">Let's build one.</h2>
 
-    <p>
+    <p data-i18n="step2.intro">
       We'll make a small round platform that bodies can land on, with a picture on it. It only takes three nodes — and once it works, you'll be able to drop it into any level. We'll use a heart for the picture since it's already in the project, but it could be anything.
     </p>
 
-    <p>
+    <p data-i18n="step2.watchIntro">
       First, watch the whole thing come together. Hit play and follow along — the camera will move around the editor so you can see what's happening up close. After that, you'll get a turn to do it yourself.
     </p>
 
@@ -1908,11 +1962,11 @@
 
             <!-- ===== TOP MENU BAR ===== -->
             <rect x="0" y="0" width="1200" height="35" fill="#1a1920"/>
-            <text x="20" y="22" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4">Scene</text>
-            <text x="68" y="22" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4">Project</text>
-            <text x="122" y="22" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4">Debug</text>
-            <text x="170" y="22" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4">Editor</text>
-            <text x="216" y="22" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4">Help</text>
+            <text x="20" y="22" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4" data-i18n-svg="gd.scene">Scene</text>
+            <text x="68" y="22" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4" data-i18n-svg="gd.project">Project</text>
+            <text x="122" y="22" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4" data-i18n-svg="gd.debug">Debug</text>
+            <text x="170" y="22" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4" data-i18n-svg="gd.editor">Editor</text>
+            <text x="216" y="22" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4" data-i18n-svg="gd.help">Help</text>
             <!-- 2D/3D/Script/Game/AssetLib mode tabs (center) -->
             <text x="475" y="22" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#57b3ff">⤤ 2D</text>
             <text x="525" y="22" font-family="Inter, sans-serif" font-size="12" fill="#888">⤥ 3D</text>
@@ -1934,7 +1988,7 @@
             <!-- Scene tabs container area -->
             <g id="tabs">
               <rect x="266" y="38" width="120" height="20" fill="#2a2832" rx="2"/>
-              <text x="280" y="52" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4" id="tabLabel">[empty]</text>
+              <text x="280" y="52" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4" id="tabLabel" data-i18n-svg="gd.empty">[empty]</text>
               <text x="370" y="52" font-family="Inter, sans-serif" font-size="12" fill="#888">×</text>
               <text x="400" y="52" font-family="Inter, sans-serif" font-size="16" fill="#888">+</text>
             </g>
@@ -1950,8 +2004,8 @@
               <rect x="0" y="35" width="258" height="26" fill="#1a1920"/>
               <!-- Active "Scene" tab -->
               <rect x="0" y="35" width="78" height="26" fill="#21202a"/>
-              <text x="22" y="52" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#d4d4d4">Scene</text>
-              <text x="92" y="52" font-family="Inter, sans-serif" font-size="11" fill="#888">Import</text>
+              <text x="22" y="52" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#d4d4d4" data-i18n-svg="gd.scene">Scene</text>
+              <text x="92" y="52" font-family="Inter, sans-serif" font-size="11" fill="#888" data-i18n-svg="gd.import">Import</text>
               <text x="244" y="52" font-family="Inter, sans-serif" font-size="14" fill="#888">⋮</text>
 
               <!-- Tools row: + button | link button | filter | sort -->
@@ -1963,7 +2017,7 @@
               <text x="54" y="90" font-family="Inter, sans-serif" font-size="14" fill="#888" text-anchor="middle">🔗</text>
               <!-- Filter Nodes search box -->
               <rect x="74" y="70" width="148" height="28" rx="3" fill="#1a1920"/>
-              <text x="86" y="89" font-family="Inter, sans-serif" font-size="11" fill="#666">Filter Nodes</text>
+              <text x="86" y="89" font-family="Inter, sans-serif" font-size="11" fill="#666" data-i18n-svg="gd.filterNodes">Filter Nodes</text>
               <text x="208" y="89" font-family="Inter, sans-serif" font-size="11" fill="#666">🔍</text>
               <text x="240" y="89" font-family="Inter, sans-serif" font-size="14" fill="#888">⋮</text>
 
@@ -1972,32 +2026,32 @@
 
                 <!-- Empty state: "Create Root Node:" with 4 buttons -->
                 <g id="emptyState">
-                  <text x="14" y="118" font-family="Inter, sans-serif" font-size="12" fill="#d4d4d4" font-weight="600">Create Root Node:</text>
+                  <text x="14" y="118" font-family="Inter, sans-serif" font-size="12" fill="#d4d4d4" font-weight="600" data-i18n-svg="gd.createRootNode">Create Root Node:</text>
                   <text x="228" y="118" font-family="Inter, sans-serif" font-size="14" fill="#ffb454">★</text>
 
                   <!-- 2D Scene button -->
                   <g id="btn2DScene">
                     <rect x="6" y="128" width="248" height="28" rx="3" fill="#2a2832"/>
                     <circle cx="22" cy="142" r="6" fill="none" stroke="#57b3ff" stroke-width="1.5"/>
-                    <text x="130" y="146" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4" text-anchor="middle">2D Scene</text>
+                    <text x="130" y="146" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4" text-anchor="middle" data-i18n-svg="gd.2dScene">2D Scene</text>
                   </g>
                   <!-- 3D Scene button -->
                   <g id="btn3DScene">
                     <rect x="6" y="160" width="248" height="28" rx="3" fill="#2a2832"/>
                     <circle cx="22" cy="174" r="6" fill="none" stroke="#ff6b6b" stroke-width="1.5"/>
-                    <text x="130" y="178" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4" text-anchor="middle">3D Scene</text>
+                    <text x="130" y="178" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4" text-anchor="middle" data-i18n-svg="gd.3dScene">3D Scene</text>
                   </g>
                   <!-- User Interface button -->
                   <g id="btnUIScene">
                     <rect x="6" y="192" width="248" height="28" rx="3" fill="#2a2832"/>
                     <circle cx="22" cy="206" r="6" fill="none" stroke="#5ec3a8" stroke-width="1.5"/>
-                    <text x="130" y="210" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4" text-anchor="middle">User Interface</text>
+                    <text x="130" y="210" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4" text-anchor="middle" data-i18n-svg="gd.userInterface">User Interface</text>
                   </g>
                   <!-- Other Node button -->
                   <g id="btnOtherNode">
                     <rect x="6" y="224" width="248" height="28" rx="3" fill="#2a2832"/>
                     <text x="22" y="244" font-family="Inter, sans-serif" font-size="16" fill="#888" text-anchor="middle">+</text>
-                    <text x="130" y="242" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4" text-anchor="middle">Other Node</text>
+                    <text x="130" y="242" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4" text-anchor="middle" data-i18n-svg="gd.otherNode">Other Node</text>
                   </g>
                 </g>
 
@@ -2047,8 +2101,8 @@
               <!-- Panel header tabs -->
               <rect x="0" y="329" width="258" height="26" fill="#1a1920"/>
               <rect x="0" y="329" width="100" height="26" fill="#21202a"/>
-              <text x="14" y="346" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#d4d4d4">FileSystem</text>
-              <text x="112" y="346" font-family="Inter, sans-serif" font-size="11" fill="#888">History</text>
+              <text x="14" y="346" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#d4d4d4" data-i18n-svg="gd.filesystem">FileSystem</text>
+              <text x="112" y="346" font-family="Inter, sans-serif" font-size="11" fill="#888" data-i18n-svg="gd.history">History</text>
               <text x="244" y="346" font-family="Inter, sans-serif" font-size="14" fill="#888">⋮</text>
 
               <!-- Path bar -->
@@ -2059,13 +2113,13 @@
 
               <!-- Filter row -->
               <rect x="8" y="395" width="216" height="22" rx="3" fill="#1a1920"/>
-              <text x="18" y="409" font-family="Inter, sans-serif" font-size="10" fill="#555">Filter Files</text>
+              <text x="18" y="409" font-family="Inter, sans-serif" font-size="10" fill="#555" data-i18n-svg="gd.filterFiles">Filter Files</text>
               <text x="208" y="409" font-family="Inter, sans-serif" font-size="10" fill="#666">🔍</text>
               <text x="232" y="409" font-family="Inter, sans-serif" font-size="11" fill="#888">↕</text>
 
               <!-- File tree -->
               <g class="fs-tree">
-                <text x="12" y="436" font-family="Inter, sans-serif" font-size="10" fill="#888">★ Favorites:</text>
+                <text x="12" y="436" font-family="Inter, sans-serif" font-size="10" fill="#888" data-i18n-svg="gd.starFavorites">★ Favorites:</text>
                 <!-- res:// expanded -->
                 <text x="12" y="455" font-family="Inter, sans-serif" font-size="11" fill="#888">▾</text>
                 <text x="26" y="455" font-family="Inter, sans-serif" font-size="11" fill="#888">📁</text>
@@ -2117,7 +2171,7 @@
                 <text x="225" y="14" font-family="Inter, sans-serif" font-size="11" fill="#888">⋮</text>
                 <text x="245" y="14" font-family="Inter, sans-serif" font-size="11" fill="#888">▦</text>
                 <line x1="270" y1="0" x2="270" y2="20" stroke="#3a3845" stroke-width="1"/>
-                <text x="640" y="14" font-family="Inter, sans-serif" font-size="11" fill="#888">View</text>
+                <text x="640" y="14" font-family="Inter, sans-serif" font-size="11" fill="#888" data-i18n-svg="gd.view">View</text>
               </g>
 
               <!-- Ruler bars: top and left edges of viewport -->
@@ -2163,9 +2217,9 @@
               <!-- Panel header -->
               <rect x="947" y="35" width="253" height="26" fill="#1a1920"/>
               <rect x="947" y="35" width="84" height="26" fill="#21202a"/>
-              <text x="966" y="52" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#d4d4d4">Inspector</text>
-              <text x="1045" y="52" font-family="Inter, sans-serif" font-size="11" fill="#888">Signals</text>
-              <text x="1110" y="52" font-family="Inter, sans-serif" font-size="11" fill="#888">Groups</text>
+              <text x="966" y="52" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#d4d4d4" data-i18n-svg="gd.inspector">Inspector</text>
+              <text x="1045" y="52" font-family="Inter, sans-serif" font-size="11" fill="#888" data-i18n-svg="gd.signals">Signals</text>
+              <text x="1110" y="52" font-family="Inter, sans-serif" font-size="11" fill="#888" data-i18n-svg="gd.groups">Groups</text>
               <text x="1184" y="52" font-family="Inter, sans-serif" font-size="14" fill="#888">⋮</text>
 
               <!-- Inspector tools row -->
@@ -2184,12 +2238,12 @@
 
               <!-- Filter Properties search -->
               <rect x="955" y="108" width="220" height="24" rx="3" fill="#1a1920"/>
-              <text x="965" y="125" font-family="Inter, sans-serif" font-size="10" fill="#555" id="filterPropsText">Filter Properties</text>
+              <text x="965" y="125" font-family="Inter, sans-serif" font-size="10" fill="#555" id="filterPropsText" data-i18n-svg="gd.filterProperties">Filter Properties</text>
               <text x="1162" y="125" font-family="Inter, sans-serif" font-size="11" fill="#666">🔍</text>
 
               <!-- Empty state (no node selected) -->
               <g id="inspectorEmpty">
-                <text x="1071" y="320" font-family="Inter, sans-serif" font-size="11" fill="#555" text-anchor="middle">No node selected</text>
+                <text x="1071" y="320" font-family="Inter, sans-serif" font-size="11" fill="#555" text-anchor="middle" data-i18n-svg="gd.noNodeSelected">No node selected</text>
               </g>
 
               <!-- CollisionShape2D inspector view -->
@@ -2286,13 +2340,13 @@
             <text x="268" y="650" font-family="JetBrains Mono, monospace" font-size="9" fill="#5a5a6a">Sidebar initialized!</text>
             <!-- Filter row -->
             <rect x="266" y="668" width="450" height="22" rx="3" fill="#0f0c17"/>
-            <text x="276" y="683" font-family="Inter, sans-serif" font-size="10" fill="#555">Filter Messages</text>
+            <text x="276" y="683" font-family="Inter, sans-serif" font-size="10" fill="#555" data-i18n-svg="gd.filterMessages">Filter Messages</text>
             <!-- Bottom tab strip -->
-            <text x="270" y="708" font-family="Inter, sans-serif" font-size="10" fill="#ff6b6b">● Output</text>
-            <text x="324" y="708" font-family="Inter, sans-serif" font-size="10" fill="#888">Debugger</text>
-            <text x="382" y="708" font-family="Inter, sans-serif" font-size="10" fill="#888">Audio</text>
-            <text x="424" y="708" font-family="Inter, sans-serif" font-size="10" fill="#888">Animation</text>
-            <text x="488" y="708" font-family="Inter, sans-serif" font-size="10" fill="#888">Shader Editor</text>
+            <text x="270" y="708" font-family="Inter, sans-serif" font-size="10" fill="#ff6b6b" data-i18n-svg="gd.output">● Output</text>
+            <text x="324" y="708" font-family="Inter, sans-serif" font-size="10" fill="#888" data-i18n-svg="gd.debugger">Debugger</text>
+            <text x="382" y="708" font-family="Inter, sans-serif" font-size="10" fill="#888" data-i18n-svg="gd.audio">Audio</text>
+            <text x="424" y="708" font-family="Inter, sans-serif" font-size="10" fill="#888" data-i18n-svg="gd.animation">Animation</text>
+            <text x="488" y="708" font-family="Inter, sans-serif" font-size="10" fill="#888" data-i18n-svg="gd.shaderEditor">Shader Editor</text>
           </svg>
 
           <!-- ===== OVERLAY: Create New Node Dialog ===== -->
@@ -2411,23 +2465,23 @@
       </div>
     </div>
 
-    <p style="margin-top: 32px;">
+    <p style="margin-top: 32px;" data-i18n="step2.wrap">
       That's it. Three nodes put together, one shape attached, one file saved. A whole platform.
     </p>
 
     <div class="callout">
-      <div class="callout-label">Why those three nodes?</div>
-      <p>Many of the basic interactive objects you'd build in a 2D platformer at least <em>start</em> with these three kinds of nodes: a <strong>body</strong> (handles physics — like getting hit by other things, or holding still while things land on you), a <strong>collision shape</strong> (tells the body what its shape is for hits), and a <strong>sprite</strong> (the picture you see). The body holds the shape and the sprite as its children, so they all move together. Coins, doors, enemies, your player — they often start from this same three-piece base, with small differences for what each one does.</p>
+      <div class="callout-label" data-i18n="step2.callout.label">Why those three nodes?</div>
+      <p data-i18n-html="step2.callout.body">Many of the basic interactive objects you'd build in a 2D platformer at least <em>start</em> with these three kinds of nodes: a <strong>body</strong> (handles physics — like getting hit by other things, or holding still while things land on you), a <strong>collision shape</strong> (tells the body what its shape is for hits), and a <strong>sprite</strong> (the picture you see). The body holds the shape and the sprite as its children, so they all move together. Coins, doors, enemies, your player — they often start from this same three-piece base, with small differences for what each one does.</p>
     </div>
 
-    <p>
+    <p data-i18n="step2.tryit">
       Now jump into Godot and try it yourself. Same three nodes, same flow — your own scene by the end.
     </p>
 
     <nav class="step-nav">
-      <button class="step-nav-btn step-nav-btn-prev" data-goto="1">← Back</button>
-      <div class="step-nav-indicator">Step 2 of 4</div>
-      <button class="step-nav-btn step-nav-btn-next" data-goto="3">Next: Use it in a level →</button>
+      <button class="step-nav-btn step-nav-btn-prev" data-goto="1" data-i18n="nav.back">← Back</button>
+      <div class="step-nav-indicator" data-i18n="step2.num">Step 2 of 4</div>
+      <button class="step-nav-btn step-nav-btn-next" data-goto="3" data-i18n="step2.nextbtn">Next: Use it in a level →</button>
     </nav>
   </div>
 
@@ -2435,14 +2489,14 @@
   <!-- STEP 3 - Use it in a level                       -->
   <!-- ============================================== -->
   <div class="step" data-step="3">
-    <div class="step-num">Step 3 of 4</div>
-    <h2>Drop it into a level.</h2>
+    <div class="step-num" data-i18n="step3.num">Step 3 of 4</div>
+    <h2 data-i18n="step3.h2">Drop it into a level.</h2>
 
-    <p>
+    <p data-i18n-html="step3.intro">
       You've saved <em class="kw">OurPlatform.tscn</em>. Now we'll put it to use. Once you know the moves, you can drop as many copies as you want anywhere in your game.
     </p>
 
-    <p>
+    <p data-i18n-html="step3.intro2">
       Open <em class="kw">main.tscn</em> (the big level scene). There are two ways to drop your saved scene into a level, and one more move for when you need to come back and edit the saved scene itself.
     </p>
 
@@ -2454,7 +2508,7 @@
       <!-- Way 2: Drag into viewport -->
       <div class="way-card way-card-featured">
         <div class="way-card-num">1</div>
-        <div class="way-card-title">Drag it into the viewport</div>
+        <div class="way-card-title" data-i18n="step3.way1.title">Drag it into the viewport</div>
         <div class="way-card-svg-wrap">
           <svg viewBox="0 0 1200 720" xmlns="http://www.w3.org/2000/svg" class="way-svg">
             <!-- Editor background -->
@@ -2462,8 +2516,8 @@
 
             <!-- Top menu bar -->
             <rect x="0" y="0" width="1200" height="35" fill="#1a1920"/>
-            <text x="20" y="22" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4">Scene</text>
-            <text x="68" y="22" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4">Project</text>
+            <text x="20" y="22" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4" data-i18n-svg="gd.scene">Scene</text>
+            <text x="68" y="22" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4" data-i18n-svg="gd.project">Project</text>
             <text x="475" y="22" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#57b3ff">⤤ 2D</text>
 
             <!-- Tab bar -->
@@ -2477,13 +2531,13 @@
             <rect x="0" y="35" width="258" height="294" fill="#21202a"/>
             <rect x="0" y="35" width="258" height="26" fill="#1a1920"/>
             <rect x="0" y="35" width="78" height="26" fill="#21202a"/>
-            <text x="22" y="52" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#d4d4d4">Scene</text>
-            <text x="92" y="52" font-family="Inter, sans-serif" font-size="11" fill="#888">Import</text>
+            <text x="22" y="52" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#d4d4d4" data-i18n-svg="gd.scene">Scene</text>
+            <text x="92" y="52" font-family="Inter, sans-serif" font-size="11" fill="#888" data-i18n-svg="gd.import">Import</text>
             <rect x="6" y="70" width="28" height="28" rx="3" fill="#2a2832"/>
             <text x="20" y="90" font-family="Inter, sans-serif" font-size="18" font-weight="700" fill="#5ec3a8" text-anchor="middle">+</text>
             <rect x="40" y="70" width="28" height="28" rx="3" fill="#2a2832"/>
             <rect x="74" y="70" width="148" height="28" rx="3" fill="#1a1920"/>
-            <text x="86" y="89" font-family="Inter, sans-serif" font-size="11" fill="#666">Filter Nodes</text>
+            <text x="86" y="89" font-family="Inter, sans-serif" font-size="11" fill="#666" data-i18n-svg="gd.filterNodes">Filter Nodes</text>
             <!-- Main scene tree -->
             <text x="12" y="124" font-family="Inter, sans-serif" font-size="11" fill="#888">▾</text>
             <circle cx="32" cy="119" r="5" fill="none" stroke="#5cb0f5" stroke-width="1.5"/>
@@ -2496,8 +2550,8 @@
             <rect x="0" y="329" width="258" height="232" fill="#21202a"/>
             <rect x="0" y="329" width="258" height="26" fill="#1a1920"/>
             <rect x="0" y="329" width="100" height="26" fill="#21202a"/>
-            <text x="14" y="346" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#d4d4d4">FileSystem</text>
-            <text x="112" y="346" font-family="Inter, sans-serif" font-size="11" fill="#888">History</text>
+            <text x="14" y="346" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#d4d4d4" data-i18n-svg="gd.filesystem">FileSystem</text>
+            <text x="112" y="346" font-family="Inter, sans-serif" font-size="11" fill="#888" data-i18n-svg="gd.history">History</text>
             <rect x="32" y="365" width="190" height="22" rx="3" fill="#1a1920"/>
             <text x="40" y="380" font-family="Inter, sans-serif" font-size="10" fill="#888">res://</text>
             <text x="12" y="410" font-family="Inter, sans-serif" font-size="10" fill="#888">main.tscn</text>
@@ -2575,30 +2629,30 @@
             <rect x="947" y="35" width="253" height="526" fill="#21202a"/>
             <rect x="947" y="35" width="253" height="26" fill="#1a1920"/>
             <rect x="947" y="35" width="84" height="26" fill="#21202a"/>
-            <text x="966" y="52" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#d4d4d4">Inspector</text>
+            <text x="966" y="52" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#d4d4d4" data-i18n-svg="gd.inspector">Inspector</text>
           </svg>
         </div>
         <div class="way-card-body">
-          <p><strong>This is the most common move.</strong> Drag <em class="kw">OurPlatform.tscn</em> up out of the FileSystem (bottom-left) and into the viewport (center) of <em class="kw">main.tscn</em>. A copy gets placed wherever you drop it. Do this five times, you have five platforms.</p>
+          <p data-i18n-html="step3.way1.body"><strong>This is the most common move.</strong> Drag <em class="kw">OurPlatform.tscn</em> up out of the FileSystem (bottom-left) and into the viewport (center) of <em class="kw">main.tscn</em>. A copy gets placed wherever you drop it. Do this five times, you have five platforms.</p>
 
-          <p style="font-size: 14px; margin-top: 14px;">While you drag, Godot shows a little tooltip that tells you how holding Shift or Alt changes where the new copy lands in your scene tree:</p>
+          <p style="font-size: 14px; margin-top: 14px;" data-i18n="step3.way1.body2">While you drag, Godot shows a little tooltip that tells you how holding Shift or Alt changes where the new copy lands in your scene tree:</p>
 
           <!-- The modifier-key tooltip as a static callout -->
           <div class="modifier-tip">
             <div class="modifier-tip-header">Dropping a Scene file&hellip;</div>
-            <div class="modifier-tip-row"><span class="mt-key">Default</span><span class="mt-desc">Add as sibling of selected node <span class="mt-paren">(except when root is selected)</span></span></div>
-            <div class="modifier-tip-row"><span class="mt-key">Hold Shift</span><span class="mt-desc">Add as child of selected node</span></div>
-            <div class="modifier-tip-row"><span class="mt-key">Hold Alt</span><span class="mt-desc">Add as child of root node</span></div>
+            <div class="modifier-tip-row"><span class="mt-key">Default</span><span class="mt-desc"><span data-i18n="modtip.default">Add as sibling of selected node</span> <span class="mt-paren" data-i18n="modtip.default.paren">(except when root is selected)</span></span></div>
+            <div class="modifier-tip-row"><span class="mt-key">Hold Shift</span><span class="mt-desc" data-i18n="modtip.shift">Add as child of selected node</span></div>
+            <div class="modifier-tip-row"><span class="mt-key">Hold Alt</span><span class="mt-desc" data-i18n="modtip.alt">Add as child of root node</span></div>
           </div>
 
-          <p style="font-size: 14px; margin-top: 14px;">Handy for keeping things organized — like dropping coins as children of a <em class="kw">Coins</em> group node by holding Shift while Coins is selected.</p>
+          <p style="font-size: 14px; margin-top: 14px;" data-i18n-html="step3.way1.body3">Handy for keeping things organized — like dropping coins as children of a <em class="kw">Coins</em> group node by holding Shift while Coins is selected.</p>
         </div>
       </div>
 
       <!-- Way 3: Drag into Scene tree -->
       <div class="way-card">
         <div class="way-card-num">2</div>
-        <div class="way-card-title">Drag it into the Scene tree</div>
+        <div class="way-card-title" data-i18n="step3.way2.title">Drag it into the Scene tree</div>
         <div class="way-card-svg-wrap">
           <svg viewBox="0 0 1200 720" xmlns="http://www.w3.org/2000/svg" class="way-svg">
             <!-- Editor background -->
@@ -2606,8 +2660,8 @@
 
             <!-- Top menu bar -->
             <rect x="0" y="0" width="1200" height="35" fill="#1a1920"/>
-            <text x="20" y="22" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4">Scene</text>
-            <text x="68" y="22" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4">Project</text>
+            <text x="20" y="22" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4" data-i18n-svg="gd.scene">Scene</text>
+            <text x="68" y="22" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4" data-i18n-svg="gd.project">Project</text>
             <text x="475" y="22" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#57b3ff">⤤ 2D</text>
 
             <!-- Tab bar -->
@@ -2621,13 +2675,13 @@
             <rect x="0" y="35" width="258" height="294" fill="#21202a"/>
             <rect x="0" y="35" width="258" height="26" fill="#1a1920"/>
             <rect x="0" y="35" width="78" height="26" fill="#21202a"/>
-            <text x="22" y="52" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#d4d4d4">Scene</text>
-            <text x="92" y="52" font-family="Inter, sans-serif" font-size="11" fill="#888">Import</text>
+            <text x="22" y="52" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#d4d4d4" data-i18n-svg="gd.scene">Scene</text>
+            <text x="92" y="52" font-family="Inter, sans-serif" font-size="11" fill="#888" data-i18n-svg="gd.import">Import</text>
             <rect x="6" y="70" width="28" height="28" rx="3" fill="#2a2832"/>
             <text x="20" y="90" font-family="Inter, sans-serif" font-size="18" font-weight="700" fill="#5ec3a8" text-anchor="middle">+</text>
             <rect x="40" y="70" width="28" height="28" rx="3" fill="#2a2832"/>
             <rect x="74" y="70" width="148" height="28" rx="3" fill="#1a1920"/>
-            <text x="86" y="89" font-family="Inter, sans-serif" font-size="11" fill="#666">Filter Nodes</text>
+            <text x="86" y="89" font-family="Inter, sans-serif" font-size="11" fill="#666" data-i18n-svg="gd.filterNodes">Filter Nodes</text>
             <!-- Tree -->
             <text x="12" y="124" font-family="Inter, sans-serif" font-size="11" fill="#888">▾</text>
             <circle cx="32" cy="119" r="5" fill="none" stroke="#5cb0f5" stroke-width="1.5"/>
@@ -2656,8 +2710,8 @@
             <rect x="0" y="329" width="258" height="232" fill="#21202a"/>
             <rect x="0" y="329" width="258" height="26" fill="#1a1920"/>
             <rect x="0" y="329" width="100" height="26" fill="#21202a"/>
-            <text x="14" y="346" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#d4d4d4">FileSystem</text>
-            <text x="112" y="346" font-family="Inter, sans-serif" font-size="11" fill="#888">History</text>
+            <text x="14" y="346" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#d4d4d4" data-i18n-svg="gd.filesystem">FileSystem</text>
+            <text x="112" y="346" font-family="Inter, sans-serif" font-size="11" fill="#888" data-i18n-svg="gd.history">History</text>
             <rect x="32" y="365" width="190" height="22" rx="3" fill="#1a1920"/>
             <text x="40" y="380" font-family="Inter, sans-serif" font-size="10" fill="#888">res://</text>
             <text x="12" y="410" font-family="Inter, sans-serif" font-size="10" fill="#888">main.tscn</text>
@@ -2710,17 +2764,17 @@
             <rect x="947" y="35" width="253" height="526" fill="#21202a"/>
             <rect x="947" y="35" width="253" height="26" fill="#1a1920"/>
             <rect x="947" y="35" width="84" height="26" fill="#21202a"/>
-            <text x="966" y="52" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#d4d4d4">Inspector</text>
+            <text x="966" y="52" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#d4d4d4" data-i18n-svg="gd.inspector">Inspector</text>
           </svg>
         </div>
         <div class="way-card-body">
-          <p>Drag the file straight up from the FileSystem into the <strong>Scene tree</strong> instead of the viewport. A blue line shows you exactly where it'll land in the tree. Useful when you want it to sit in a specific spot in the tree and don't care yet about where it shows up on screen.</p>
+          <p data-i18n-html="step3.way2.body">Drag the file straight up from the FileSystem into the <strong>Scene tree</strong> instead of the viewport. A blue line shows you exactly where it'll land in the tree. Useful when you want it to sit in a specific spot in the tree and don't care yet about where it shows up on screen.</p>
         </div>
       </div>
 <!-- Way 1: Double-click to open -->
       <div class="way-card">
         <div class="way-card-num">3</div>
-        <div class="way-card-title">Double-click it to make changes later</div>
+        <div class="way-card-title" data-i18n="step3.way3.title">Double-click it to make changes later</div>
         <div class="way-card-svg-wrap">
           <svg viewBox="0 0 1200 720" xmlns="http://www.w3.org/2000/svg" class="way-svg">
             <!-- Editor background -->
@@ -2728,8 +2782,8 @@
 
             <!-- Top menu bar -->
             <rect x="0" y="0" width="1200" height="35" fill="#1a1920"/>
-            <text x="20" y="22" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4">Scene</text>
-            <text x="68" y="22" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4">Project</text>
+            <text x="20" y="22" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4" data-i18n-svg="gd.scene">Scene</text>
+            <text x="68" y="22" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4" data-i18n-svg="gd.project">Project</text>
             <text x="475" y="22" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#57b3ff">⤤ 2D</text>
 
             <!-- Tab bar -->
@@ -2752,13 +2806,13 @@
             <rect x="0" y="35" width="258" height="294" fill="#21202a"/>
             <rect x="0" y="35" width="258" height="26" fill="#1a1920"/>
             <rect x="0" y="35" width="78" height="26" fill="#21202a"/>
-            <text x="22" y="52" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#d4d4d4">Scene</text>
-            <text x="92" y="52" font-family="Inter, sans-serif" font-size="11" fill="#888">Import</text>
+            <text x="22" y="52" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#d4d4d4" data-i18n-svg="gd.scene">Scene</text>
+            <text x="92" y="52" font-family="Inter, sans-serif" font-size="11" fill="#888" data-i18n-svg="gd.import">Import</text>
             <rect x="6" y="70" width="28" height="28" rx="3" fill="#2a2832"/>
             <text x="20" y="90" font-family="Inter, sans-serif" font-size="18" font-weight="700" fill="#5ec3a8" text-anchor="middle">+</text>
             <rect x="40" y="70" width="28" height="28" rx="3" fill="#2a2832"/>
             <rect x="74" y="70" width="148" height="28" rx="3" fill="#1a1920"/>
-            <text x="86" y="89" font-family="Inter, sans-serif" font-size="11" fill="#666">Filter Nodes</text>
+            <text x="86" y="89" font-family="Inter, sans-serif" font-size="11" fill="#666" data-i18n-svg="gd.filterNodes">Filter Nodes</text>
             <!-- Tree shows main scene -->
             <text x="12" y="124" font-family="Inter, sans-serif" font-size="11" fill="#888">▾</text>
             <circle cx="32" cy="119" r="5" fill="none" stroke="#5cb0f5" stroke-width="1.5"/>
@@ -2775,8 +2829,8 @@
             <rect x="0" y="329" width="258" height="232" fill="#21202a"/>
             <rect x="0" y="329" width="258" height="26" fill="#1a1920"/>
             <rect x="0" y="329" width="100" height="26" fill="#21202a"/>
-            <text x="14" y="346" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#d4d4d4">FileSystem</text>
-            <text x="112" y="346" font-family="Inter, sans-serif" font-size="11" fill="#888">History</text>
+            <text x="14" y="346" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#d4d4d4" data-i18n-svg="gd.filesystem">FileSystem</text>
+            <text x="112" y="346" font-family="Inter, sans-serif" font-size="11" fill="#888" data-i18n-svg="gd.history">History</text>
             <rect x="32" y="365" width="190" height="22" rx="3" fill="#1a1920"/>
             <text x="40" y="380" font-family="Inter, sans-serif" font-size="10" fill="#888">res://</text>
             <text x="12" y="410" font-family="Inter, sans-serif" font-size="10" fill="#888">main.tscn</text>
@@ -2840,9 +2894,9 @@
             <rect x="947" y="35" width="253" height="526" fill="#21202a"/>
             <rect x="947" y="35" width="253" height="26" fill="#1a1920"/>
             <rect x="947" y="35" width="84" height="26" fill="#21202a"/>
-            <text x="966" y="52" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#d4d4d4">Inspector</text>
-            <text x="1045" y="52" font-family="Inter, sans-serif" font-size="11" fill="#888">Signals</text>
-            <text x="1110" y="52" font-family="Inter, sans-serif" font-size="11" fill="#888">Groups</text>
+            <text x="966" y="52" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#d4d4d4" data-i18n-svg="gd.inspector">Inspector</text>
+            <text x="1045" y="52" font-family="Inter, sans-serif" font-size="11" fill="#888" data-i18n-svg="gd.signals">Signals</text>
+            <text x="1110" y="52" font-family="Inter, sans-serif" font-size="11" fill="#888" data-i18n-svg="gd.groups">Groups</text>
 
             <!-- Cursor doing the double-click on OurPlatform.tscn -->
             <g class="w1-cursor">
@@ -2858,26 +2912,26 @@
           </svg>
         </div>
         <div class="way-card-body">
-          <p>If you need to come back and adjust <em class="kw">OurPlatform.tscn</em> itself — change its color, swap its shape, whatever — double-click it in the FileSystem to open it in its own tab. Changes you save there show up in every copy you've placed (except for the ones you've customized specifically).</p>
+          <p data-i18n-html="step3.way3.body">If you need to come back and adjust <em class="kw">OurPlatform.tscn</em> itself — change its color, swap its shape, whatever — double-click it in the FileSystem to open it in its own tab. Changes you save there show up in every copy you've placed (except for the ones you've customized specifically).</p>
         </div>
       </div>
 
           </div>
 
     <div class="callout">
-      <div class="callout-label">The big idea</div>
-      <p>Every copy you drop into <em class="kw">main.tscn</em> is <strong>linked back to the original</strong>. Edit <em class="kw">OurPlatform.tscn</em> — change the heart to a star, swap the circle for a rectangle — and every copy picks up the change.</p>
-      <p>There are some exceptions: anything you've already tweaked directly on one specific copy in the level (like its position, scale, or modulate color) stays the way you left it. For everything you haven't touched, though, the source change wins.</p>
+      <div class="callout-label" data-i18n="step3.callout.label">The big idea</div>
+      <p data-i18n-html="step3.callout.body1">Every copy you drop into <em class="kw">main.tscn</em> is <strong>linked back to the original</strong>. Edit <em class="kw">OurPlatform.tscn</em> — change the heart to a star, swap the circle for a rectangle — and every copy picks up the change.</p>
+      <p data-i18n="step3.callout.body2">There are some exceptions: anything you've already tweaked directly on one specific copy in the level (like its position, scale, or modulate color) stays the way you left it. For everything you haven't touched, though, the source change wins.</p>
     </div>
 
-    <p>
+    <p data-i18n-html="step3.tryit">
       Try it: open <em class="kw">OurPlatform.tscn</em>, change the <em class="kw">Sprite2D</em>'s texture to a different image, save, then open <em class="kw">main.tscn</em>. Every platform that you haven't customized will be showing the new image. One edit, whole level updated.
     </p>
 
     <nav class="step-nav">
-      <button class="step-nav-btn step-nav-btn-prev" data-goto="2">← Back</button>
-      <div class="step-nav-indicator">Step 3 of 4</div>
-      <button class="step-nav-btn step-nav-btn-next" data-goto="4">Next: What's next →</button>
+      <button class="step-nav-btn step-nav-btn-prev" data-goto="2" data-i18n="nav.back">← Back</button>
+      <div class="step-nav-indicator" data-i18n="step3.num">Step 3 of 4</div>
+      <button class="step-nav-btn step-nav-btn-next" data-goto="4" data-i18n="step3.nextbtn">Next: What's next →</button>
     </nav>
   </div>
 
@@ -2885,10 +2939,10 @@
   <!-- STEP 4 - What's next                            -->
   <!-- ============================================== -->
   <div class="step" data-step="4">
-    <div class="step-num">Step 4 of 4</div>
-    <h2>What's next.</h2>
+    <div class="step-num" data-i18n="step4.num">Step 4 of 4</div>
+    <h2 data-i18n="step4.h2">What's next.</h2>
 
-    <p>
+    <p data-i18n="step4.intro">
       You've built a scene, you've placed it in a level. That's the core loop of working in Godot — almost everything you'll ever build is some version of those moves. Here are three ways to practice.
     </p>
 
@@ -2896,41 +2950,698 @@
       <div class="quest">
         <div class="quest-num">01</div>
         <div class="quest-body">
-          <h4>Build something new with a custom shape.</h4>
-          <p>Build a fresh scene the same way you just did — Node2D root, StaticBody2D as its child, CollisionShape2D under that, Sprite2D as sibling. This time use your own image for the texture, and pick a shape that fits it. <em class="kw">RectangleShape2D</em> works for blocky art, but if your image has an irregular outline, try <em class="kw">ConvexPolygonShape2D</em> and set its points so the collision matches the shape of the picture. <strong>Why this matters:</strong> the three-node pattern is flexible. Same recipe, different parts, different result.</p>
+          <h4 data-i18n="step4.q1.title">Build something new with a custom shape.</h4>
+          <p data-i18n-html="step4.q1.body">Build a fresh scene the same way you just did — Node2D root, StaticBody2D as its child, CollisionShape2D under that, Sprite2D as sibling. This time use your own image for the texture, and pick a shape that fits it. <em class="kw">RectangleShape2D</em> works for blocky art, but if your image has an irregular outline, try <em class="kw">ConvexPolygonShape2D</em> and set its points so the collision matches the shape of the picture. <strong>Why this matters:</strong> the three-node pattern is flexible. Same recipe, different parts, different result.</p>
         </div>
       </div>
 
       <div class="quest">
         <div class="quest-num">02</div>
         <div class="quest-body">
-          <h4>Place ten OurPlatform copies in main.tscn.</h4>
-          <p>Drag, drag, drag. Notice how identical they all are — they're not separate copies you'd have to update one-by-one, they all point back to the same source scene. Now open <em class="kw">OurPlatform.tscn</em> and change something. Every copy you haven't customized picks the change up. <strong>Why this matters:</strong> this is the difference between copy-pasting things and actually reusing them.</p>
+          <h4 data-i18n="step4.q2.title">Place ten OurPlatform copies in main.tscn.</h4>
+          <p data-i18n-html="step4.q2.body">Drag, drag, drag. Notice how identical they all are — they're not separate copies you'd have to update one-by-one, they all point back to the same source scene. Now open <em class="kw">OurPlatform.tscn</em> and change something. Every copy you haven't customized picks the change up. <strong>Why this matters:</strong> this is the difference between copy-pasting things and actually reusing them.</p>
         </div>
       </div>
 
       <div class="quest">
         <div class="quest-num">03</div>
         <div class="quest-body">
-          <h4>Customize one copy on purpose.</h4>
-          <p>Click one of your platforms in <em class="kw">main.tscn</em> and change the Sprite2D's Texture in the Inspector. Just for that one. Notice how the property name now has a small revert arrow next to it — Godot is telling you "this one's been customized, I won't change it." <strong>Why this matters:</strong> every copy picks up changes from the source scene — except for the parts you've changed on a specific copy.</p>
+          <h4 data-i18n="step4.q3.title">Customize one copy on purpose.</h4>
+          <p data-i18n-html="step4.q3.body">Click one of your platforms in <em class="kw">main.tscn</em> and change the Sprite2D's Texture in the Inspector. Just for that one. Notice how the property name now has a small revert arrow next to it — Godot is telling you "this one's been customized, I won't change it." <strong>Why this matters:</strong> every copy picks up changes from the source scene — except for the parts you've changed on a specific copy.</p>
         </div>
       </div>
     </div>
 
     <div class="closing-note">
-      <p>You now know what a scene is, how to build one, and how to drop it into a level so it can be reused. Scenes are the building block of most of what you'll work with in Godot — UI panels are scenes, enemy AI is scenes, your player is a scene, the title screen is a scene. It's all trees of nodes saved as files.</p>
-      <p><strong>From here, you can start building.</strong></p>
+      <p data-i18n="step4.closing1">You now know what a scene is, how to build one, and how to drop it into a level so it can be reused. Scenes are the building block of most of what you'll work with in Godot — UI panels are scenes, enemy AI is scenes, your player is a scene, the title screen is a scene. It's all trees of nodes saved as files.</p>
+      <p data-i18n-html="step4.closing2"><strong>From here, you can start building.</strong></p>
     </div>
 
     <nav class="step-nav">
-      <button class="step-nav-btn step-nav-btn-prev" data-goto="3">← Back</button>
-      <div class="step-nav-indicator">Step 4 of 4 — finish</div>
-      <button class="step-nav-btn step-nav-btn-next" data-goto="1">↺ Start over</button>
+      <button class="step-nav-btn step-nav-btn-prev" data-goto="3" data-i18n="nav.back">← Back</button>
+      <div class="step-nav-indicator" data-i18n="step4.num.finish">Step 4 of 4 — finish</div>
+      <button class="step-nav-btn step-nav-btn-next" data-goto="1" data-i18n="step4.startover">↺ Start over</button>
     </nav>
   </div>
 
 </div>
+<script>
+// ============================================================
+// BILINGUAL SUPPORT (EN / ES)
+// A dictionary of translated strings keyed by data-i18n attributes.
+// Toggle switches all tagged elements between languages, and also
+// SVG text labels (data-i18n-svg) and animation captions (via
+// setCaption's key lookup, defined in the animation IIFE below).
+// ============================================================
+window.CONTENT = {
+  "eyebrow": {
+    "en": "Godot Modding · Tutorial 02",
+    "es": "Modding en Godot · Tutorial 02"
+  },
+  "h1": {
+    "en": "What is a <em>scene</em>? Build one and find out.",
+    "es": "¿Qué es una <em>escena</em>? Construye una y descúbrelo."
+  },
+  "nav.back": {
+    "en": "← Back",
+    "es": "← Atrás"
+  },
+  "step1.num": {
+    "en": "Step 1 of 4",
+    "es": "Paso 1 de 4"
+  },
+  "step2.num": {
+    "en": "Step 2 of 4",
+    "es": "Paso 2 de 4"
+  },
+  "step3.num": {
+    "en": "Step 3 of 4",
+    "es": "Paso 3 de 4"
+  },
+  "step4.num": {
+    "en": "Step 4 of 4",
+    "es": "Paso 4 de 4"
+  },
+  "step4.num.finish": {
+    "en": "Step 4 of 4 — finish",
+    "es": "Paso 4 de 4 — final"
+  },
+  "step1.h2": {
+    "en": "What's inside a scene?",
+    "es": "¿Qué hay dentro de una escena?"
+  },
+  "step1.lede": {
+    "en": "A scene in Godot is a <strong>reusable game component</strong> — something you build once and use as many times as you want. It can be huge, like a whole level. Or tiny, like a single coin. Scenes are made out of <em class=\"kw\">nodes</em> (Godot's built-in components) and sometimes other, smaller scenes you've already built. The fastest way to understand them is to build one. Let's do that.",
+    "es": "Una escena en Godot es un <strong>componente de juego reutilizable</strong> — algo que construyes una vez y usas todas las veces que quieras. Puede ser enorme, como un nivel entero. O diminuta, como una sola moneda. Las escenas están hechas de <em class=\"kw\">nodos</em> (los componentes que ya vienen en Godot) y a veces de otras escenas más pequeñas que ya construiste. La forma más rápida de entenderlas es construir una. Vamos a hacerlo."
+  },
+  "step1.row1.text": {
+    "en": "Every scene is a tree of <em class=\"kw\">nodes</em>. Godot has hundreds of node types, and each one already knows how to do its job. A <em class=\"kw\">Sprite2D</em> displays an image. An <em class=\"kw\">AudioStreamPlayer</em> plays a sound. No code needed — though you can attach a script later for custom behavior.",
+    "es": "Cada escena es un árbol de <em class=\"kw\">nodos</em>. Godot tiene cientos de tipos de nodos, y cada uno ya sabe cómo hacer su trabajo. Un <em class=\"kw\">Sprite2D</em> muestra una imagen. Un <em class=\"kw\">AudioStreamPlayer</em> reproduce un sonido. Sin necesidad de código — aunque después puedes agregar un script para un comportamiento personalizado."
+  },
+  "step1.row2.text": {
+    "en": "To build one, you pick the nodes you need, arrange them in a tree, and save the file. A scene can also contain <em>other</em> scenes you've made — that's how bigger ones (like whole levels) get put together: nodes plus smaller scenes as building blocks.",
+    "es": "Para construir una, eliges los nodos que necesitas, los organizas en un árbol y guardas el archivo. Una escena también puede contener <em>otras</em> escenas que hayas hecho — así se arman las más grandes (como niveles enteros): nodos más escenas pequeñas como piezas de construcción."
+  },
+  "step1.row3.text": {
+    "en": "Once you save it, you can use it over and over without rebuilding. Need ten platforms? Drag your platform scene into the level ten times. Each one is an <em>instance</em> of the same saved scene.",
+    "es": "Una vez que la guardas, puedes usarla una y otra vez sin volver a construirla. ¿Necesitas diez plataformas? Arrastra tu escena de plataforma al nivel diez veces. Cada una es una <em>instancia</em> de la misma escena guardada."
+  },
+  "step1.row4.text": {
+    "en": "Change the saved scene later — like swapping a coin's collision shape — and every copy you've already placed updates too.",
+    "es": "Cambia la escena guardada después — como intercambiar la forma de colisión de una moneda — y cada copia que ya colocaste también se actualiza."
+  },
+  "step1.remember.label": {
+    "en": "Remember",
+    "es": "Recuerda"
+  },
+  "step1.remember.body": {
+    "en": "A scene can be as <strong>small</strong> as a single platform, or as <strong>big</strong> as a whole level.",
+    "es": "Una escena puede ser tan <strong>pequeña</strong> como una sola plataforma, o tan <strong>grande</strong> como un nivel entero."
+  },
+  "step1.small.label": {
+    "en": "A scene can be small",
+    "es": "Una escena puede ser pequeña"
+  },
+  "step1.big.label": {
+    "en": "…or a scene can be a whole level",
+    "es": "…o una escena puede ser un nivel entero"
+  },
+  "step1.accordion.summary.main": {
+    "en": "Want to know more about how the pieces fit together?",
+    "es": "¿Quieres saber más sobre cómo encajan las piezas?"
+  },
+  "step1.accordion.summary.hint": {
+    "en": "click to expand — otherwise, on to building",
+    "es": "haz clic para expandir — o si no, a construir"
+  },
+  "step1.accordion.p1": {
+    "en": "Every node lives inside one other node — its <strong>parent</strong>. A parent can hold any number of nodes inside it — those are its <strong>children</strong>. The node at the top of the whole tree, the one that holds everything else, is called the <strong>root</strong>. (The root doesn't have a parent — it's at the top.)",
+    "es": "Cada nodo vive dentro de otro nodo — su <strong>padre</strong>. Un padre puede contener cualquier cantidad de nodos adentro — esos son sus <strong>hijos</strong>. El nodo en la parte superior del árbol, el que contiene a todos los demás, se llama <strong>raíz</strong>. (La raíz no tiene padre — está arriba de todo.)"
+  },
+  "step1.accordion.p2": {
+    "en": "This isn't just a way of organizing things. It changes how the nodes behave together.",
+    "es": "Esto no es solo una forma de organizar las cosas. Cambia cómo se comportan los nodos juntos."
+  },
+  "step1.accordion.p3": {
+    "en": "<strong>Parent moves, children follow.</strong> Children inherit a lot from their parent. Move the parent, and the children move with it. Hide the parent, and the children go hidden too. In our little platform: the heart (Sprite2D) sits inside the circle (StaticBody2D). Move the circle across the screen and the heart rides along automatically. Nested scenes work the same way — a scene dropped inside another scene is treated as one whole thing when the parent moves.",
+    "es": "<strong>El padre se mueve, los hijos lo siguen.</strong> Los hijos heredan mucho de su padre. Mueve al padre y los hijos se mueven con él. Oculta al padre y los hijos también se ocultan. En nuestra pequeña plataforma: el corazón (Sprite2D) vive dentro del círculo (StaticBody2D). Mueve el círculo por la pantalla y el corazón viaja junto con él automáticamente. Las escenas anidadas funcionan igual — una escena metida dentro de otra escena se trata como una sola cosa cuando el padre se mueve."
+  },
+  "step1.nextbtn": {
+    "en": "Next: Let's build one →",
+    "es": "Siguiente: Construyamos una →"
+  },
+  "step2.h2": {
+    "en": "Let's build one.",
+    "es": "Construyamos una."
+  },
+  "step2.intro": {
+    "en": "We'll make a small round platform that bodies can land on, with a picture on it. It only takes three nodes — and once it works, you'll be able to drop it into any level. We'll use a heart for the picture since it's already in the project, but it could be anything.",
+    "es": "Vamos a hacer una pequeña plataforma redonda sobre la que puedan aterrizar cuerpos, con una imagen encima. Solo hacen falta tres nodos — y en cuanto funcione, podrás soltarla en cualquier nivel. Usaremos un corazón para la imagen porque ya está en el proyecto, pero podría ser cualquier cosa."
+  },
+  "step2.watchIntro": {
+    "en": "First, watch the whole thing come together. Hit play and follow along — the camera will move around the editor so you can see exactly what to click.",
+    "es": "Primero, mira cómo se arma todo. Presiona reproducir y sigue el proceso — la cámara se moverá por el editor para que veas exactamente qué hacer clic."
+  },
+  "step2.wrap": {
+    "en": "That's it. Three nodes put together, one shape attached, one file saved. A whole platform.",
+    "es": "Eso es todo. Tres nodos armados juntos, una forma agregada, un archivo guardado. Una plataforma entera."
+  },
+  "step2.callout.label": {
+    "en": "Why those three nodes?",
+    "es": "¿Por qué esos tres nodos?"
+  },
+  "step2.callout.body": {
+    "en": "Many of the basic interactive objects you'd build in a 2D platformer at least <em>start</em> with these three kinds of nodes: a <strong>body</strong> (handles physics — like getting hit by other things, or holding still while things land on you), a <strong>collision shape</strong> (tells the body what its shape is for hits), and a <strong>sprite</strong> (the picture you see). The body holds the shape and the sprite as its children, so they all move together. Coins, doors, enemies, your player — they often start from this same three-piece base, with small differences for what each one does.",
+    "es": "Muchos de los objetos interactivos básicos que construirías en un juego de plataformas 2D <em>empiezan</em> al menos con estos tres tipos de nodos: un <strong>cuerpo</strong> (maneja la física — como recibir golpes de otras cosas, o quedarse quieto mientras otras cosas aterrizan encima), una <strong>forma de colisión</strong> (le dice al cuerpo qué forma tiene para los choques), y un <strong>sprite</strong> (la imagen que ves). El cuerpo contiene a la forma y al sprite como hijos, así que todo se mueve junto. Monedas, puertas, enemigos, tu jugador — a menudo empiezan desde esta misma base de tres piezas, con pequeñas diferencias según lo que hace cada uno."
+  },
+  "step2.tryit": {
+    "en": "Now jump into Godot and try it yourself. Same three nodes, same flow — your own scene by the end.",
+    "es": "Ahora entra a Godot y pruébalo tú. Los mismos tres nodos, el mismo flujo — al final tendrás tu propia escena."
+  },
+  "step2.nextbtn": {
+    "en": "Next: Use it in a level →",
+    "es": "Siguiente: Úsala en un nivel →"
+  },
+  "step3.h2": {
+    "en": "Drop it into a level.",
+    "es": "Ponla en un nivel."
+  },
+  "step3.intro": {
+    "en": "You've saved <em class=\"kw\">OurPlatform.tscn</em>. Now we'll put it to use. Once you know the moves, you can drop as many copies as you want anywhere in your game.",
+    "es": "Ya guardaste <em class=\"kw\">OurPlatform.tscn</em>. Ahora la vamos a usar. Cuando conozcas los movimientos, podrás soltar todas las copias que quieras en cualquier parte de tu juego."
+  },
+  "step3.intro2": {
+    "en": "Open <em class=\"kw\">main.tscn</em> (the big level scene). There are two ways to drop your saved scene into a level, and one more move for when you need to come back and edit the saved scene itself.",
+    "es": "Abre <em class=\"kw\">main.tscn</em> (la escena grande del nivel). Hay dos formas de soltar tu escena guardada en un nivel, y un movimiento más para cuando necesites volver y editar la escena guardada."
+  },
+  "step3.way1.title": {
+    "en": "Drag it into the viewport",
+    "es": "Arrástrala al viewport"
+  },
+  "step3.way1.body": {
+    "en": "<strong>This is the most common move.</strong> Drag <em class=\"kw\">OurPlatform.tscn</em> up out of the FileSystem (bottom-left) and into the viewport (center) of <em class=\"kw\">main.tscn</em>. A copy gets placed wherever you drop it. Do this five times, you have five platforms.",
+    "es": "<strong>Este es el movimiento más común.</strong> Arrastra <em class=\"kw\">OurPlatform.tscn</em> desde el FileSystem (abajo a la izquierda) hasta el viewport (el centro) de <em class=\"kw\">main.tscn</em>. Se coloca una copia donde la sueltes. Haz esto cinco veces y tienes cinco plataformas."
+  },
+  "step3.way1.body2": {
+    "en": "While you drag, Godot shows a little tooltip that tells you how holding Shift or Alt changes where the new copy lands in your scene tree:",
+    "es": "Mientras arrastras, Godot muestra un pequeño tooltip que te dice cómo mantener Shift o Alt cambia dónde termina la copia nueva en el árbol de escena:"
+  },
+  "step3.way1.body3": {
+    "en": "Handy for keeping things organized — like dropping coins as children of a <em class=\"kw\">Coins</em> group node by holding Shift while <em class=\"kw\">Coins</em> is selected.",
+    "es": "Útil para mantener las cosas organizadas — como soltar monedas como hijos de un nodo grupo <em class=\"kw\">Coins</em> manteniendo Shift mientras <em class=\"kw\">Coins</em> está seleccionado."
+  },
+  "step3.way2.title": {
+    "en": "Drag it into the Scene tree",
+    "es": "Arrástrala al árbol de escena"
+  },
+  "step3.way2.body": {
+    "en": "Drag the file straight up from the FileSystem into the <strong>Scene tree</strong> instead of the viewport. A blue line shows you exactly where it'll land in the tree. Useful when you want it to sit in a specific spot in the tree and don't care yet about where it shows up on screen.",
+    "es": "Arrastra el archivo directamente desde el FileSystem hacia el <strong>árbol de escena</strong> en lugar de al viewport. Una línea azul te muestra exactamente dónde va a caer en el árbol. Útil cuando quieres que quede en un lugar específico del árbol y todavía no te importa dónde aparece en la pantalla."
+  },
+  "step3.way3.title": {
+    "en": "Double-click it to make changes later",
+    "es": "Haz doble clic para hacer cambios después"
+  },
+  "step3.way3.body": {
+    "en": "If you need to come back and adjust <em class=\"kw\">OurPlatform.tscn</em> itself — change its color, swap its shape, whatever — double-click it in the FileSystem to open it in its own tab. Changes you save there show up in every copy you've placed (except for the ones you've customized specifically).",
+    "es": "Si necesitas volver y ajustar <em class=\"kw\">OurPlatform.tscn</em> — cambiar su color, intercambiar su forma, lo que sea — haz doble clic en ella en el FileSystem para abrirla en su propia pestaña. Los cambios que guardes ahí aparecen en cada copia que hayas colocado (excepto en las que hayas personalizado específicamente)."
+  },
+  "step3.callout.label": {
+    "en": "The big idea",
+    "es": "La idea principal"
+  },
+  "step3.callout.body1": {
+    "en": "Every copy you drop into <em class=\"kw\">main.tscn</em> is <strong>linked back to the original</strong>. Edit <em class=\"kw\">OurPlatform.tscn</em> — change the heart to a star, swap the circle for a rectangle — and every copy picks up the change.",
+    "es": "Cada copia que sueltas en <em class=\"kw\">main.tscn</em> está <strong>conectada a la original</strong>. Edita <em class=\"kw\">OurPlatform.tscn</em> — cambia el corazón por una estrella, cambia el círculo por un rectángulo — y cada copia adopta el cambio."
+  },
+  "step3.callout.body2": {
+    "en": "There are some exceptions: anything you've already tweaked directly on one specific copy in the level (like its position, scale, or modulate color) stays the way you left it. For everything you haven't touched, though, the source change wins.",
+    "es": "Hay algunas excepciones: cualquier cosa que ya hayas ajustado directamente sobre una copia específica en el nivel (como su posición, escala, o modulate color) se queda como la dejaste. Pero para todo lo que no hayas tocado, el cambio en el original gana."
+  },
+  "step3.tryit": {
+    "en": "Try it: open <em class=\"kw\">OurPlatform.tscn</em>, change the <em class=\"kw\">Sprite2D</em>'s texture to a different image, save, then open <em class=\"kw\">main.tscn</em>. Every platform that you haven't customized will be showing the new image. One edit, whole level updated.",
+    "es": "Pruébalo: abre <em class=\"kw\">OurPlatform.tscn</em>, cambia la textura del <em class=\"kw\">Sprite2D</em> por otra imagen, guarda, y después abre <em class=\"kw\">main.tscn</em>. Cada plataforma que no hayas personalizado va a mostrar la imagen nueva. Una edición, nivel entero actualizado."
+  },
+  "step3.nextbtn": {
+    "en": "Next: What's next →",
+    "es": "Siguiente: Qué sigue →"
+  },
+  "step4.h2": {
+    "en": "What's next.",
+    "es": "Qué sigue."
+  },
+  "step4.intro": {
+    "en": "You've built a scene, you've placed it in a level. That's the core loop of working in Godot — almost everything you'll ever build is some version of those moves. Here are three ways to practice.",
+    "es": "Construiste una escena, la pusiste en un nivel. Ese es el ciclo básico de trabajar en Godot — casi todo lo que vas a construir es alguna versión de esos movimientos. Aquí hay tres formas de practicar."
+  },
+  "step4.q1.title": {
+    "en": "Build something new with a custom shape.",
+    "es": "Construye algo nuevo con una forma personalizada."
+  },
+  "step4.q1.body": {
+    "en": "Build a fresh scene the same way you just did — Node2D root, StaticBody2D as its child, CollisionShape2D under that, Sprite2D as sibling. This time use your own image for the texture, and pick a shape that fits it. <em class=\"kw\">RectangleShape2D</em> works for blocky art, but if your image has an irregular outline, try <em class=\"kw\">ConvexPolygonShape2D</em> and set its points so the collision matches the shape of the picture. <strong>Why this matters:</strong> the three-node pattern is flexible. Same recipe, different parts, different result.",
+    "es": "Construye una escena nueva de la misma forma que acabas de hacer — Node2D como raíz, StaticBody2D como su hijo, CollisionShape2D debajo, Sprite2D como hermano. Esta vez usa tu propia imagen para la textura, y elige una forma que le vaya bien. <em class=\"kw\">RectangleShape2D</em> funciona para arte con formas cuadradas, pero si tu imagen tiene un contorno irregular, prueba <em class=\"kw\">ConvexPolygonShape2D</em> y ajusta sus puntos para que la colisión coincida con la forma de la imagen. <strong>Por qué importa:</strong> el patrón de tres nodos es flexible. Misma receta, distintas piezas, distinto resultado."
+  },
+  "step4.q2.title": {
+    "en": "Place ten OurPlatform copies in main.tscn.",
+    "es": "Coloca diez copias de OurPlatform en main.tscn."
+  },
+  "step4.q2.body": {
+    "en": "Drag, drag, drag. Notice how identical they all are — they're not separate copies you'd have to update one-by-one, they all point back to the same source scene. Now open <em class=\"kw\">OurPlatform.tscn</em> and change something. Every copy you haven't customized picks the change up. <strong>Why this matters:</strong> this is the difference between copy-pasting things and actually reusing them.",
+    "es": "Arrastra, arrastra, arrastra. Fíjate cómo son todas idénticas — no son copias separadas que tendrías que actualizar una por una, todas apuntan a la misma escena original. Ahora abre <em class=\"kw\">OurPlatform.tscn</em> y cambia algo. Cada copia que no hayas personalizado adopta el cambio. <strong>Por qué importa:</strong> esta es la diferencia entre copiar-pegar cosas y realmente reutilizarlas."
+  },
+  "step4.q3.title": {
+    "en": "Customize one copy on purpose.",
+    "es": "Personaliza una sola copia a propósito."
+  },
+  "step4.q3.body": {
+    "en": "Click one of your platforms in <em class=\"kw\">main.tscn</em> and change the Sprite2D's Texture in the Inspector. Just for that one. Notice how the property name now has a small revert arrow next to it — Godot is telling you \"this one's been customized, I won't change it.\" <strong>Why this matters:</strong> every copy picks up changes from the source scene — except for the parts you've changed on a specific copy.",
+    "es": "Haz clic en una de tus plataformas en <em class=\"kw\">main.tscn</em> y cambia la Texture del Sprite2D en el Inspector. Solo en esa. Fíjate cómo el nombre de la propiedad ahora tiene una pequeña flecha de revertir al lado — Godot te está diciendo \"esta ya se personalizó, no la voy a cambiar\". <strong>Por qué importa:</strong> cada copia adopta los cambios de la escena original — excepto en las partes que hayas cambiado en una copia específica."
+  },
+  "step4.closing1": {
+    "en": "You now know what a scene is, how to build one, and how to drop it into a level so it can be reused. Scenes are the building block of most of what you'll work with in Godot — UI panels are scenes, enemy AI is scenes, your player is a scene, the title screen is a scene. It's all trees of nodes saved as files.",
+    "es": "Ya sabes qué es una escena, cómo construir una y cómo soltarla en un nivel para poder reutilizarla. Las escenas son el bloque de construcción de la mayor parte de lo que trabajarás en Godot — los paneles de UI son escenas, la IA de enemigos son escenas, tu jugador es una escena, la pantalla de título es una escena. Todo son árboles de nodos guardados como archivos."
+  },
+  "step4.closing2": {
+    "en": "<strong>From here, you can start building.</strong>",
+    "es": "<strong>Desde aquí, ya puedes empezar a construir.</strong>"
+  },
+  "step4.startover": {
+    "en": "↺ Start over",
+    "es": "↺ Empezar de nuevo"
+  },
+  "svg.row2.caption": {
+    "en": "Pick, arrange, save.",
+    "es": "Elige, ordena, guarda."
+  },
+  "svg.row3.copies": {
+    "en": "copies:",
+    "es": "copias:"
+  },
+  "svg.row4.caption": {
+    "en": "Edit once, all copies update.",
+    "es": "Edita una vez, todas se actualizan."
+  },
+  "svg.contains": {
+    "en": "CONTAINS",
+    "es": "CONTIENE"
+  },
+  "svg.threeNodes": {
+    "en": "3 nodes",
+    "es": "3 nodos"
+  },
+  "svg.additional": {
+    "en": "additional nodes",
+    "es": "nodos adicionales"
+  },
+  "svg.theTree": {
+    "en": "THE TREE",
+    "es": "EL ÁRBOL"
+  },
+  "svg.whatYouSee": {
+    "en": "WHAT YOU SEE",
+    "es": "LO QUE VES"
+  },
+  "svg.rootSuffix": {
+    "en": "OurPlatform (root)",
+    "es": "OurPlatform (raíz)"
+  },
+  "svg.spriteHeart": {
+    "en": "Sprite2D (heart)",
+    "es": "Sprite2D (corazón)"
+  },
+  "ctrl.play": {
+    "en": "▶ Play",
+    "es": "▶ Reproducir"
+  },
+  "ctrl.pause": {
+    "en": "⏸ Pause",
+    "es": "⏸ Pausa"
+  },
+  "ctrl.replay": {
+    "en": "↻ Replay",
+    "es": "↻ Repetir"
+  },
+  "ctrl.reset": {
+    "en": "↺ Reset",
+    "es": "↺ Reiniciar"
+  },
+  "ctrl.done": {
+    "en": "done",
+    "es": "listo"
+  },
+  "modtip.default": {
+    "en": "Add as sibling of selected node",
+    "es": "Agregar como hermano del nodo seleccionado"
+  },
+  "modtip.default.paren": {
+    "en": "(except when root is selected)",
+    "es": "(excepto cuando la raíz está seleccionada)"
+  },
+  "modtip.shift": {
+    "en": "Add as child of selected node",
+    "es": "Agregar como hijo del nodo seleccionado"
+  },
+  "modtip.alt": {
+    "en": "Add as child of root node",
+    "es": "Agregar como hijo del nodo raíz"
+  },
+  "cap.t0": {
+    "en": "Here's Godot, with a brand-new empty scene.",
+    "es": "Aquí está Godot, con una escena nueva y vacía."
+  },
+  "cap.t4000": {
+    "en": "Godot starts by asking what kind of scene you want. You pick from the <strong>Scene panel</strong>.",
+    "es": "Godot empieza preguntándote qué tipo de escena quieres. Eliges desde el <strong>panel Scene</strong>."
+  },
+  "cap.t10000": {
+    "en": "First click: <strong>2D Scene</strong>. This creates a <em class=\"kw\">Node2D</em> as the scene's root.",
+    "es": "Primer clic: <strong>2D Scene</strong>. Esto crea un <em class=\"kw\">Node2D</em> como raíz de la escena."
+  },
+  "cap.t14000": {
+    "en": "A <em class=\"kw\">Node2D</em> appears. This is the scene's <strong>root</strong>.",
+    "es": "Aparece un <em class=\"kw\">Node2D</em>. Esta es la <strong>raíz</strong> de la escena."
+  },
+  "cap.t18000": {
+    "en": "Let's rename it. Double-click the label to edit.",
+    "es": "Vamos a renombrarlo. Haz doble clic en la etiqueta para editar."
+  },
+  "cap.t22200": {
+    "en": "Renamed. The root is now <em class=\"kw\">OurPlatform</em>.",
+    "es": "Renombrado. La raíz ahora es <em class=\"kw\">OurPlatform</em>."
+  },
+  "cap.t26000": {
+    "en": "Now add the physics body. With the root selected, click <strong>+</strong> to add a child.",
+    "es": "Ahora agrega el cuerpo de física. Con la raíz seleccionada, haz clic en <strong>+</strong> para agregar un hijo."
+  },
+  "cap.t29400": {
+    "en": "The <strong>Create New Node</strong> dialog opens. Type to filter the list.",
+    "es": "Se abre el diálogo <strong>Create New Node</strong>. Escribe para filtrar la lista."
+  },
+  "cap.t33500": {
+    "en": "One match: <em class=\"kw\">StaticBody2D</em>. A \"static\" body doesn't move — perfect for a platform.",
+    "es": "Un resultado: <em class=\"kw\">StaticBody2D</em>. Un cuerpo \"static\" no se mueve — perfecto para una plataforma."
+  },
+  "cap.t38400": {
+    "en": "<em class=\"kw\">StaticBody2D</em> added as a child of <em class=\"kw\">OurPlatform</em>. Indentation shows the parent-child link.",
+    "es": "<em class=\"kw\">StaticBody2D</em> agregado como hijo de <em class=\"kw\">OurPlatform</em>. La sangría muestra la relación padre-hijo."
+  },
+  "cap.t43500": {
+    "en": "Same move — with <em class=\"kw\">StaticBody2D</em> selected, click <strong>+</strong> to add <em class=\"kw\">CollisionShape2D</em> as <em>its</em> child.",
+    "es": "Mismo movimiento — con <em class=\"kw\">StaticBody2D</em> seleccionado, haz clic en <strong>+</strong> para agregar <em class=\"kw\">CollisionShape2D</em> como <em>su</em> hijo."
+  },
+  "cap.t51400": {
+    "en": "<em class=\"kw\">CollisionShape2D</em> is added. But it has no shape yet.",
+    "es": "Se agrega <em class=\"kw\">CollisionShape2D</em>. Pero todavía no tiene forma."
+  },
+  "cap.t56000": {
+    "en": "The Inspector shows the node's properties. <strong>Shape</strong> is currently empty.",
+    "es": "El Inspector muestra las propiedades del nodo. <strong>Shape</strong> está vacío por ahora."
+  },
+  "cap.t60500": {
+    "en": "Click the <strong>▾</strong> next to Shape.",
+    "es": "Haz clic en <strong>▾</strong> junto a Shape."
+  },
+  "cap.t62900": {
+    "en": "A list of shape types appears. We want <em class=\"kw\">CircleShape2D</em>.",
+    "es": "Aparece una lista de tipos de forma. Queremos <em class=\"kw\">CircleShape2D</em>."
+  },
+  "cap.t66800": {
+    "en": "Shape is now <em class=\"kw\">CircleShape2D</em>. The collision area is set — invisible at runtime, but the physics engine sees it.",
+    "es": "Shape ahora es <em class=\"kw\">CircleShape2D</em>. El área de colisión queda lista — invisible durante el juego, pero el motor de física la ve."
+  },
+  "cap.t73000": {
+    "en": "Now the visual: a <em class=\"kw\">Sprite2D</em>. We want it next to <em class=\"kw\">StaticBody2D</em>, not inside it.",
+    "es": "Ahora lo visual: un <em class=\"kw\">Sprite2D</em>. Lo queremos junto a <em class=\"kw\">StaticBody2D</em>, no adentro."
+  },
+  "cap.t78500": {
+    "en": "First, click <em class=\"kw\">OurPlatform</em> so the next node is added as <em>its</em> child.",
+    "es": "Primero, haz clic en <em class=\"kw\">OurPlatform</em> para que el siguiente nodo se agregue como <em>su</em> hijo."
+  },
+  "cap.t80600": {
+    "en": "Click <strong>+</strong> to add another child.",
+    "es": "Haz clic en <strong>+</strong> para agregar otro hijo."
+  },
+  "cap.t86400": {
+    "en": "<em class=\"kw\">Sprite2D</em> is added next to <em class=\"kw\">StaticBody2D</em>. Both are children of <em class=\"kw\">OurPlatform</em>.",
+    "es": "<em class=\"kw\">Sprite2D</em> se agrega junto a <em class=\"kw\">StaticBody2D</em>. Ambos son hijos de <em class=\"kw\">OurPlatform</em>."
+  },
+  "cap.t91000": {
+    "en": "The <em class=\"kw\">Sprite2D</em> needs a texture — an image to display. We'll grab one from the <strong>FileSystem</strong>.",
+    "es": "El <em class=\"kw\">Sprite2D</em> necesita una textura — una imagen para mostrar. Vamos a tomar una del <strong>FileSystem</strong>."
+  },
+  "cap.t97000": {
+    "en": "Find <em class=\"kw\">heart.png</em> in the <em class=\"kw\">assets</em> folder.",
+    "es": "Encuentra <em class=\"kw\">heart.png</em> en la carpeta <em class=\"kw\">assets</em>."
+  },
+  "cap.t100000": {
+    "en": "Drag <em class=\"kw\">heart.png</em> onto the <strong>Texture</strong> slot in the Inspector.",
+    "es": "Arrastra <em class=\"kw\">heart.png</em> hasta la ranura <strong>Texture</strong> en el Inspector."
+  },
+  "cap.t104200": {
+    "en": "Texture set. The <em class=\"kw\">Sprite2D</em> now displays the heart in the viewport.",
+    "es": "Textura asignada. El <em class=\"kw\">Sprite2D</em> ahora muestra el corazón en el viewport."
+  },
+  "cap.t109000": {
+    "en": "A working platform — circle collision plus heart sprite. Three nodes, working together.",
+    "es": "Una plataforma que funciona — colisión de círculo más sprite de corazón. Tres nodos, trabajando juntos."
+  },
+  "cap.t115000": {
+    "en": "Last step: save with <strong>Ctrl+S</strong> (Mac: <strong>Cmd+S</strong>) as <em class=\"kw\">OurPlatform.tscn</em>.",
+    "es": "Último paso: guarda con <strong>Ctrl+S</strong> (Mac: <strong>Cmd+S</strong>) como <em class=\"kw\">OurPlatform.tscn</em>."
+  },
+  "cap.t121000": {
+    "en": "<strong>Done.</strong> You've built a scene. Hit ↻ Replay to watch again, or open Godot and build your own.",
+    "es": "<strong>Listo.</strong> Construiste una escena. Presiona ↻ Repetir para verlo otra vez, o abre Godot y construye la tuya."
+  }
+,
+
+  "step1.small.caption": {
+    "en": "One scene with three <em class=\"kw\">nodes</em> inside. Saved as <em class=\"kw\">OurPlatform.tscn</em>. This is what we'll build.",
+    "es": "Una escena con tres <em class=\"kw\">nodos</em> adentro. Guardada como <em class=\"kw\">OurPlatform.tscn</em>. Esto es lo que vamos a construir."
+  },
+  "step1.big.caption": {
+    "en": "One big scene made up of smaller scenes (the dashed outlines) and a few extra nodes for things like the sky and ground. Saved as <em class=\"kw\">main.tscn</em>.",
+    "es": "Una escena grande hecha de escenas más pequeñas (los contornos punteados) y algunos nodos extra para cosas como el cielo y el suelo. Guardada como <em class=\"kw\">main.tscn</em>."
+  },
+  "gd.scene": {
+    "en": "Scene",
+    "es": "Escena"
+  },
+  "gd.project": {
+    "en": "Project",
+    "es": "Proyecto"
+  },
+  "gd.debug": {
+    "en": "Debug",
+    "es": "Depurar"
+  },
+  "gd.editor": {
+    "en": "Editor",
+    "es": "Editor"
+  },
+  "gd.help": {
+    "en": "Help",
+    "es": "Ayuda"
+  },
+  "gd.import": {
+    "en": "Import",
+    "es": "Importar"
+  },
+  "gd.inspector": {
+    "en": "Inspector",
+    "es": "Inspector"
+  },
+  "gd.signals": {
+    "en": "Signals",
+    "es": "Señales"
+  },
+  "gd.groups": {
+    "en": "Groups",
+    "es": "Grupos"
+  },
+  "gd.filterNodes": {
+    "en": "Filter Nodes",
+    "es": "Filtrar Nodos"
+  },
+  "gd.createRootNode": {
+    "en": "Create Root Node:",
+    "es": "Crear Nodo Raíz:"
+  },
+  "gd.2dScene": {
+    "en": "2D Scene",
+    "es": "Escena 2D"
+  },
+  "gd.3dScene": {
+    "en": "3D Scene",
+    "es": "Escena 3D"
+  },
+  "gd.userInterface": {
+    "en": "User Interface",
+    "es": "Interfaz de usuario"
+  },
+  "gd.otherNode": {
+    "en": "Other Node",
+    "es": "Otro Nodo"
+  },
+  "gd.filesystem": {
+    "en": "FileSystem",
+    "es": "Sistema de Archivos"
+  },
+  "gd.history": {
+    "en": "History",
+    "es": "Historial"
+  },
+  "gd.filterFiles": {
+    "en": "Filter Files",
+    "es": "Filtrar Archivos"
+  },
+  "gd.favoritesColon": {
+    "en": "Favorites:",
+    "es": "Favoritos:"
+  },
+  "gd.starFavorites": {
+    "en": "★ Favorites:",
+    "es": "★ Favoritos:"
+  },
+  "gd.filterProperties": {
+    "en": "Filter Properties",
+    "es": "Filtrar Propiedades"
+  },
+  "gd.noNodeSelected": {
+    "en": "No node selected",
+    "es": "Ningún nodo seleccionado"
+  },
+  "gd.view": {
+    "en": "View",
+    "es": "Ver"
+  },
+  "gd.createNewNode": {
+    "en": "Create New Node",
+    "es": "Crear Nodo Nuevo"
+  },
+  "gd.search": {
+    "en": "Search:",
+    "es": "Buscar:"
+  },
+  "gd.matches": {
+    "en": "Matches:",
+    "es": "Coincidencias:"
+  },
+  "gd.description": {
+    "en": "Description:",
+    "es": "Descripción:"
+  },
+  "gd.recent": {
+    "en": "Recent:",
+    "es": "Reciente:"
+  },
+  "gd.create": {
+    "en": "Create",
+    "es": "Crear"
+  },
+  "gd.cancel": {
+    "en": "Cancel",
+    "es": "Cancelar"
+  },
+  "gd.empty": {
+    "en": "[empty]",
+    "es": "[vacío]"
+  },
+  "gd.unsaved": {
+    "en": "[unsaved]",
+    "es": "[sin guardar]"
+  },
+  "gd.filterMessages": {
+    "en": "Filter Messages",
+    "es": "Filtrar Mensajes"
+  },
+  "gd.output": {
+    "en": "● Output",
+    "es": "● Salida"
+  },
+  "gd.debugger": {
+    "en": "Debugger",
+    "es": "Depurador"
+  },
+  "gd.audio": {
+    "en": "Audio",
+    "es": "Audio"
+  },
+  "gd.animation": {
+    "en": "Animation",
+    "es": "Animación"
+  },
+  "gd.shaderEditor": {
+    "en": "Shader Editor",
+    "es": "Editor de Shader"
+  }
+};
+
+// Current language — persisted in localStorage across sessions.
+window.currentLang = 'en';
+try {
+  const saved = localStorage.getItem('scenes-guide-lang');
+  if (saved === 'en' || saved === 'es') window.currentLang = saved;
+} catch (_) {}
+
+// Look up a key's value in the current language, falling back to English.
+function i18nLookup(key) {
+  const entry = window.CONTENT[key];
+  if (!entry) return null;
+  return entry[window.currentLang] || entry.en || null;
+}
+
+// Apply translations to all tagged elements.
+function applyStaticTranslations() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    const val = i18nLookup(key);
+    if (typeof val === 'string') el.textContent = val;
+  });
+  document.querySelectorAll('[data-i18n-html]').forEach(el => {
+    const key = el.getAttribute('data-i18n-html');
+    const val = i18nLookup(key);
+    if (typeof val === 'string') el.innerHTML = val;
+  });
+  document.querySelectorAll('[data-i18n-svg]').forEach(el => {
+    const key = el.getAttribute('data-i18n-svg');
+    const val = i18nLookup(key);
+    if (typeof val === 'string') el.textContent = val;
+  });
+}
+
+// Switch language, save to localStorage, and re-render everything.
+function setLanguage(lang) {
+  if (lang !== 'en' && lang !== 'es') return;
+  window.currentLang = lang;
+  try { localStorage.setItem('scenes-guide-lang', lang); } catch (_) {}
+  const enBtn = document.getElementById('langEnBtn');
+  const esBtn = document.getElementById('langEsBtn');
+  if (enBtn && esBtn) {
+    enBtn.classList.toggle('active', lang === 'en');
+    esBtn.classList.toggle('active', lang === 'es');
+    enBtn.setAttribute('aria-pressed', lang === 'en' ? 'true' : 'false');
+    esBtn.setAttribute('aria-pressed', lang === 'es' ? 'true' : 'false');
+  }
+  applyStaticTranslations();
+  // Re-render the currently visible build-stage caption + controls (defined below)
+  if (typeof window.refreshCaption === 'function') window.refreshCaption();
+  if (typeof window.updateBuildButtons === 'function') window.updateBuildButtons();
+  if (typeof window.refreshBuildStageTexts === 'function') window.refreshBuildStageTexts();
+}
+
+// Wire up toggle buttons
+document.addEventListener('DOMContentLoaded', () => {
+  const enBtn = document.getElementById('langEnBtn');
+  const esBtn = document.getElementById('langEsBtn');
+  if (enBtn) enBtn.addEventListener('click', () => setLanguage('en'));
+  if (esBtn) esBtn.addEventListener('click', () => setLanguage('es'));
+  // Apply the persisted language on first load
+  setLanguage(window.currentLang);
+});
+</script>
+
 <script>
 // ============================================================
 // STEP NAVIGATION
@@ -3058,7 +3769,22 @@
     }, 600);
   }
 
-  function setCaption(html) {
+  // Remember the last caption key so we can re-render it if the language changes mid-view
+  let lastCaptionKey = null;
+
+  function setCaption(keyOrHtml) {
+    // If the argument looks like a CONTENT key (starts with "cap.") look it up;
+    // otherwise treat as literal HTML (kept for backward compat / debugging).
+    let html;
+    if (typeof keyOrHtml === 'string' && /^cap\.t?\w+$/.test(keyOrHtml)) {
+      lastCaptionKey = keyOrHtml;
+      const entry = (typeof CONTENT !== 'undefined') && CONTENT[keyOrHtml];
+      const lang = (typeof currentLang !== 'undefined') ? currentLang : 'en';
+      html = entry ? (entry[lang] || entry.en || keyOrHtml) : keyOrHtml;
+    } else {
+      lastCaptionKey = null;
+      html = keyOrHtml;
+    }
     // Insert a word joiner (U+2060) between closing inline elements and punctuation
     // that immediately follows them. This prevents the punctuation from getting
     // stranded on a new line when the inline pill wraps.
@@ -3072,6 +3798,18 @@
     }, 250);
   }
 
+  // Re-render the currently displayed caption (called after a language switch)
+  function refreshCaption() {
+    if (!lastCaptionKey) return;
+    const entry = (typeof CONTENT !== 'undefined') && CONTENT[lastCaptionKey];
+    const lang = (typeof currentLang !== 'undefined') ? currentLang : 'en';
+    const html = entry ? (entry[lang] || entry.en || lastCaptionKey) : lastCaptionKey;
+    const bound = html.replace(/(<\/(?:em|strong)>)([.,;:!?]+)/g, '$1\u2060$2');
+    caption.innerHTML = '<span class="build-caption-inner">' + bound + '</span>';
+  }
+  // Expose to window so the outer i18n script can call it on language change
+  window.refreshCaption = refreshCaption;
+
   function setCamera(preset) {
     camera.className = 'build-camera ' + preset;
   }
@@ -3084,10 +3822,44 @@
     const el = document.getElementById(id);
     if (el) el.classList.add('hidden');
   }
+  // Map of raw English UI strings to CONTENT keys, so setText can auto-translate.
+  const SETTEXT_I18N = {
+    '[empty]': 'gd.empty',
+    '[unsaved]': 'gd.unsaved',
+  };
+  // Track the original (untranslated) value for each element ID so we can retranslate on lang change
+  const lastSetTextValue = {};
+
   function setText(id, txt) {
     const el = document.getElementById(id);
-    if (el) el.textContent = txt;
+    if (!el) return;
+    lastSetTextValue[id] = txt;
+    // If this string maps to a translatable UI key, look it up
+    const key = SETTEXT_I18N[txt];
+    if (key && typeof CONTENT !== 'undefined' && CONTENT[key]) {
+      const lang = (typeof currentLang !== 'undefined') ? currentLang : 'en';
+      el.textContent = CONTENT[key][lang] || CONTENT[key].en || txt;
+    } else {
+      el.textContent = txt;
+    }
   }
+
+  // Called on language change — retranslates all previously-set text
+  function refreshSetTexts() {
+    for (const id in lastSetTextValue) {
+      const el = document.getElementById(id);
+      if (!el) continue;
+      const original = lastSetTextValue[id];
+      const key = SETTEXT_I18N[original];
+      if (key && typeof CONTENT !== 'undefined' && CONTENT[key]) {
+        const lang = (typeof currentLang !== 'undefined') ? currentLang : 'en';
+        el.textContent = CONTENT[key][lang] || CONTENT[key].en || original;
+      } else {
+        el.textContent = original;
+      }
+    }
+  }
+  window.refreshBuildStageTexts = refreshSetTexts;
 
   // ----- Mark a specific tree row as selected -----
   // Removes selection from any other tree row first, so only one is highlighted.
@@ -3158,7 +3930,7 @@
         setCamera('cam-full');
         cursor.classList.add('hidden-cursor');
       },
-      caption: 'Here\'s Godot, with a brand-new empty scene.'
+      caption: 'cap.t0'
     },
 
     // -------- ACT 2: ZOOM INTO SCENE PANEL (4.5-8s) --------
@@ -3167,7 +3939,7 @@
       do: () => {
         setCamera('cam-scenepanel');
       },
-      caption: 'Godot starts by asking what kind of scene you want. You pick from the <strong>Scene panel</strong>.'
+      caption: 'cap.t4000'
     },
 
     // -------- ACT 3: CLICK 2D SCENE (8-12s) --------
@@ -3180,7 +3952,7 @@
         // Start cursor somewhere visible, then move to button.
         cursorTo(50, 50);
       },
-      caption: 'First click: <strong>2D Scene</strong>. This creates a <em class="kw">Node2D</em> as the scene\'s root.'
+      caption: 'cap.t10000'
     },
     {
       t: 11500,
@@ -3211,7 +3983,7 @@
     },
     {
       t: 14000,
-      caption: 'A <em class="kw">Node2D</em> appears. This is the scene\'s <strong>root</strong>.'
+      caption: 'cap.t14000'
     },
 
     // -------- ACT 4: RENAME ROOT (12-16.5s) --------
@@ -3226,7 +3998,7 @@
         // Root label sits at SVG (x≈70, y≈124) → 5.8% x, 17.2% y.
         cursorTo(5.8, 17.2);
       },
-      caption: 'Let\'s rename it. Double-click the label to edit.'
+      caption: 'cap.t18000'
     },
     {
       t: 19400,
@@ -3294,13 +4066,13 @@
         document.getElementById('rootCaret').classList.add('hidden');
         setText('tabLabel', 'OurPlatform');
       },
-      caption: 'Renamed. The root is now <em class="kw">OurPlatform</em>.'
+      caption: 'cap.t22200'
     },
 
     // -------- ACT 5: ADD STATICBODY2D (16-22s) --------
     {
       t: 26000,
-      caption: 'Now add the physics body. With the root selected, click <strong>+</strong> to add a child.'
+      caption: 'cap.t26000'
     },
     {
       t: 27500,
@@ -3324,7 +4096,7 @@
         cursor.classList.add('hidden-cursor');
         show('nodeDialog');
       },
-      caption: 'The <strong>Create New Node</strong> dialog opens. Type to filter the list.'
+      caption: 'cap.t29400'
     },
     {
       t: 31500,
@@ -3350,7 +4122,7 @@
     },
     {
       t: 33500,
-      caption: 'One match: <em class="kw">StaticBody2D</em>. A "static" body doesn\'t move — perfect for a platform.'
+      caption: 'cap.t33500'
     },
     {
       t: 36500,
@@ -3375,13 +4147,13 @@
         document.getElementById('staticBodyNode').classList.add('appearing');
         selectTreeNode('staticBodyNode');
       },
-      caption: '<em class="kw">StaticBody2D</em> added as a child of <em class="kw">OurPlatform</em>. Indentation shows the parent-child link.'
+      caption: 'cap.t38400'
     },
 
     // -------- ACT 6: ADD COLLISIONSHAPE2D (28-34s) --------
     {
       t: 43500,
-      caption: 'Same move — with <em class="kw">StaticBody2D</em> selected, click <strong>+</strong> to add <em class="kw">CollisionShape2D</em> as <em>its</em> child.'
+      caption: 'cap.t43500'
     },
     {
       t: 45500,
@@ -3445,7 +4217,7 @@
         document.getElementById('collisionNode').classList.add('appearing');
         selectTreeNode('collisionNode');
       },
-      caption: '<em class="kw">CollisionShape2D</em> is added. But it has no shape yet.'
+      caption: 'cap.t51400'
     },
 
     // -------- ACT 7: SET SHAPE TO CIRCLE (37-46s) --------
@@ -3456,7 +4228,7 @@
         hide('inspectorEmpty');
         show('inspectorCollision');
       },
-      caption: 'The Inspector shows the node\'s properties. <strong>Shape</strong> is currently empty.'
+      caption: 'cap.t56000'
     },
     {
       t: 60500,
@@ -3465,7 +4237,7 @@
         // Shape dropdown ▾ arrow at SVG (1166, 182) → 97.2% x, 25.3% y
         cursorTo(97.6, 25.7);
       },
-      caption: 'Click the <strong>▾</strong> next to Shape.'
+      caption: 'cap.t60500'
     },
     {
       t: 62500,
@@ -3478,7 +4250,7 @@
       do: () => {
         show('shapeDropdown');
       },
-      caption: 'A list of shape types appears. We want <em class="kw">CircleShape2D</em>.'
+      caption: 'cap.t62900'
     },
     {
       t: 64500,
@@ -3516,7 +4288,7 @@
         setText('shapeValue', 'CircleShape2D');
         cursor.classList.add('hidden-cursor');
       },
-      caption: 'Shape is now <em class="kw">CircleShape2D</em>. The collision area is set — invisible at runtime, but the physics engine sees it.'
+      caption: 'cap.t66800'
     },
 
     // -------- ACT 8: ADD SPRITE2D AS SIBLING (48-58s) --------
@@ -3525,7 +4297,7 @@
       do: () => {
         setCamera('cam-scenepanel');
       },
-      caption: 'Now the visual: a <em class="kw">Sprite2D</em>. We want it next to <em class="kw">StaticBody2D</em>, not inside it.'
+      caption: 'cap.t73000'
     },
     {
       t: 78500,
@@ -3534,7 +4306,7 @@
         // OurPlatform root row at SVG (50, 108) → 4.2% x, 15% y
         cursorTo(3.7, 16.7);
       },
-      caption: 'First, click <em class="kw">OurPlatform</em> so the next node is added as <em>its</em> child.'
+      caption: 'cap.t78500'
     },
     {
       t: 80000,
@@ -3549,7 +4321,7 @@
         // Back to + button
         cursorTo(1.7, 11.7);
       },
-      caption: 'Click <strong>+</strong> to add another child.'
+      caption: 'cap.t80600'
     },
     {
       t: 82200,
@@ -3604,7 +4376,7 @@
         document.getElementById('spriteNode').classList.add('appearing');
         selectTreeNode('spriteNode');
       },
-      caption: '<em class="kw">Sprite2D</em> is added next to <em class="kw">StaticBody2D</em>. Both are children of <em class="kw">OurPlatform</em>.'
+      caption: 'cap.t86400'
     },
 
     // -------- ACT 9: DRAG HEART.PNG ONTO TEXTURE (60-68s) --------
@@ -3617,11 +4389,11 @@
         hide('inspectorCollision');
         show('inspectorSprite');
       },
-      caption: 'The <em class="kw">Sprite2D</em> needs a texture — an image to display. We\'ll grab one from the <strong>FileSystem</strong>.'
+      caption: 'cap.t91000'
     },
     {
       t: 97000,
-      caption: 'Find <em class="kw">heart.png</em> in the <em class="kw">assets</em> folder.'
+      caption: 'cap.t97000'
     },
     {
       t: 100000,
@@ -3630,7 +4402,7 @@
         // heart.png at SVG (90, 597) → 7.5% x, 82.9% y
         cursorTo(6.8, 68.5);
       },
-      caption: 'Drag <em class="kw">heart.png</em> onto the <strong>Texture</strong> slot in the Inspector.'
+      caption: 'cap.t100000'
     },
     {
       t: 101800,
@@ -3663,7 +4435,7 @@
         hide('heartDragGhost');
         setText('textureValue', 'heart.png');
       },
-      caption: 'Texture set. The <em class="kw">Sprite2D</em> now displays the heart in the viewport.'
+      caption: 'cap.t104200'
     },
 
     // -------- ACT 10: FINAL REVEAL (70-78s) --------
@@ -3674,15 +4446,15 @@
         cursor.classList.add('hidden-cursor');
         show('finalPlatform');
       },
-      caption: 'A working platform — circle collision plus heart sprite. Three nodes, working together.'
+      caption: 'cap.t109000'
     },
     {
       t: 115000,
-      caption: 'Last step: save with <strong>Ctrl+S</strong> (Mac: <strong>Cmd+S</strong>) as <em class="kw">OurPlatform.tscn</em>.'
+      caption: 'cap.t115000'
     },
     {
       t: 121000,
-      caption: '<strong>Done.</strong> You\'ve built a scene. Hit ↻ Replay to watch again, or open Godot and build your own.'
+      caption: 'cap.t121000'
     }
     // -------- END (engine auto-finishes when elapsed reaches totalDuration) --------
   ];
@@ -3721,21 +4493,32 @@
     progressFill.style.width = pct + '%';
     const sec = Math.floor(elapsedMs / 1000);
     if (elapsedMs >= totalDuration) {
-      timeDisplay.textContent = 'done';
+      const lang = (typeof currentLang !== 'undefined') ? currentLang : 'en';
+      const doneEntry = (typeof CONTENT !== 'undefined') && CONTENT['ctrl.done'];
+      timeDisplay.textContent = doneEntry ? (doneEntry[lang] || doneEntry.en || 'done') : 'done';
     } else {
       timeDisplay.textContent = formatTime(sec);
     }
   }
 
   function updateButtons() {
+    const lang = (typeof currentLang !== 'undefined') ? currentLang : 'en';
+    const lookup = (key, fallback) => {
+      const entry = (typeof CONTENT !== 'undefined') && CONTENT[key];
+      return entry ? (entry[lang] || entry.en || fallback) : fallback;
+    };
     if (playing) {
-      playBtn.textContent = '⏸ Pause';
+      playBtn.textContent = lookup('ctrl.pause', '⏸ Pause');
     } else if (elapsedMs >= totalDuration) {
-      playBtn.textContent = '↻ Replay';
+      playBtn.textContent = lookup('ctrl.replay', '↻ Replay');
     } else {
-      playBtn.textContent = '▶ Play';
+      playBtn.textContent = lookup('ctrl.play', '▶ Play');
     }
+    // Reset button and Done label also
+    if (resetBtn) resetBtn.textContent = lookup('ctrl.reset', '↺ Reset');
   }
+  // Expose so setLanguage can re-render controls on language change
+  window.updateBuildButtons = updateButtons;
 
   function fireCue(cue) {
     if (cue.do) cue.do();
@@ -3834,7 +4617,7 @@
     tickInterval = null;
     elapsedMs = totalDuration;
     progressFill.style.width = '100%';
-    timeDisplay.textContent = 'done';
+    updateProgressUi();
     updateButtons();
   }
 
@@ -4092,11 +4875,11 @@
 
         <!-- Top menu bar -->
         <rect x="0" y="0" width="1200" height="35" fill="#1a1920"/>
-        <text x="20" y="22" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4">Scene</text>
-        <text x="68" y="22" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4">Project</text>
-        <text x="122" y="22" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4">Debug</text>
-        <text x="170" y="22" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4">Editor</text>
-        <text x="216" y="22" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4">Help</text>
+        <text x="20" y="22" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4" data-i18n-svg="gd.scene">Scene</text>
+        <text x="68" y="22" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4" data-i18n-svg="gd.project">Project</text>
+        <text x="122" y="22" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4" data-i18n-svg="gd.debug">Debug</text>
+        <text x="170" y="22" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4" data-i18n-svg="gd.editor">Editor</text>
+        <text x="216" y="22" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4" data-i18n-svg="gd.help">Help</text>
         <text x="475" y="22" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#57b3ff">⤤ 2D</text>
         <text x="525" y="22" font-family="Inter, sans-serif" font-size="12" fill="#888">⤥ 3D</text>
         <text x="572" y="22" font-family="Inter, sans-serif" font-size="12" fill="#888">📄 Script</text>
@@ -4113,8 +4896,8 @@
         <rect x="0" y="35" width="258" height="294" fill="#21202a"/>
         <rect x="0" y="35" width="258" height="26" fill="#1a1920"/>
         <rect x="0" y="35" width="78" height="26" fill="#21202a"/>
-        <text x="22" y="52" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#d4d4d4">Scene</text>
-        <text x="92" y="52" font-family="Inter, sans-serif" font-size="11" fill="#888">Import</text>
+        <text x="22" y="52" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#d4d4d4" data-i18n-svg="gd.scene">Scene</text>
+        <text x="92" y="52" font-family="Inter, sans-serif" font-size="11" fill="#888" data-i18n-svg="gd.import">Import</text>
 
         <!-- + button -->
         <rect x="6" y="70" width="28" height="28" rx="3" fill="#2a2832"/>
@@ -4123,23 +4906,23 @@
         <rect x="40" y="70" width="28" height="28" rx="3" fill="#2a2832"/>
         <!-- Filter Nodes search -->
         <rect x="74" y="70" width="148" height="28" rx="3" fill="#1a1920"/>
-        <text x="86" y="89" font-family="Inter, sans-serif" font-size="11" fill="#666">Filter Nodes</text>
+        <text x="86" y="89" font-family="Inter, sans-serif" font-size="11" fill="#666" data-i18n-svg="gd.filterNodes">Filter Nodes</text>
 
         ${!r ? `
           <!-- Empty state: Create Root Node -->
-          <text x="14" y="118" font-family="Inter, sans-serif" font-size="12" fill="#d4d4d4" font-weight="600">Create Root Node:</text>
+          <text x="14" y="118" font-family="Inter, sans-serif" font-size="12" fill="#d4d4d4" font-weight="600" data-i18n-svg="gd.createRootNode">Create Root Node:</text>
           <!-- 2D Scene button -->
           <rect x="6" y="128" width="248" height="28" rx="3" fill="#2a2832"/>
           <circle cx="22" cy="142" r="6" fill="none" stroke="#57b3ff" stroke-width="1.5"/>
-          <text x="130" y="146" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4" text-anchor="middle">2D Scene</text>
+          <text x="130" y="146" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4" text-anchor="middle" data-i18n-svg="gd.2dScene">2D Scene</text>
           <!-- 3D Scene button -->
           <rect x="6" y="160" width="248" height="28" rx="3" fill="#2a2832"/>
           <circle cx="22" cy="174" r="6" fill="none" stroke="#ff6b6b" stroke-width="1.5"/>
-          <text x="130" y="178" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4" text-anchor="middle">3D Scene</text>
+          <text x="130" y="178" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4" text-anchor="middle" data-i18n-svg="gd.3dScene">3D Scene</text>
           <!-- User Interface button -->
           <rect x="6" y="192" width="248" height="28" rx="3" fill="#2a2832"/>
           <circle cx="22" cy="206" r="6" fill="none" stroke="#5ec3a8" stroke-width="1.5"/>
-          <text x="130" y="210" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4" text-anchor="middle">User Interface</text>
+          <text x="130" y="210" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4" text-anchor="middle" data-i18n-svg="gd.userInterface">User Interface</text>
           <!-- Other Node -->
           <rect x="6" y="224" width="248" height="28" rx="3" fill="#2a2832"/>
           <text x="130" y="242" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4" text-anchor="middle">+ Other Node</text>
@@ -4172,15 +4955,15 @@
         <rect x="0" y="329" width="258" height="232" fill="#21202a"/>
         <rect x="0" y="329" width="258" height="26" fill="#1a1920"/>
         <rect x="0" y="329" width="100" height="26" fill="#21202a"/>
-        <text x="14" y="346" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#d4d4d4">FileSystem</text>
-        <text x="112" y="346" font-family="Inter, sans-serif" font-size="11" fill="#888">History</text>
+        <text x="14" y="346" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#d4d4d4" data-i18n-svg="gd.filesystem">FileSystem</text>
+        <text x="112" y="346" font-family="Inter, sans-serif" font-size="11" fill="#888" data-i18n-svg="gd.history">History</text>
         <!-- Path & filter -->
         <rect x="32" y="365" width="190" height="22" rx="3" fill="#1a1920"/>
         <text x="40" y="380" font-family="Inter, sans-serif" font-size="10" fill="#888">res://</text>
         <rect x="8" y="395" width="216" height="22" rx="3" fill="#1a1920"/>
-        <text x="18" y="409" font-family="Inter, sans-serif" font-size="10" fill="#555">Filter Files</text>
+        <text x="18" y="409" font-family="Inter, sans-serif" font-size="10" fill="#555" data-i18n-svg="gd.filterFiles">Filter Files</text>
         <!-- File tree -->
-        <text x="12" y="436" font-family="Inter, sans-serif" font-size="10" fill="#888">★ Favorites:</text>
+        <text x="12" y="436" font-family="Inter, sans-serif" font-size="10" fill="#888" data-i18n-svg="gd.starFavorites">★ Favorites:</text>
         <text x="12" y="455" font-family="Inter, sans-serif" font-size="11" fill="#888">▾  📁 res://</text>
         <text x="28" y="473" font-family="Inter, sans-serif" font-size="11" fill="#888">▾  📁 assets</text>
         <!-- heart.png (the target) -->
@@ -4206,11 +4989,11 @@
         <rect x="947" y="35" width="253" height="526" fill="#21202a"/>
         <rect x="947" y="35" width="253" height="26" fill="#1a1920"/>
         <rect x="947" y="35" width="84" height="26" fill="#21202a"/>
-        <text x="966" y="52" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#d4d4d4">Inspector</text>
-        <text x="1045" y="52" font-family="Inter, sans-serif" font-size="11" fill="#888">Signals</text>
-        <text x="1110" y="52" font-family="Inter, sans-serif" font-size="11" fill="#888">Groups</text>
+        <text x="966" y="52" font-family="Inter, sans-serif" font-size="11" font-weight="600" fill="#d4d4d4" data-i18n-svg="gd.inspector">Inspector</text>
+        <text x="1045" y="52" font-family="Inter, sans-serif" font-size="11" fill="#888" data-i18n-svg="gd.signals">Signals</text>
+        <text x="1110" y="52" font-family="Inter, sans-serif" font-size="11" fill="#888" data-i18n-svg="gd.groups">Groups</text>
         <rect x="955" y="108" width="220" height="24" rx="3" fill="#1a1920"/>
-        <text x="965" y="125" font-family="Inter, sans-serif" font-size="10" fill="#555">Filter Properties</text>
+        <text x="965" y="125" font-family="Inter, sans-serif" font-size="10" fill="#555" data-i18n-svg="gd.filterProperties">Filter Properties</text>
 
         ${showInspectorCol ? `
           <rect x="955" y="86" width="218" height="20" rx="2" fill="#2a2832"/>
@@ -4238,10 +5021,10 @@
           <rect x="1041" y="174" width="120" height="22" rx="2" fill="#1a1920"/>
           <text x="1051" y="189" font-family="Inter, sans-serif" font-size="10" fill="${tx ? '#d4d4d4' : '#888'}">${tx ? 'heart.png' : '&lt;empty&gt;'}</text>
           <text x="963" y="214" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4">Offset</text>
-          <text x="963" y="236" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4">Animation</text>
+          <text x="963" y="236" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4" data-i18n-svg="gd.animation">Animation</text>
         ` : ''}
         ${!showInspectorCol && !showInspectorSp ? `
-          <text x="1071" y="320" font-family="Inter, sans-serif" font-size="11" fill="#555" text-anchor="middle">No node selected</text>
+          <text x="1071" y="320" font-family="Inter, sans-serif" font-size="11" fill="#555" text-anchor="middle" data-i18n-svg="gd.noNodeSelected">No node selected</text>
         ` : ''}
 
         ${drop ? renderShapeDropdown(ss) : ''}
@@ -4308,19 +5091,19 @@
         <rect x="240" y="80" width="720" height="36" fill="#1a1920"/>
         <circle cx="262" cy="98" r="9" fill="#57b3ff"/>
         <text x="262" y="103" font-family="Inter, sans-serif" font-size="11" fill="#fff" text-anchor="middle" font-weight="700">G</text>
-        <text x="282" y="103" font-family="Inter, sans-serif" font-size="13" fill="#d4d4d4" font-weight="600">Create New Node</text>
+        <text x="282" y="103" font-family="Inter, sans-serif" font-size="13" fill="#d4d4d4" font-weight="600" data-i18n-svg="gd.createNewNode">Create New Node</text>
         <text x="940" y="103" font-family="Inter, sans-serif" font-size="14" fill="#888">×</text>
 
         <!-- Favorites column label -->
-        <text x="262" y="138" font-family="Inter, sans-serif" font-size="11" fill="#888" font-weight="600">Favorites:</text>
+        <text x="262" y="138" font-family="Inter, sans-serif" font-size="11" fill="#888" font-weight="600" data-i18n-svg="gd.favoritesColon">Favorites:</text>
         <rect x="260" y="148" width="124" height="220" fill="#1a1920" rx="3"/>
 
         <!-- Recent column label -->
-        <text x="262" y="392" font-family="Inter, sans-serif" font-size="11" fill="#888" font-weight="600">Recent:</text>
+        <text x="262" y="392" font-family="Inter, sans-serif" font-size="11" fill="#888" font-weight="600" data-i18n-svg="gd.recent">Recent:</text>
         <rect x="260" y="402" width="124" height="120" fill="#1a1920" rx="3"/>
 
         <!-- Search row -->
-        <text x="402" y="138" font-family="Inter, sans-serif" font-size="11" fill="#888" font-weight="600">Search:</text>
+        <text x="402" y="138" font-family="Inter, sans-serif" font-size="11" fill="#888" font-weight="600" data-i18n-svg="gd.search">Search:</text>
         <rect x="400" y="148" width="498" height="26" rx="3" fill="#1a1920" stroke="#3a3845" stroke-width="0.5"/>
         <text x="412" y="166" font-family="JetBrains Mono, monospace" font-size="12" fill="#d4d4d4">${searchText}</text>
         <text x="412" y="166" font-family="JetBrains Mono, monospace" font-size="12" fill="#57b3ff">
@@ -4331,7 +5114,7 @@
         <text x="913" y="166" font-family="Inter, sans-serif" font-size="12" fill="#888" text-anchor="middle">★</text>
 
         <!-- Matches: label -->
-        <text x="402" y="196" font-family="Inter, sans-serif" font-size="11" fill="#888" font-weight="600">Matches:</text>
+        <text x="402" y="196" font-family="Inter, sans-serif" font-size="11" fill="#888" font-weight="600" data-i18n-svg="gd.matches">Matches:</text>
 
         <!-- Tree (filtered to show inheritance to selected node) -->
         <g font-family="Inter, sans-serif" font-size="12">
@@ -4385,14 +5168,14 @@
 
         <!-- Description box -->
         <rect x="400" y="424" width="500" height="84" fill="#1a1920" rx="3"/>
-        <text x="408" y="442" font-family="Inter, sans-serif" font-size="10" fill="#888" font-weight="600">Description:</text>
+        <text x="408" y="442" font-family="Inter, sans-serif" font-size="10" fill="#888" font-weight="600" data-i18n-svg="gd.description">Description:</text>
         <text x="408" y="462" font-family="JetBrains Mono, monospace" font-size="10" fill="${selectedColor}">Class ${selectedNode}</text>
 
         <!-- Bottom buttons: Create (blue) and Cancel (grey) -->
         <rect x="456" y="524" width="120" height="28" rx="3" fill="#2a2832" stroke="#57b3ff" stroke-width="1"/>
-        <text x="516" y="542" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4" text-anchor="middle" font-weight="600">Create</text>
+        <text x="516" y="542" font-family="Inter, sans-serif" font-size="11" fill="#d4d4d4" text-anchor="middle" font-weight="600" data-i18n-svg="gd.create">Create</text>
         <rect x="624" y="524" width="120" height="28" rx="3" fill="#2a2832" stroke="#3a3845" stroke-width="1"/>
-        <text x="684" y="542" font-family="Inter, sans-serif" font-size="11" fill="#888" text-anchor="middle">Cancel</text>
+        <text x="684" y="542" font-family="Inter, sans-serif" font-size="11" fill="#888" text-anchor="middle" data-i18n-svg="gd.cancel">Cancel</text>
       </g>
     `;
   }
