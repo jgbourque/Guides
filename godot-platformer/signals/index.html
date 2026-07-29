@@ -172,6 +172,69 @@ canvas{display:block;width:100%;height:100%;min-height:0}
   font-size:13px;
   line-height:1.4;
 }
+/* "Why is this one-way?" accordion — only shown for the layer/mask step. Sits at the bottom
+   of the middle column (centered horizontally, avoiding the Scene panel on the left and
+   Inspector on the right). Uses <details> so it's a real interactive accordion, not just a
+   drawn hint. */
+.lm-accordion{
+  position:absolute;
+  bottom:10px;
+  left:16%;
+  right:30%;
+  z-index:6;
+  display:none;
+  background:rgba(20,17,30,.92);
+  border:1px solid rgba(255,180,84,.45);
+  border-radius:10px;
+  padding:8px 12px;
+  box-shadow:0 8px 24px rgba(0,0,0,.35);
+}
+.lm-accordion.active{display:block}
+.lm-accordion details summary{
+  cursor:pointer;
+  color:var(--accent);
+  font:700 12px/1.3 ui-monospace,SFMono-Regular,Consolas,monospace;
+  list-style:none;
+  padding:2px 0;
+  outline:none;
+}
+.lm-accordion details summary::-webkit-details-marker{display:none}
+.lm-accordion details summary::before{content:"▸  ";color:var(--accent)}
+.lm-accordion details[open] summary::before{content:"▾  "}
+.lm-accordion details p{
+  margin:8px 0 2px;
+  color:var(--ink-dim);
+  font:12px/1.5 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+}
+@media(max-width:820px){
+  .lm-accordion{left:8px;right:8px;bottom:8px}
+  .lm-accordion details summary{font-size:11px}
+  .lm-accordion details p{font-size:11px}
+}
+/* "Replay animation" button — shown only during the layer/mask steps. Sits top-right of
+   the canvas, below the mode tag, and resets stepStartMs so the staged animation plays
+   from the beginning without auto-looping. */
+.lm-replay{
+  position:absolute;
+  top:44px;
+  right:10px;
+  z-index:7;
+  display:none;
+  padding:6px 12px;
+  background:rgba(20,17,30,.92);
+  border:1px solid rgba(255,180,84,.55);
+  border-radius:20px;
+  color:var(--accent);
+  font:700 11px ui-monospace,SFMono-Regular,Consolas,monospace;
+  cursor:pointer;
+  transition:background .12s, border-color .12s;
+}
+.lm-replay.active{display:inline-flex}
+.lm-replay:hover,.lm-replay:focus-visible{
+  background:rgba(255,180,84,.14);
+  border-color:rgba(255,180,84,.85);
+  outline:none;
+}
 .mobile-pad{display:none;padding:10px 12px;background:rgba(15,12,23,.92);border:1px solid rgba(255,255,255,.12);border-radius:14px;justify-content:space-between;gap:10px;align-items:center;position:absolute;left:14px;right:14px;bottom:18px;z-index:26;box-shadow:0 12px 32px rgba(0,0,0,.35)}
 .mobile-pad.active{display:flex}
 .pad-label{font:700 11px ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.08em;min-width:72px}
@@ -224,6 +287,21 @@ pre{margin:0;padding:12px 10px;overflow:auto;flex:1;min-height:0;font:13px/1.75 
 .code-line.visible{opacity:1}
 .code-line.hi{background:rgba(255,180,84,.16);border-left-color:var(--accent);box-shadow:0 0 18px rgba(255,180,84,.06) inset}
 .code-line.glow{background:rgba(94,195,168,.16);border-left-color:var(--cool);box-shadow:0 0 22px rgba(94,195,168,.12) inset}
+/* Token-level accent used for runtime events (e.g. a signal firing on a line whose other
+   tokens ran back during _ready() and aren't executing now). Highlights the exact symbol
+   without lighting up the whole line. */
+.code-line .tok-fire{
+  color:#cff5e8;
+  background:rgba(94,195,168,.28);
+  border-radius:3px;
+  padding:0 3px;
+  box-shadow:0 0 10px rgba(94,195,168,.45);
+  animation:tokFirePulse 1.4s ease-in-out infinite;
+}
+@keyframes tokFirePulse{
+  0%,100%{box-shadow:0 0 8px rgba(94,195,168,.35)}
+  50%{box-shadow:0 0 18px rgba(94,195,168,.75)}
+}
 .explain{border-top:1px solid var(--line);background:var(--bg-deeper);padding:10px 14px 28px;min-height:126px;max-height:170px;overflow:auto}
 .explain-label{font:700 11px/1.2 ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--accent);letter-spacing:.08em;text-transform:uppercase;margin-bottom:7px}
 .explain h2{font-size:18px;margin:0 0 6px;color:var(--ink)}
@@ -959,13 +1037,12 @@ html.phone-layout .lesson.code-focus .center-code-panel{
     </div>
 
     <div class="build-strip" aria-label="Build steps">
-      <span id="buildStep1">1 Coin Area2D</span>
-      <span id="buildStep2">2 Sprite2D</span>
-      <span id="buildStep3">3 CollisionShape2D</span>
-      <span id="buildStep4">4 Attach Script</span>
-      <span id="buildStep5">5 Add Signal Code</span>
-      <span id="buildStep6">6 Test Level</span>
-      <span id="buildStep7">7 Test Pickup</span>
+      <span id="buildStep1">1 Build the coin</span>
+      <span id="buildStep2">2 Attach script</span>
+      <span id="buildStep3">3 Add signal code</span>
+      <span id="buildStep4">4 Build test level</span>
+      <span id="buildStep5">5 Layers &amp; masks</span>
+      <span id="buildStep6">6 Test the coin signal</span>
     </div>
 
     <div class="work">
@@ -985,6 +1062,15 @@ html.phone-layout .lesson.code-focus .center-code-panel{
             <h2 id="visualStepTitle">Build the Coin scene</h2>
             <p id="visualStepText">First, create the game object. Then we'll give it behavior with code.</p>
           </div>
+          <div class="lm-accordion" id="layerMaskAccordion" aria-hidden="true">
+            <details>
+              <summary data-i18n="ui.lmAccordionSummary">Why does the Coin look for the Player, not the other way?</summary>
+              <p data-i18n="ui.lmAccordionBody">This is a design choice, not a Godot rule…</p>
+            </details>
+          </div>
+          <button class="lm-replay" id="lmReplayBtn" type="button" aria-hidden="true">
+            <span data-i18n="ui.lmReplay">▶ Replay animation</span>
+          </button>
         </div>
         <div class="mobile-pad" id="pad">
           <div class="pad-label">Player controls</div>
@@ -1118,6 +1204,8 @@ const visualStepCard = document.getElementById("visualStepCard");
 const visualStepKicker = document.getElementById("visualStepKicker");
 const visualStepTitle = document.getElementById("visualStepTitle");
 const visualStepText = document.getElementById("visualStepText");
+const layerMaskAccordion = document.getElementById("layerMaskAccordion");
+const lmReplayBtn = document.getElementById("lmReplayBtn");
 const lessonEl = document.getElementById("lesson");
 const visualPanel = document.getElementById("visualPanel");
 const codePanelWrap = document.getElementById("codePanelWrap");
@@ -1126,7 +1214,7 @@ const scriptCheckpointTitle = document.getElementById("scriptCheckpointTitle");
 const scriptCheckpointList = document.getElementById("scriptCheckpointList");
 const counter = document.getElementById("counter");
 const progress = document.getElementById("progress");
-const buildSteps = [1,2,3,4,5,6,7].map(n=>document.getElementById("buildStep"+n));
+const buildSteps = [1,2,3,4,5,6].map(n=>document.getElementById("buildStep"+n));
 const backBtn = document.getElementById("backBtn");
 const nextBtn = document.getElementById("nextBtn");
 const topBackBtn = document.getElementById("topBackBtn");
@@ -1205,6 +1293,14 @@ let codeHelp_en = {
   "hitbox boundary": {
     title: "Hitbox boundary",
     text: "The invisible outline that decides what counts as touching an object. When something crosses that outline, the object it belongs to can react. Used for pickups, damage zones, buttons, trigger areas, and many other things."
+  },
+  "collision layer": {
+    title: "Collision layer",
+    text: "A tag a physics body puts on itself: 'I'm on layer X.' Every physics body has one. Layers are just numbers (1 through 32) — they don't mean anything on their own, but they let you group bodies so that other bodies can detect them selectively. In this guide, the Player is on Layer 1."
+  },
+  "collision mask": {
+    title: "Collision mask",
+    text: "The set of layers a physics body (or Area2D) is watching for. If a body enters the area and its layer is checked in this mask, the Area2D fires signals like body_entered for it. If the mask doesn't include the body's layer, nothing fires. The Coin's mask must include the Player's layer for the pickup to work."
   },
   "node": {
     title: "Node",
@@ -1334,6 +1430,13 @@ function updateCenterCodePanel(){
 
 if(codePopoverClose) codePopoverClose.addEventListener("click", hideCodePopover);
 
+// Replay button — resets the animation timeline for the layer/mask staged reveal. We
+// deliberately don't reset stepTick here since other code in the render loop reads it,
+// but the layerMask animation is keyed off stepStartMs so resetting that is enough.
+if(lmReplayBtn) lmReplayBtn.addEventListener("click", () => {
+  stepStartMs = performance.now();
+});
+
 // Delegated click handler for any prose tokens rendered inside the visual step card or the
 // explain block. The per-token handlers on code tokens in the center code panel use
 // stopPropagation, so they win for their own tokens — delegation only fires for the rest.
@@ -1355,6 +1458,11 @@ let auto=false;
 let autoTimer=null;
 let tick=0;
 let stepTick=0;
+// Real-elapsed-ms companion to stepTick — set to performance.now() on step entry. Some
+// animations (like the layer/mask step's staged reveal) need to run at a consistent wall-
+// clock pace regardless of the display's refresh rate; using stepTick alone was making
+// them play 2× fast on 120Hz displays and 2.4× fast on 144Hz.
+let stepStartMs = 0;
 let player={x:40,y:0,w:30,h:40,vx:0,vy:0,on:true};
 let coin={x:0,y:0,r:18,alive:true};
 let particles=[];
@@ -1367,8 +1475,8 @@ let freeze=false;
 let chapters = [
   {num:1, title:"Build the Coin scene",     startIdx:0,  endIdx:6},
   {num:2, title:"Write the signal code",    startIdx:7,  endIdx:17},
-  {num:3, title:"Build a test scene",       startIdx:18, endIdx:22},
-  {num:4, title:"See the signal in action", startIdx:23, endIdx:28}
+  {num:3, title:"Build a test scene",       startIdx:18, endIdx:24},
+  {num:4, title:"See the signal in action", startIdx:25, endIdx:30}
 ];
 const chapterTotal = chapters.length;
 function getChapter(idx){
@@ -1454,7 +1562,7 @@ const steps_en = [
   {
     phase:"code", mode:"SCRIPT EDITOR", title:"Add this: .connect",
     top:"Add .connect",
-    text:"The dot means: use something that belongs to body_entered. connect is a built-in method, which means an action you can use in code. Here, connect is one action you can take with a signal.",
+    text:"The dot after body_entered means: what comes next is an action to take with that signal. Here that action is [[connect]] — it links the signal to a function you'll name. Other actions use the same dot pattern; for example, body_entered.disconnect would stop listening instead.",
     customLine5:"    body_entered.connect", lines:[1,2,3,4,5], hi:[5], tree:3
   },
   {
@@ -1530,6 +1638,20 @@ const steps_en = [
     lines:[1,2,3,4,5,6,7,8], hi:[], tree:3, testStage:4
   },
   {
+    phase:"layerMask", lmPart:1, mode:"BEFORE YOU TEST · 1/2", title:"Pause (1/2): where the Player lives",
+    top:"Layers: every physics object has a label saying what it is.",
+    text:"Before we test, take a moment to see how Godot organizes physics objects. Every physics body has a [[collision layer|Layer]] — a numbered label that says what it is. The Player in this guide is on Layer 1. That's a setting on its CollisionObject2D properties, visible in the Inspector when you select the Player node.",
+    visualText:"Every physics object in Godot has a Layer — a label that says what it is. The Player is on Layer 1.",
+    lines:[1,2,3,4,5,6,7,8], hi:[], tree:3
+  },
+  {
+    phase:"layerMask", lmPart:2, mode:"BEFORE YOU TEST · 2/2", title:"Pause (2/2): what the Coin watches for",
+    top:"Masks: the layers this object watches for.",
+    text:"The Coin also has a Layer, but that's not what makes the pickup work. What matters is the Coin's [[collision mask|Mask]] — the list of layers it watches for. Since the Player is on Layer 1, the Coin's Mask row must have Layer 1 checked. It's a one-way check: the Coin watches the Player, not the other way around. Godot's defaults have Mask Layer 1 checked already, so this is mostly a chance to know why it matters.",
+    visualText:"The Coin has a Layer too, but it's the Coin's Mask that must have Layer 1 checked — that's how it watches for the Player.",
+    lines:[1,2,3,4,5,6,7,8], hi:[], tree:3
+  },
+  {
     phase:"play", mode:"PLAY TEST", title:"Do this: test the pickup",
     top:"Move the player into the coin.",
     text:"Now the player controls appear. Use the arrow keys, WASD, or the mobile buttons. Jump into the coin. The game will freeze at the moment the Area2D detects the player.",
@@ -1538,14 +1660,14 @@ const steps_en = [
   {
     phase:"fired", mode:"SIGNAL FIRED", title:"The Area2D signal fires",
     top:"body_entered fires.",
-    text:"The player entered the coin's Area2D zone. That makes the built-in body_entered signal fire, like an alarm bell going off.",
-    lines:[1,2,3,4,5,6,7,8], hi:[5], glow:[5], tree:3
+    text:"The player entered the coin's Area2D zone, so Godot fires the built-in body_entered signal. This firing happens in Godot's engine, not on any line of coin.gd — the code you wrote already did its job earlier by connecting the signal in _ready(). All that happens now is: Godot uses that stored connection to call _on_body_entered, and control jumps into that function next.",
+    lines:[1,2,3,4,5,6,7,8], hi:[], tree:3
   },
   {
     phase:"fired", mode:"SIGNAL FIRED", title:"connect() points to the recipe",
     top:"Godot checks the connected function.",
     text:"Because connect() was given _on_body_entered inside its parentheses, Godot knows which function to call. The function name is the argument we passed into connect().",
-    lines:[1,2,3,4,5,6,7,8], hi:[5,7], glow:[7], tree:3
+    lines:[1,2,3,4,5,6,7,8], hi:[7], glow:[7], tree:3
   },
   {
     phase:"fired", mode:"FUNCTION RUNS", title:"The function runs its one instruction",
@@ -1614,23 +1736,20 @@ if(typeof ResizeObserver !== "undefined"){
 
 function getBuildStage(){
   const s=steps[stepIndex];
-  // Checkpoints don't have their own pill — they confirm the last thing the learner did.
-  // Keep the active pill on whichever chapter just wrapped up, rather than letting these
-  // phases fall through to the pill-7 fallback below.
+  // Six pills now: 1 Build the coin | 2 Attach script | 3 Add signal code |
+  // 4 Build test level | 5 Layers & masks | 6 Test the coin signal
+  // Checkpoints stay on the pill for the chapter they wrap up.
   if(s.phase==="checkpoint"){
-    if(s.checkpointGroup==="scene")  return 4;   // just finished attach-script
-    if(s.checkpointGroup==="script") return 5;   // just finished writing code
-    if(s.checkpointGroup==="test")   return 7;   // just finished play-test
+    if(s.checkpointGroup==="scene")  return 1;
+    if(s.checkpointGroup==="script") return 3;
+    if(s.checkpointGroup==="test")   return 6;
   }
-  if(s.phase==="scene"){
-    if((s.tree||0)<=1) return 1;
-    if((s.tree||0)===2) return 2;
-    return 3;
-  }
-  if(s.phase==="attach") return 4;
-  if(s.phase==="code" || s.phase==="summary") return 5;
-  if(s.phase==="testSetup") return 6;
-  return 7;
+  if(s.phase==="scene") return 1;
+  if(s.phase==="attach") return 2;
+  if(s.phase==="code" || s.phase==="summary") return 3;
+  if(s.phase==="testSetup") return 4;
+  if(s.phase==="layerMask") return 5;
+  return 6;
 }
 function renderBuildStrip(){
   if(!buildSteps || !buildSteps.length) return;
@@ -1641,7 +1760,7 @@ function renderBuildStrip(){
   });
 }
 
-const buildJumpSteps = [0,3,4,5,10,18,23];
+const buildJumpSteps = [0,5,10,18,23,25];
 buildSteps.forEach((el,i)=>{
   el.addEventListener("click", ()=>{
     const targetStep = buildJumpSteps[i] ?? 0;
@@ -1764,6 +1883,7 @@ function updateScriptCheckpointOverlay(s){
 
 function applyStep(instant=false){
   stepTick=0;
+  stepStartMs = performance.now();
   const s=steps[stepIndex];
 
   // Update the chapter indicator. When crossing a chapter boundary, flash the indicator
@@ -1793,6 +1913,25 @@ function applyStep(instant=false){
   explainText.innerHTML=renderProseWithTokens(s.text);
   modeTag.textContent=s.mode;
   updateVisualStepCard(s);
+  // Show the "why one-way?" accordion only on Part 2 of the layer/mask teaching, since
+  // that's where the one-way concept lands. Part 1 focuses on the Player's layer alone.
+  if(layerMaskAccordion){
+    const isLmP2 = s.phase === "layerMask" && s.lmPart === 2;
+    layerMaskAccordion.classList.toggle("active", isLmP2);
+    layerMaskAccordion.setAttribute("aria-hidden", isLmP2 ? "false" : "true");
+    if(!isLmP2){
+      const d = layerMaskAccordion.querySelector("details");
+      if(d) d.open = false;
+    }
+  }
+  // Replay button shows on both layer/mask parts — since the animation no longer auto-loops,
+  // the learner needs an explicit control to rewatch. Clicking it resets stepStartMs, which
+  // is what the drawLayerMask beats key off of, so the sequence plays from the beginning.
+  if(lmReplayBtn){
+    const isLm = s.phase === "layerMask";
+    lmReplayBtn.classList.toggle("active", isLm);
+    lmReplayBtn.setAttribute("aria-hidden", isLm ? "false" : "true");
+  }
   playBtn.textContent = s.phase==="play" || s.phase==="fired" || s.phase==="gone" ? t("ui","resetPlay") : t("ui","playTest");
   pad.classList.toggle("active", ["play","fired","gone"].includes(s.phase));
   backBtn.disabled = stepIndex===0;
@@ -1809,7 +1948,10 @@ function applyStep(instant=false){
   // the full width of the lesson. Removes the "coin.gd" label + empty pre + duplicated
   // explain block that were creating visual noise.
   const wasNoCodePanel = lessonEl.classList.contains("no-code-panel");
-  const willBeNoCodePanel = chapter.num === 1;
+  // Ch1 has no script yet, Ch3 is about building the test scene (so the finished coin.gd
+  // shouldn't take up real estate that could go to the scene-building visual), and the
+  // layerMask step needs the full canvas to teach the concept.
+  const willBeNoCodePanel = chapter.num === 1 || chapter.num === 3 || s.phase === "layerMask";
   lessonEl.classList.toggle("no-code-panel", willBeNoCodePanel);
   // Chapter 3 keeps the finished coin.gd as a reference but hides the explain block
   // below it (which would otherwise just repeat the visual step card).
@@ -1862,9 +2004,25 @@ function startTypingFromCurrent(){
 
 function typeLineClasses(){
   const s=steps[stepIndex];
+  const hiTokens = s.hiTokens || null;
   lineEls.forEach((el,i)=>{
-    el.textContent=typed[i];
     const n=i+1;
+    const text = typed[i];
+    const tokensForLine = hiTokens ? hiTokens[n] : null;
+    if(tokensForLine && tokensForLine.length && text){
+      // Render this line as HTML so we can wrap specific tokens in .tok-fire spans.
+      // Word-boundary regex (\b) ensures a token like "body_entered" is only highlighted
+      // as the standalone identifier — it won't match inside "_on_body_entered".
+      let html = safeHTML(text);
+      tokensForLine.forEach(tok => {
+        const escTok = tok.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const rx = new RegExp(`\\b${escTok}\\b`, "g");
+        html = html.replace(rx, `<span class="tok-fire">${safeHTML(tok)}</span>`);
+      });
+      el.innerHTML = html;
+    } else {
+      el.textContent = text;
+    }
     let cls="code-line";
     if(typed[i] || typeTarget[i]) cls+=" visible";
     if((s.hi||[]).includes(n)) cls+=" hi";
@@ -1925,7 +2083,7 @@ function scheduleAuto(){
     if(steps[stepIndex].phase==="play" && coin.alive){ scheduleAuto(); return; }
     nextStep();
     scheduleAuto();
-  }, stepIndex<4?3300:stepIndex<14?5600:4200);
+  }, stepIndex===5 ? 10500 : stepIndex===23 ? 10000 : stepIndex===24 ? 11500 : stepIndex<4?3300:stepIndex<14?5600:4200);
 }
 
 function resetPlayer(resetCoin=true){
@@ -2008,6 +2166,7 @@ function draw(){
   if(["play","fired","gone"].includes(s.phase)) drawGame();
   else if(s.phase==="testSetup") drawTestSetup(s);
   else if(s.phase==="checkpoint") drawCheckpoint(s);
+  else if(s.phase==="layerMask") drawLayerMask(s);
   else drawEditor(s);
 }
 
@@ -2094,7 +2253,7 @@ function drawEditor(s){
       ctx.fillStyle="rgba(93,173,226,.28)";
       ctx.fillRect(10,rowY,panelW-20,rowH);
     }
-    ctx.fillStyle=n.color; ctx.font="700 12px ui-monospace,monospace";
+    ctx.fillStyle=n.color; ctx.font="700 "+(panelW<200?"10.5px":"12px")+" ui-monospace,monospace";
     ctx.fillText(" ".repeat(n.indent*2)+n.icon+" "+n.name,18+n.indent*22,y);
     ctx.fillStyle="#858593"; ctx.font=(W<500?"11px":"9px")+" ui-monospace,monospace";
     ctx.fillText(n.type,42+n.indent*22,y+17);
@@ -2127,7 +2286,10 @@ function drawEditor(s){
   }
   if(s.phase==="attach"){
     const pulse = (Math.sin(tick*.06)+1)/2;
-    const p = Math.min(1, stepTick/90);
+    // Real-elapsed-ms timing so the animation runs at the same pace regardless of the
+    // display's refresh rate. Icon slide: 300ms delay → 2500ms slide (finishes ~2.8s in).
+    const elapsedMs = performance.now() - stepStartMs;
+    const p = Math.max(0, Math.min(1, (elapsedMs - 300) / 2500));
 
     const buttonX = Math.max(18, panelW - 58);
     const buttonY = 50;
@@ -2247,6 +2409,92 @@ function drawEditor(s){
       ctx.fillStyle="#b3a98f";
       ctx.font=(W<500?"11px":"11px")+" ui-monospace,monospace";
       ctx.fillText(t("ui","clickToOpen"),calloutX+12,calloutY+43);
+
+      // ── Transition animation ─────────────────────────────────────────────
+      // Once the script icon has landed, play out the click for the learner: a mouse
+      // cursor glides from the callout area to the icon, clicks (ripple), and then the
+      // viewport fades away and the Script Editor slides in. Once the sequence completes,
+      // it stays at the end state (Script Editor visible), which cues what's about to
+      // happen when they follow the instruction themselves. Timings are in real ms so the
+      // pacing doesn't accelerate on high-refresh-rate displays.
+      const p2 = Math.max(0, Math.min(1, (elapsedMs - 4500) / 1800));   // cursor glide (1.8s)
+      const p3 = Math.max(0, Math.min(1, (elapsedMs - 6200) / 700));    // click ripple (0.7s)
+      const p4 = Math.max(0, Math.min(1, (elapsedMs - 6800) / 2000));   // viewport fade to dark (2s)
+      const p5 = Math.max(0, Math.min(1, (elapsedMs - 7600) / 1800));   // script editor fade in (1.8s)
+
+      if(p2 > 0 && p4 < 1){
+        const cursorStartX = calloutX + Math.min(calloutW*.55, 160);
+        const cursorStartY = calloutY + 30;
+        const cursorEndX = scriptX - 2;
+        const cursorEndY = scriptY - 4;
+        const e = p2*p2*(3 - 2*p2);
+        const cx = cursorStartX + (cursorEndX - cursorStartX) * e;
+        const cy = cursorStartY + (cursorEndY - cursorStartY) * e;
+        const cAlpha = 1 - p4;
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.fillStyle = `rgba(245,245,250,${cAlpha * 0.98})`;
+        ctx.strokeStyle = `rgba(15,12,23,${cAlpha * 0.9})`;
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(0, 15);
+        ctx.lineTo(4, 12);
+        ctx.lineTo(7, 16);
+        ctx.lineTo(9, 15);
+        ctx.lineTo(6, 11);
+        ctx.lineTo(11, 10);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      if(p3 > 0 && p3 < 1){
+        const rippleR = 5 + p3 * 22;
+        const rippleAlpha = (1 - p3) * 0.85;
+        ctx.strokeStyle = `rgba(255,180,84,${rippleAlpha})`;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(scriptX + 2, scriptY - 4, rippleR, 0, Math.PI*2);
+        ctx.stroke();
+      }
+
+      if(p4 > 0){
+        ctx.fillStyle = `rgba(11,10,18,${p4 * 0.95})`;
+        ctx.fillRect(panelW+1, 30, W-panelW-1, H-30);
+      }
+
+      if(p5 > 0){
+        const editX = panelW + 12;
+        const editY = 44;
+        const editW = W - panelW - 24;
+        const editH = H - 62;
+        ctx.fillStyle = `rgba(15,12,23,${p5})`;
+        ctx.beginPath();
+        ctx.roundRect(editX, editY, editW, editH, 10);
+        ctx.fill();
+        ctx.strokeStyle = `rgba(58,51,73,${p5})`;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Script editor "tab" label
+        ctx.fillStyle = `rgba(255,180,84,${p5})`;
+        ctx.font = "bold 12px ui-monospace,monospace";
+        ctx.textAlign = "left";
+        ctx.fillText("coin.gd", editX + 16, editY + 24);
+
+        // A couple of faint lines to signal "you're in the script editor"
+        ctx.fillStyle = `rgba(133,133,147,${p5 * 0.85})`;
+        ctx.font = "12px ui-monospace,monospace";
+        ctx.fillText("# coin.gd", editX + 16, editY + 52);
+
+        // Blinking cursor — "ready for you to type"
+        if(Math.floor(tick / 26) % 2 === 0){
+          ctx.fillStyle = `rgba(255,180,84,${p5})`;
+          ctx.fillRect(editX + 16, editY + 72, 8, 14);
+        }
+      }
     }
   }
 
@@ -2475,14 +2723,21 @@ function drawTestSetup(s){
     {name:"Coin2", type:t("ui","rowType_optionalCopy"), icon:"●", indent:1}
   ];
   const stage = s.testStage != null ? s.testStage : 1;
-  // Only draw scene-tree rows once TestLevel exists (stage >= 1). During the "open a new
-  // blank scene" step (stage 0), the Scene panel is intentionally empty — the learner
-  // hasn't added anything yet.
+  // Only draw scene-tree rows once at least one node exists (stage >= 1). During the
+  // "open a new blank scene" step (stage 0) the Scene panel is intentionally empty.
+  //
+  // Semantics: testStage counts how many nodes have been added so far.
+  //   stage=1 → step "add TestLevel"   → row 0 drawn + highlighted
+  //   stage=2 → step "add Floor"       → rows 0,1 drawn, row 1 highlighted
+  //   stage=3 → step "add Player"      → rows 0,1,2 drawn, row 2 highlighted
+  //   stage=4 → step "add Coin"        → rows 0,1,2,3 drawn, row 3 highlighted
+  // The current row (the one being added at this step) is stage - 1.
   if(stage >= 1){
+    const currentRow = stage - 1;
     rows.forEach((r,i)=>{
-      if(i>stage) return;
+      if(i > currentRow) return;
       const y=(W<500?142:132)+i*(W<500?48:44);
-      const selected=i===stage;
+      const selected=i===currentRow;
       if(selected){
         const rowH = W<500 ? 46 : 42;
         const rowY = y-22;
@@ -2631,6 +2886,583 @@ function drawTestSetup(s){
   }
 }
 
+// The "pause before test" moment. This step teaches a new concept (collision layers
+// and masks) and is split into two navigable steps so the learner can absorb one idea
+// at a time. Part 1 focuses only on the Player and its Layer. Part 2 brings the Coin
+// in and introduces the Mask concept. Each part is a self-contained looping animation
+// so learners see the reveal from the start regardless of when they arrive.
+//
+// Both parts share the same layout: Scene panel left, teaching diagram middle, Inspector
+// right. Timing is real elapsed milliseconds (not stepTick, which is frame-count based
+// and runs 2× faster on 120Hz displays, 2.4× on 144Hz).
+function drawLayerMask(s){
+  ctx.fillStyle="#181820"; ctx.fillRect(0,0,W,H);
+  const isNarrow = W < 780;
+  const isMobile = W < 520;
+  const pulse = (Math.sin(tick*.055)+1)/2;
+  const lmPart = s.lmPart || 1;
+
+  // Animation plays once and holds at the end state. A Replay button (see the HTML overlay
+  // for #lmReplayBtn) resets stepStartMs so the learner can rewatch on demand. That's more
+  // usable than an auto-loop that keeps resetting the visual mid-thought.
+  const elapsedMs = performance.now() - stepStartMs;
+  const localMs = elapsedMs;
+
+  const fadeIn = (startMs, endMs) => Math.max(0, Math.min(1, (localMs - startMs) / (endMs - startMs)));
+  const attentionPulse = (startMs, endMs) => {
+    const t = (localMs - startMs) / (endMs - startMs);
+    if(t <= 0 || t >= 1) return 0;
+    return Math.sin(t * Math.PI);
+  };
+
+  const menuH = 26;
+  const sceneW = isMobile ? 88 : Math.min(140, Math.max(108, W * 0.14));
+  const inspectorW = isMobile ? 210 : Math.min(280, Math.max(232, W * 0.28));
+  const midX = sceneW;
+  const midW = W - sceneW - inspectorW;
+  const inspX = W - inspectorW;
+  const bodyTop = menuH;
+  const bodyH = H - bodyTop;
+
+  // ─── Menu strip ───────────────────────────────────────────────────────────
+  ctx.fillStyle="#24262e"; ctx.fillRect(0, 0, W, menuH);
+  ctx.fillStyle="#b8b8c0";
+  ctx.font=(isMobile?"10px":"11px")+" ui-monospace,monospace";
+  ctx.textAlign="left";
+  ctx.fillText(t("ui","fileMenu"), 12, 17);
+
+  // ─── Scene panel (left) ───────────────────────────────────────────────────
+  ctx.fillStyle="#17181d"; ctx.fillRect(0, bodyTop, sceneW, bodyH);
+  ctx.strokeStyle="#3a3a44";
+  ctx.beginPath(); ctx.moveTo(sceneW, bodyTop); ctx.lineTo(sceneW, H); ctx.stroke();
+
+  ctx.fillStyle="#2b2d35"; ctx.fillRect(0, bodyTop, sceneW, 28);
+  ctx.fillStyle="#f4ecd8";
+  ctx.font="bold "+(isMobile?"10px":"11px")+" ui-monospace,monospace";
+  ctx.fillText(t("ui","panelScene"), 10, bodyTop + 19);
+
+  const playerRowY = bodyTop + 54;
+  const coinRowY = playerRowY + 28;
+  // Highlight follows the current focus: Player in Part 1, Coin in Part 2.
+  if(lmPart === 1){
+    ctx.fillStyle="rgba(94,195,168,.28)";
+    ctx.fillRect(4, playerRowY-14, sceneW-8, 20);
+    ctx.fillStyle="#5ec3a8";
+    ctx.font="bold "+(isMobile?"10px":"11px")+" ui-monospace,monospace";
+    ctx.fillText("▲ Player", 10, playerRowY);
+    ctx.fillStyle="rgba(255,180,84,.6)";
+    ctx.font="bold "+(isMobile?"10px":"11px")+" ui-monospace,monospace";
+    ctx.fillText("● Coin", 10, coinRowY);
+    ctx.fillStyle="rgba(133,133,147,.6)";
+    ctx.font=(isMobile?"8px":"9px")+" ui-monospace,monospace";
+    ctx.fillText("Area2D", 20, coinRowY+12);
+  } else {
+    ctx.fillStyle="rgba(94,195,168,.6)";
+    ctx.font="bold "+(isMobile?"10px":"11px")+" ui-monospace,monospace";
+    ctx.fillText("▲ Player", 10, playerRowY);
+    ctx.fillStyle="rgba(255,180,84,.28)";
+    ctx.fillRect(4, coinRowY-14, sceneW-8, 20);
+    ctx.fillStyle="#ffb454";
+    ctx.font="bold "+(isMobile?"10px":"11px")+" ui-monospace,monospace";
+    ctx.fillText("● Coin", 10, coinRowY);
+    ctx.fillStyle="#858593";
+    ctx.font=(isMobile?"8px":"9px")+" ui-monospace,monospace";
+    ctx.fillText("Area2D", 20, coinRowY+12);
+  }
+
+  // ─── Middle: teaching diagram ─────────────────────────────────────────────
+  ctx.fillStyle="#11101a";
+  ctx.fillRect(midX, bodyTop, midW, bodyH);
+  ctx.strokeStyle="rgba(255,255,255,.03)";
+  for(let x=midX+10; x<midX+midW; x+=30){ ctx.beginPath(); ctx.moveTo(x, bodyTop); ctx.lineTo(x, H); ctx.stroke(); }
+  for(let y=bodyTop+10; y<H; y+=30){ ctx.beginPath(); ctx.moveTo(midX, y); ctx.lineTo(midX+midW, y); ctx.stroke(); }
+
+  const midCX = midX + midW/2;
+  const titleY = bodyTop + 30;
+  ctx.fillStyle="#f4ecd8";
+  ctx.font="bold "+(isNarrow?"14px":"16px")+" ui-monospace,monospace";
+  ctx.textAlign="center";
+  ctx.fillText(t("ui","layerMaskTitle"), midCX, titleY);
+
+  ctx.fillStyle="#a8a8b8";
+  ctx.font=(isNarrow?"10px":"11px")+" ui-monospace,monospace";
+  ctx.fillText(lmPart === 1 ? t("ui","lm1Subtitle") : t("ui","lm2Subtitle"), midCX, titleY + 18);
+
+  // Figures positions
+  const figuresY = titleY + 130;
+  const playerCX = lmPart === 1 ? midCX : midX + midW * 0.28;
+  const coinCX = midX + midW * 0.72;
+  const playerH = 46, playerW = 32;
+  const coinR = 22;
+  const badgeY = figuresY + playerH/2 + 16;
+
+  if(lmPart === 1){
+    // ═══════════════════ PART 1: PLAYER + LAYER ═══════════════════
+    // Beats: Player fades in → label → badge → attention pulse on Inspector Layer row →
+    //        concept text → summary sentence → hold → loop.
+
+    const B_PLAYER_IN     = [500, 2000];
+    const B_PLAYER_LABEL  = [1200, 2500];
+    const B_PLAYER_BADGE  = [2200, 3500];
+    const B_LAYER_SPOT    = [3000, 5500];
+    const B_CONCEPT       = [3800, 5300];
+    const B_SUMMARY       = [5500, 7000];
+
+    // Concept line
+    const conceptY = titleY + 52;
+    ctx.fillStyle=`rgba(200,200,208,${fadeIn(...B_CONCEPT)})`;
+    ctx.font=(isNarrow?"11px":"12.5px")+" ui-monospace,monospace";
+    ctx.fillText(t("ui","lm1ConceptFull"), midCX, conceptY);
+
+    // Player figure (centered in Part 1)
+    const pA = fadeIn(...B_PLAYER_IN);
+    if(pA > 0){
+      ctx.fillStyle=`rgba(94,195,168,${pA})`;
+      ctx.fillRect(playerCX - playerW/2, figuresY - playerH/2, playerW, playerH);
+      ctx.fillStyle=`rgba(17,16,26,${pA})`;
+      ctx.fillRect(playerCX - playerW/2 + 7, figuresY - playerH/2 + 10, 5, 5);
+      ctx.fillRect(playerCX - playerW/2 + 20, figuresY - playerH/2 + 10, 5, 5);
+      ctx.fillRect(playerCX - 5, figuresY - playerH/2 + 26, 10, 3);
+    }
+    const pLA = fadeIn(...B_PLAYER_LABEL);
+    if(pLA > 0){
+      ctx.fillStyle=`rgba(94,195,168,${pLA})`;
+      ctx.font="bold "+(isNarrow?"12px":"13px")+" ui-monospace,monospace";
+      ctx.fillText(t("ui","playerLabel"), playerCX, figuresY - playerH/2 - 12);
+    }
+    const pBA = fadeIn(...B_PLAYER_BADGE);
+    if(pBA > 0){
+      const bText = t("ui","layerMaskPlayerLayer");
+      ctx.font="bold "+(isNarrow?"11px":"12px")+" ui-monospace,monospace";
+      ctx.textAlign="center";
+      const bW = ctx.measureText(bText).width + 16;
+      ctx.fillStyle=`rgba(94,195,168,${0.15 * pBA})`;
+      ctx.fillRect(playerCX - bW/2, badgeY - 12, bW, 18);
+      ctx.strokeStyle=`rgba(94,195,168,${0.55 * pBA})`;
+      ctx.lineWidth=1;
+      ctx.strokeRect(playerCX - bW/2, badgeY - 12, bW, 18);
+      ctx.fillStyle=`rgba(94,195,168,${pBA})`;
+      ctx.fillText(bText, playerCX, badgeY);
+      ctx.fillStyle=`rgba(122,122,134,${pBA})`;
+      ctx.font=(isNarrow?"10px":"11px")+" ui-monospace,monospace";
+      ctx.fillText(t("ui","layerMaskMyId"), playerCX, badgeY + 17);
+    }
+
+    // Summary sentence at bottom
+    const summaryY = badgeY + 60;
+    const sA = fadeIn(...B_SUMMARY);
+    if(sA > 0){
+      ctx.fillStyle=`rgba(94,195,168,${sA})`;
+      ctx.font="bold "+(isNarrow?"12px":"13.5px")+" ui-monospace,monospace";
+      ctx.textAlign="center";
+      ctx.fillText(t("ui","lm1Summary"), midCX, summaryY);
+    }
+
+    // Store the spotlight window for the Inspector code below
+    var _layerSpotStart = B_LAYER_SPOT[0], _layerSpotEnd = B_LAYER_SPOT[1];
+    var _showMask = false, _showArrow = false, _showTakeaway = false;
+
+  } else {
+    // ═══════════════════ PART 2: COIN + MASK ═══════════════════
+    // Player is already fully visible (carrying over from Part 1). Coin fades in, then
+    // its grey Layer badge shows briefly, then the amber Mask badge takes over. Inspector
+    // is already Coin state from the start.
+
+    const B_COIN_IN         = [500, 2000];
+    const B_COIN_LABEL      = [1200, 2500];
+    const B_COIN_LAYER_DIM  = [2500, 3800];
+    const B_CONCEPT_A       = [2800, 4300];
+    const B_CONCEPT_B       = [3800, 5300];
+    const B_COIN_MASK       = [4500, 6000];
+    const B_MASK_SPOT       = [5000, 7500];
+    const B_ARROW           = [5500, 7000];
+    const B_TAKEAWAY_A      = [6500, 8000];
+    const B_TAKEAWAY_B      = [7500, 9000];
+
+    // Concept lines A + B
+    const conceptY = titleY + 52;
+    ctx.fillStyle=`rgba(200,200,208,${fadeIn(...B_CONCEPT_A)})`;
+    ctx.font=(isNarrow?"10.5px":"12px")+" ui-monospace,monospace";
+    ctx.fillText(t("ui","layerMaskConceptA"), midCX, conceptY);
+    ctx.fillStyle=`rgba(200,200,208,${fadeIn(...B_CONCEPT_B)})`;
+    ctx.fillText(t("ui","layerMaskConceptB"), midCX, conceptY + 17);
+
+    // Player (fully visible immediately in Part 2)
+    ctx.fillStyle="#5ec3a8";
+    ctx.fillRect(playerCX - playerW/2, figuresY - playerH/2, playerW, playerH);
+    ctx.fillStyle="#11101a";
+    ctx.fillRect(playerCX - playerW/2 + 7, figuresY - playerH/2 + 10, 5, 5);
+    ctx.fillRect(playerCX - playerW/2 + 20, figuresY - playerH/2 + 10, 5, 5);
+    ctx.fillRect(playerCX - 5, figuresY - playerH/2 + 26, 10, 3);
+    ctx.fillStyle="#5ec3a8";
+    ctx.font="bold "+(isNarrow?"11px":"12px")+" ui-monospace,monospace";
+    ctx.textAlign="center";
+    ctx.fillText(t("ui","playerLabel"), playerCX, figuresY - playerH/2 - 12);
+    // Player badge
+    const pbText = t("ui","layerMaskPlayerLayer");
+    ctx.font="bold "+(isNarrow?"10px":"11px")+" ui-monospace,monospace";
+    const pbW = ctx.measureText(pbText).width + 14;
+    ctx.fillStyle="rgba(94,195,168,.15)";
+    ctx.fillRect(playerCX - pbW/2, badgeY - 11, pbW, 16);
+    ctx.strokeStyle="rgba(94,195,168,.55)";
+    ctx.lineWidth=1;
+    ctx.strokeRect(playerCX - pbW/2, badgeY - 11, pbW, 16);
+    ctx.fillStyle="#5ec3a8";
+    ctx.fillText(pbText, playerCX, badgeY);
+
+    // Coin figure — fades in
+    const cA = fadeIn(...B_COIN_IN);
+    if(cA > 0){
+      ctx.fillStyle=`rgba(255,180,84,${cA})`;
+      ctx.beginPath();
+      ctx.arc(coinCX, figuresY, coinR, 0, Math.PI*2);
+      ctx.fill();
+      ctx.fillStyle=`rgba(0,0,0,${0.28 * cA})`;
+      ctx.font="bold "+(coinR*0.9|0)+"px sans-serif";
+      ctx.textBaseline="middle";
+      ctx.textAlign="center";
+      ctx.fillText("◎", coinCX, figuresY);
+      ctx.textBaseline="alphabetic";
+    }
+    const cLA = fadeIn(...B_COIN_LABEL);
+    if(cLA > 0){
+      ctx.fillStyle=`rgba(255,180,84,${cLA})`;
+      ctx.font="bold "+(isNarrow?"11px":"12px")+" ui-monospace,monospace";
+      ctx.textAlign="center";
+      ctx.fillText(t("ui","layerMaskCoinLabel"), coinCX, figuresY - coinR - 12);
+    }
+    // Coin's grey Layer badge (brief) — same y as the Mask badge, so they crossfade in
+    // place rather than stacking on top of the coin visual. Grey fades out as amber fades in.
+    const cLdA = fadeIn(...B_COIN_LAYER_DIM);
+    const cMA = fadeIn(...B_COIN_MASK);
+    if(cLdA > 0 && cMA < 0.95){
+      const dimA = cLdA * (1 - cMA);
+      const dText = t("ui","layerMaskPlayerLayer");
+      ctx.font="bold "+(isNarrow?"10px":"11px")+" ui-monospace,monospace";
+      ctx.textAlign="center";
+      const dW = ctx.measureText(dText).width + 14;
+      ctx.fillStyle=`rgba(122,122,134,${0.20 * dimA})`;
+      ctx.fillRect(coinCX - dW/2, badgeY - 12, dW, 18);
+      ctx.strokeStyle=`rgba(122,122,134,${0.50 * dimA})`;
+      ctx.lineWidth=1;
+      ctx.strokeRect(coinCX - dW/2, badgeY - 12, dW, 18);
+      ctx.fillStyle=`rgba(180,180,190,${dimA})`;
+      ctx.fillText(dText, coinCX, badgeY);
+    }
+    // Coin's amber Mask badge — the focus
+    if(cMA > 0){
+      const mText = t("ui","layerMaskMaskValue");
+      ctx.font="bold "+(isNarrow?"11px":"12px")+" ui-monospace,monospace";
+      ctx.textAlign="center";
+      const mW = ctx.measureText(mText).width + 16;
+      ctx.fillStyle=`rgba(255,180,84,${0.15 * cMA})`;
+      ctx.fillRect(coinCX - mW/2, badgeY - 12, mW, 18);
+      ctx.strokeStyle=`rgba(255,180,84,${0.55 * cMA})`;
+      ctx.lineWidth=1;
+      ctx.strokeRect(coinCX - mW/2, badgeY - 12, mW, 18);
+      ctx.fillStyle=`rgba(255,180,84,${cMA})`;
+      ctx.fillText(mText, coinCX, badgeY);
+      ctx.fillStyle=`rgba(122,122,134,${cMA})`;
+      ctx.font=(isNarrow?"10px":"11px")+" ui-monospace,monospace";
+      ctx.fillText(t("ui","layerMaskIWatch"), coinCX, badgeY + 17);
+    }
+
+    // Arrow
+    const arA = fadeIn(...B_ARROW);
+    if(arA > 0){
+      const arrowY = figuresY;
+      const arrowStart = coinCX - coinR - 8;
+      const arrowEnd = playerCX + playerW/2 + 8;
+      ctx.strokeStyle=`rgba(255,180,84,${arA * (0.55 + 0.35*pulse)})`;
+      ctx.lineWidth=2;
+      ctx.setLineDash([6,4]);
+      ctx.beginPath();
+      ctx.moveTo(arrowStart, arrowY);
+      ctx.lineTo(arrowEnd, arrowY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.strokeStyle=`rgba(255,180,84,${arA})`;
+      ctx.lineWidth=2;
+      ctx.beginPath();
+      ctx.moveTo(arrowEnd+7, arrowY-5);
+      ctx.lineTo(arrowEnd, arrowY);
+      ctx.lineTo(arrowEnd+7, arrowY+5);
+      ctx.stroke();
+      ctx.fillStyle=`rgba(255,180,84,${arA})`;
+      ctx.font="bold "+(isNarrow?"10px":"11px")+" ui-monospace,monospace";
+      ctx.textAlign="center";
+      ctx.fillText(t("ui","layerMaskWatchesLayer"), (arrowStart+arrowEnd)/2, arrowY - 12);
+    }
+
+    // Takeaways
+    const takeawayY = badgeY + 52;
+    const tA = fadeIn(...B_TAKEAWAY_A);
+    const tB = fadeIn(...B_TAKEAWAY_B);
+    if(tA > 0){
+      ctx.fillStyle=`rgba(94,195,168,${tA})`;
+      ctx.font="bold "+(isNarrow?"11px":"12px")+" ui-monospace,monospace";
+      ctx.textAlign="center";
+      ctx.fillText(t("ui","layerMaskMatchOk"), midCX, takeawayY);
+    }
+    if(tB > 0){
+      ctx.fillStyle=`rgba(168,168,184,${tB})`;
+      ctx.font=(isNarrow?"10px":"11px")+" ui-monospace,monospace";
+      ctx.fillText(t("ui","layerMaskOneWay"), midCX, takeawayY + 20);
+    }
+
+    var _layerSpotStart = 0, _layerSpotEnd = 0;  // no Layer spotlight in Part 2
+    var _showMask = true;
+    var _showArrow = true;
+    var _showTakeaway = true;
+    var _maskSpotStart = B_MASK_SPOT[0], _maskSpotEnd = B_MASK_SPOT[1];
+  }
+
+  // ─── Inspector (right) ────────────────────────────────────────────────────
+  ctx.textAlign="left";
+  ctx.fillStyle="#1f2028";
+  ctx.fillRect(inspX, bodyTop, inspectorW, bodyH);
+  ctx.strokeStyle="#3a3a44";
+  ctx.beginPath();
+  ctx.moveTo(inspX, bodyTop); ctx.lineTo(inspX, H); ctx.stroke();
+
+  // Tab bar
+  ctx.fillStyle="#2b2d35";
+  ctx.fillRect(inspX, bodyTop, inspectorW, 26);
+  ctx.fillStyle="#f4ecd8";
+  ctx.font="bold "+(isMobile?"10px":"11px")+" ui-monospace,monospace";
+  ctx.textAlign="left";
+  ctx.fillText(t("ui","layerMaskInspector"), inspX + 10, bodyTop + 18);
+  ctx.fillStyle="#5a5a60";
+  ctx.font=(isMobile?"9px":"10px")+" ui-monospace,monospace";
+  ctx.fillText("Signals   Groups", inspX + inspectorW - 100, bodyTop + 18);
+
+  const rowH = isMobile ? 15 : 16;
+  const propFont = (isMobile?"9.5px":"10.5px")+" ui-monospace,monospace";
+
+  if(lmPart === 1){
+    // Player Inspector
+    const nodeY = bodyTop + 46;
+    ctx.fillStyle="rgba(94,195,168,.10)";
+    ctx.fillRect(inspX+4, nodeY-14, inspectorW-8, 20);
+    ctx.fillStyle="#5ec3a8";
+    ctx.font="bold "+(isMobile?"11px":"12px")+" ui-monospace,monospace";
+    ctx.fillText("▲ Player", inspX + 10, nodeY);
+    ctx.fillStyle="#858593";
+    ctx.font=(isMobile?"9px":"10px")+" ui-monospace,monospace";
+    ctx.fillText("(CharacterBody2D)", inspX + 10 + 62, nodeY);
+
+    let py = nodeY + 22;
+    ctx.fillStyle="#7a7a86";
+    ctx.font=propFont;
+    ctx.fillText("Motion Mode", inspX + 12, py + 10);
+    py += rowH;
+    ctx.fillText("Up Direction", inspX + 12, py + 10);
+    py += rowH + 4;
+    ctx.fillStyle="#a8a8b8";
+    ctx.font="bold " + propFont;
+    ctx.fillText("▸ Floor", inspX + 8, py + 10);
+    py += rowH + 2;
+    ctx.fillText("▸ CollisionObject2D", inspX + 8, py + 10);
+    py += rowH + 2;
+
+    const collHeaderY = py;
+    ctx.fillStyle="rgba(94,195,168,.10)";
+    ctx.fillRect(inspX+2, collHeaderY, inspectorW-4, rowH+2);
+    ctx.fillStyle="#5ec3a8";
+    ctx.font="bold "+(isMobile?"10.5px":"11.5px")+" ui-monospace,monospace";
+    ctx.fillText("▼ " + t("ui","layerMaskCollision"), inspX + 8, collHeaderY + 11);
+    py += rowH + 6;
+
+    ctx.fillStyle="#858593";
+    ctx.font=(isMobile?"10px":"11px")+" ui-monospace,monospace";
+    ctx.fillText(t("ui","layerMaskLayer"), inspX + 14, py + 10);
+    const layerCbY = py + 16;
+    drawLmCheckboxRow(inspX + 14, layerCbY, 0, isMobile, pulse);
+    py = layerCbY + (isMobile ? 12 : 13) + 18;
+
+    ctx.fillStyle="#858593";
+    ctx.fillText(t("ui","layerMaskMask"), inspX + 14, py + 10);
+    const maskCbY = py + 16;
+    drawLmCheckboxRow(inspX + 14, maskCbY, -1, isMobile, pulse);
+
+    // Attention spotlight on Player Layer row
+    const spotL = attentionPulse(_layerSpotStart, _layerSpotEnd);
+    if(spotL > 0){
+      ctx.strokeStyle=`rgba(94,195,168,${spotL * 0.85})`;
+      ctx.lineWidth=2;
+      ctx.beginPath();
+      ctx.roundRect(inspX + 10, layerCbY - 22, inspectorW - 20, 34, 6);
+      ctx.stroke();
+      ctx.fillStyle=`rgba(94,195,168,${spotL * 0.12})`;
+      ctx.fillRect(inspX + 10, layerCbY - 22, inspectorW - 20, 34);
+    }
+
+  } else {
+    // Coin Inspector
+    const nodeY = bodyTop + 46;
+    ctx.fillStyle="rgba(255,180,84,.10)";
+    ctx.fillRect(inspX+4, nodeY-14, inspectorW-8, 20);
+    ctx.fillStyle="#ffb454";
+    ctx.font="bold "+(isMobile?"11px":"12px")+" ui-monospace,monospace";
+    ctx.fillText("● Coin", inspX + 10, nodeY);
+    ctx.fillStyle="#858593";
+    ctx.font=(isMobile?"9px":"10px")+" ui-monospace,monospace";
+    ctx.fillText("(Area2D)", inspX + 10 + 52, nodeY);
+
+    let py = nodeY + 22;
+    ctx.fillStyle="#7a7a86";
+    ctx.font=propFont;
+    ctx.fillText("Texture", inspX + 12, py + 10);
+    ctx.textAlign="right";
+    ctx.fillStyle="#5a5a60";
+    ctx.fillText("<empty>", inspX + inspectorW - 10, py + 10);
+    ctx.textAlign="left";
+    py += rowH;
+    ctx.fillStyle="#7a7a86";
+    ctx.fillText("Tint", inspX + 12, py + 10);
+    ctx.fillStyle="#e8e8ec";
+    ctx.strokeStyle="#3a3a44";
+    ctx.lineWidth=1;
+    ctx.fillRect(inspX + inspectorW - 42, py - rowH + 20, 30, 10);
+    ctx.strokeRect(inspX + inspectorW - 42, py - rowH + 20, 30, 10);
+    py += rowH + 4;
+
+    ctx.fillStyle="#a8a8b8";
+    ctx.font="bold " + propFont;
+    ctx.fillText("▸ Area2D", inspX + 8, py + 10);
+    py += rowH + 2;
+    ctx.fillText("▸ CollisionObject2D", inspX + 8, py + 10);
+    py += rowH + 2;
+
+    const collHeaderY = py;
+    ctx.fillStyle="rgba(94,195,168,.10)";
+    ctx.fillRect(inspX+2, collHeaderY, inspectorW-4, rowH+2);
+    ctx.fillStyle="#5ec3a8";
+    ctx.font="bold "+(isMobile?"10.5px":"11.5px")+" ui-monospace,monospace";
+    ctx.fillText("▼ " + t("ui","layerMaskCollision"), inspX + 8, collHeaderY + 11);
+    py += rowH + 6;
+
+    ctx.fillStyle="#5ec3a8";
+    ctx.font=(isMobile?"8.5px":"9.5px")+" ui-monospace,monospace";
+    ctx.fillText(t("ui","layerMaskCollisionNote"), inspX + 10, py + 8);
+    py += 14;
+
+    // Layer row (dim — Coin has one, but it's not the focus)
+    ctx.fillStyle="#7a7a86";
+    ctx.font=(isMobile?"10px":"11px")+" ui-monospace,monospace";
+    ctx.fillText(t("ui","layerMaskLayer"), inspX + 14, py + 10);
+    const layerCbY = py + 16;
+    drawLmCheckboxRow(inspX + 14, layerCbY, 0, isMobile, pulse, true);
+    py = layerCbY + (isMobile ? 12 : 13) + 12;
+    ctx.fillStyle="#666670";
+    ctx.font=(isMobile?"8.5px":"9px")+" ui-monospace,monospace";
+    ctx.fillText(t("ui","layerMaskLayerHint"), inspX + 14, py);
+    py += 12;
+
+    // Mask row (the focus)
+    ctx.fillStyle="#858593";
+    ctx.font=(isMobile?"10px":"11px")+" ui-monospace,monospace";
+    ctx.fillText(t("ui","layerMaskMask"), inspX + 14, py + 10);
+    const maskCbY = py + 16;
+    drawLmCheckboxRow(inspX + 14, maskCbY, 0, isMobile, pulse);
+
+    // "check Layer 1" prompt — sits to the RIGHT of the mask checkbox row instead of
+    // below with a dotted arrow (that layout was crammed alongside the attention spotlight
+    // and the CanvasItem-trap note). The pulsing amber checkbox and spotlight already
+    // provide the visual pointer.
+    const cMask = fadeIn(4500, 6000);
+    if(cMask > 0.3){
+      const cbSize = isMobile ? 12 : 13;
+      const cbGap = 2;
+      const groupGap = 5;
+      const rowEndX = inspX + 14 + 8*cbSize + 7*cbGap + groupGap;
+      ctx.fillStyle=`rgba(255,180,84,${cMask})`;
+      ctx.font="bold "+(isMobile?"9.5px":"10px")+" ui-monospace,monospace";
+      ctx.textAlign="left";
+      ctx.fillText("← " + t("ui","layerMaskCheckPrompt"), rowEndX + 6, maskCbY + cbSize/2 + 4);
+    }
+
+    // Attention spotlight on Mask row
+    const spotM = attentionPulse(_maskSpotStart, _maskSpotEnd);
+    if(spotM > 0){
+      ctx.strokeStyle=`rgba(255,180,84,${spotM * 0.85})`;
+      ctx.lineWidth=2;
+      ctx.beginPath();
+      ctx.roundRect(inspX + 10, maskCbY - 22, inspectorW - 20, 34, 6);
+      ctx.stroke();
+      ctx.fillStyle=`rgba(255,180,84,${spotM * 0.12})`;
+      ctx.fillRect(inspX + 10, maskCbY - 22, inspectorW - 20, 34);
+    }
+
+    // Collapsed sections below — more breathing room so the mask focus stays readable
+    const belowY = maskCbY + (isMobile ? 12 : 13) + 34;
+    ctx.fillStyle="#a8a8b8";
+    ctx.font="bold " + propFont;
+    ctx.textAlign="left";
+    ctx.fillText("▸ Node2D", inspX + 8, belowY);
+    ctx.fillText("▸ CanvasItem", inspX + 8, belowY + rowH + 4);
+    ctx.fillStyle="#666670";
+    ctx.font=(isMobile?"8.5px":"9.5px")+" ui-monospace,monospace";
+    ctx.textAlign="right";
+    ctx.fillText(t("ui","layerMaskCanvasHint"), inspX + inspectorW - 10, belowY + rowH + 4);
+    ctx.textAlign="left";
+  }
+}
+
+// Shared checkbox-row drawer used by both Inspector states in drawLayerMask.
+// `checkedIdx` = index (0-7) that should be checked; -1 means none.
+// `dim` = draw a checked box in a muted grey instead of amber (used when the checkbox
+// is technically set but not the current focus).
+function drawLmCheckboxRow(gridX, y, checkedIdx, isMobile, pulse, dim){
+  const cbSize = isMobile ? 12 : 13;
+  const cbGap = 2;
+  const groupGap = 5;
+  for(let i=0; i<8; i++){
+    const groupOffset = (i>=4 ? groupGap : 0);
+    const x = gridX + i*(cbSize+cbGap) + groupOffset;
+    if(i === checkedIdx){
+      if(dim){
+        ctx.fillStyle="rgba(120,120,132,.35)";
+        ctx.fillRect(x, y, cbSize, cbSize);
+        ctx.strokeStyle="#5a5a60";
+        ctx.lineWidth=1;
+        ctx.strokeRect(x, y, cbSize, cbSize);
+        ctx.strokeStyle="#c8c8d0";
+        ctx.lineWidth=1.5;
+        ctx.beginPath();
+        ctx.moveTo(x+3, y+cbSize/2);
+        ctx.lineTo(x+cbSize/2-1, y+cbSize-4);
+        ctx.lineTo(x+cbSize-3, y+3);
+        ctx.stroke();
+      } else {
+        ctx.fillStyle=`rgba(255,180,84,${0.55 + 0.30*pulse})`;
+        ctx.fillRect(x, y, cbSize, cbSize);
+        ctx.strokeStyle="#ffb454";
+        ctx.lineWidth=1.5;
+        ctx.strokeRect(x, y, cbSize, cbSize);
+        ctx.strokeStyle="#181820";
+        ctx.lineWidth=2;
+        ctx.beginPath();
+        ctx.moveTo(x+3, y+cbSize/2);
+        ctx.lineTo(x+cbSize/2-1, y+cbSize-4);
+        ctx.lineTo(x+cbSize-3, y+3);
+        ctx.stroke();
+      }
+    } else {
+      ctx.strokeStyle="#5a5a60";
+      ctx.lineWidth=1;
+      ctx.strokeRect(x, y, cbSize, cbSize);
+      ctx.fillStyle="#5a5a60";
+      ctx.font=(isMobile?"8px":"9px")+" ui-monospace,monospace";
+      ctx.textAlign="center";
+      ctx.textBaseline="middle";
+      ctx.fillText(String(i+1), x + cbSize/2, y + cbSize/2);
+      ctx.textBaseline="alphabetic";
+      ctx.textAlign="left";
+    }
+  }
+}
+
 function drawGame(){
   const floor=H-92;
   ctx.fillStyle="#11101a";ctx.fillRect(0,0,W,H);
@@ -2741,7 +3573,43 @@ const i18n = {
       rowType_coinInstance: "coin instance",
       rowType_optionalCopy: "optional copy",
       playerLabel: "Player",
-      coinScenesLabel: "Coin scenes"
+      coinScenesLabel: "Coin scenes",
+      // Layer/Mask concept step
+      layerMaskHeader: "How Layer 1 links the Player and the Coin",
+      layerMaskInspector: "Inspector",
+      layerMaskCollision: "Collision",
+      layerMaskLayer: "Layer",
+      layerMaskMask: "Mask",
+      layerMaskLayerHint: "(any value works)",
+      layerMaskMatchLabel: "Layer 1 matches",
+      layerMaskCheckPrompt: "check Layer 1",
+      layerMaskPlayerLayer: "Layer: 1",
+      layerMaskMaskValue: "Mask: Layer 1 ✓",
+      // Teaching text drawn on the canvas
+      layerMaskTitle: "Layers & Masks",
+      layerMaskSubtitle: "How Godot decides which physics objects notice which",
+      layerMaskConceptA: "Every physics object lives on a Layer, and",
+      layerMaskConceptB: "has a Mask — the layers it watches for.",
+      layerMaskWhy: "Without this, everything would react to everything.",
+      // Part 1 specific
+      lm1ConceptFull: "Layers are like slices of the physics world.",
+      lm1Summary: "The Player lives on Layer 1.",
+      lm1Subtitle: "Part 1 — Layers: labels on every physics object",
+      lm2Subtitle: "Part 2 — Masks: what each object watches for",
+      layerMaskMyId: "(the Player's slice)",
+      layerMaskIWatch: "(watches Layer 1)",
+      layerMaskWatchesLayer: "watches Layer 1",
+      layerMaskCoinLabel: "Coin (Area2D)",
+      layerMaskMatchOk: "Match → Coin sees Player → body_entered fires",
+      layerMaskOneWay: "One direction: Player doesn't need to know Coin exists.",
+      layerMaskWhereInGodot: "Where to check this in Godot →",
+      // Inspector depth + CanvasItem trap
+      layerMaskCollisionNote: "This section — not CanvasItem's Visibility Layer.",
+      layerMaskCanvasHint: "(different — visibility, not collision)",
+      // Accordion — the "why one-way" question
+      lmAccordionSummary: "Why does the Coin look for the Player, not the other way?",
+      lmAccordionBody: "Think about what happens when the Coin gets picked up: it plays a chime, disappears, adds to a score. That's all Coin behavior. If the Player watched for the Coin, the Player script would need to know how to remove a Coin, play its sound, update the score — Coin logic would end up living inside the Player. That doesn't scale. Add a health pack, a key, a powerup, and the Player script grows every time. When each pickup watches for the Player instead, each pickup handles its own reaction. Adding a new pickup means writing a new pickup — the Player script doesn't change. (There are cases where the Player should watch — sensing a wall or a hazard, for example. For pickups and triggers, though, the pickup being the watcher is cleaner.)",
+      lmReplay: "▶ Replay animation"
     },
     chapterTitles: {
       1: "Build the Coin scene",
@@ -2750,13 +3618,12 @@ const i18n = {
       4: "See the signal in action"
     },
     pills: [
-      "1 Coin Area2D",
-      "2 Sprite2D",
-      "3 CollisionShape2D",
-      "4 Attach Script",
-      "5 Add Signal Code",
-      "6 Test Level",
-      "7 Test Pickup"
+      "1 Build the coin",
+      "2 Attach script",
+      "3 Add signal code",
+      "4 Build test level",
+      "5 Layers & masks",
+      "6 Test the coin signal"
     ],
     quickBuild: {
       title: "Quick rebuild checklist",
@@ -2831,7 +3698,43 @@ const i18n = {
       rowType_coinInstance: "instancia de Coin",
       rowType_optionalCopy: "copia opcional",
       playerLabel: "Player",
-      coinScenesLabel: "Escenas Coin"
+      coinScenesLabel: "Escenas Coin",
+      // Layer/Mask concept step
+      layerMaskHeader: "Cómo la Capa 1 conecta al Player y a la Coin",
+      layerMaskInspector: "Inspector",
+      layerMaskCollision: "Colisión",
+      layerMaskLayer: "Capa",
+      layerMaskMask: "Máscara",
+      layerMaskLayerHint: "(cualquier valor sirve)",
+      layerMaskMatchLabel: "La Capa 1 coincide",
+      layerMaskCheckPrompt: "marca la Capa 1",
+      layerMaskPlayerLayer: "Capa: 1",
+      layerMaskMaskValue: "Máscara: Capa 1 ✓",
+      // Teaching text drawn on the canvas
+      layerMaskTitle: "Capas y Máscaras",
+      layerMaskSubtitle: "Cómo Godot decide qué objetos físicos notan a cuáles",
+      layerMaskConceptA: "Cada objeto físico vive en una Capa, y",
+      layerMaskConceptB: "tiene una Máscara — las capas que observa.",
+      layerMaskWhy: "Sin esto, todo reaccionaría a todo.",
+      // Part 1 specific
+      lm1ConceptFull: "Las Capas son como rebanadas del mundo físico.",
+      lm1Summary: "El Player vive en la Capa 1.",
+      lm1Subtitle: "Parte 1 — Capas: etiquetas en cada objeto físico",
+      lm2Subtitle: "Parte 2 — Máscaras: qué observa cada objeto",
+      layerMaskMyId: "(la rebanada del Player)",
+      layerMaskIWatch: "(observa la Capa 1)",
+      layerMaskWatchesLayer: "observa la Capa 1",
+      layerMaskCoinLabel: "Coin (Area2D)",
+      layerMaskMatchOk: "Coinciden → Coin ve al Player → se dispara body_entered",
+      layerMaskOneWay: "Una dirección: al Player no le importa la Coin.",
+      layerMaskWhereInGodot: "Dónde revisarlo en Godot →",
+      // Inspector depth + CanvasItem trap
+      layerMaskCollisionNote: "Esta sección — no la Visibility Layer de CanvasItem.",
+      layerMaskCanvasHint: "(distinto — visibilidad, no colisión)",
+      // Accordion — the "why one-way" question
+      lmAccordionSummary: "¿Por qué la Coin busca al Player y no al revés?",
+      lmAccordionBody: "Piensa en lo que pasa cuando la Coin se recoge: suena una campanita, desaparece, añade puntos. Todo eso es comportamiento de la Coin. Si el Player observara a la Coin, su script tendría que saber cómo eliminar una Coin, reproducir su sonido, actualizar la puntuación — la lógica de la Coin acabaría viviendo dentro del Player. Eso no escala. Añade un botiquín, una llave, un potenciador, y el script del Player crece con cada uno. Cuando cada recogida observa al Player en su lugar, cada una maneja su propia reacción. Añadir una nueva recogida significa escribir una nueva recogida — el script del Player no cambia. (Hay casos en los que el Player sí debería observar — detectar un muro o un peligro, por ejemplo. Pero para recogidas y disparadores, que la recogida sea la observadora es más limpio.)",
+      lmReplay: "▶ Repetir animación"
     },
     chapterTitles: {
       1: "Construye la escena Coin",
@@ -2840,13 +3743,12 @@ const i18n = {
       4: "Ve la señal en acción"
     },
     pills: [
-      "1 Coin Area2D",
-      "2 Sprite2D",
-      "3 CollisionShape2D",
-      "4 Adjuntar script",
-      "5 Código de señal",
-      "6 Nivel de prueba",
-      "7 Probar recogida"
+      "1 Construye la moneda",
+      "2 Adjunta el script",
+      "3 Añade el código de señal",
+      "4 Construye el nivel de prueba",
+      "5 Capas y máscaras",
+      "6 Prueba la señal de la moneda"
     ],
     quickBuild: {
       title: "Lista rápida para reconstruir",
@@ -2943,7 +3845,7 @@ const steps_es_overrides = [
   { mode:"EDITOR DE SCRIPT",
     title:"Añade esto: .connect",
     top:"Añade .connect",
-    text:"El punto significa: usa algo que pertenece a body_entered. connect es un método integrado, es decir, una acción que puedes usar en el código. Aquí, connect es una acción que puedes tomar con una señal." },
+    text:"El punto después de body_entered significa: lo que viene después es una acción para hacer con esa señal. Aquí esa acción es [[connect]]: enlaza la señal con una función que vas a nombrar. Otras acciones usan el mismo patrón con el punto; por ejemplo, body_entered.disconnect dejaría de escuchar." },
   // 12 parentheses
   { mode:"EDITOR DE SCRIPT",
     title:"Añade esto: paréntesis",
@@ -3005,32 +3907,44 @@ const steps_es_overrides = [
     top:"Añade una o más Coins al nivel.",
     text:"Añade la [[scene|escena]] Coin al nivel como hija de TestLevel. Coloca una o más Coins donde el Player pueda alcanzarlas. Ahora el script de la [[signal|señal]] tiene algo que probar.",
     visualText:"Añade la [[scene|escena]] Coin como hija de TestLevel. Colócala donde el Player pueda alcanzarla. Ahora el script de la [[signal|señal]] tiene algo que probar." },
-  // 23 Play test
+  // 23 Pause: layer/mask alignment — Part 1 (Player + Layer)
+  { mode:"ANTES DE PROBAR · 1/2",
+    title:"Pausa (1/2): dónde vive el Player",
+    top:"Capas: cada objeto físico tiene una etiqueta que dice qué es.",
+    text:"Antes de probar, tómate un momento para ver cómo Godot organiza los objetos físicos. Cada cuerpo físico tiene una [[collision layer|Capa]] — una etiqueta numerada que dice qué es. El Player en esta guía está en la Capa 1. Es un ajuste en sus propiedades de CollisionObject2D, visible en el Inspector cuando seleccionas el nodo Player.",
+    visualText:"Cada objeto físico en Godot tiene una Capa — una etiqueta que dice qué es. El Player está en la Capa 1." },
+  // 24 Pause: layer/mask alignment — Part 2 (Coin + Mask + takeaway)
+  { mode:"ANTES DE PROBAR · 2/2",
+    title:"Pausa (2/2): qué observa la Coin",
+    top:"Máscaras: las capas que este objeto observa.",
+    text:"La Coin también tiene una Capa, pero eso no es lo que hace que funcione la recogida. Lo que importa es la [[collision mask|Máscara]] de la Coin — la lista de capas que observa. Como el Player está en la Capa 1, la fila de Máscara de la Coin debe tener la Capa 1 marcada. Es una verificación de un solo sentido: la Coin observa al Player, no al revés. Los valores por defecto de Godot ya tienen la Capa 1 marcada, así que este paso es sobre todo una oportunidad para saber por qué importa.",
+    visualText:"La Coin también tiene una Capa, pero es la Máscara de la Coin la que debe tener la Capa 1 marcada — así es como observa al Player." },
+  // 25 Play test
   { mode:"PRUEBA DE JUEGO",
     title:"Haz esto: prueba la recogida",
     top:"Mueve al jugador hacia la moneda.",
     text:"Ahora aparecen los controles del jugador. Usa las flechas, WASD o los botones móviles. Salta hacia la moneda. El juego se congelará en el momento en que el Area2D detecte al jugador." },
-  // 24 Signal fires
+  // 26 Signal fires
   { mode:"SEÑAL DISPARADA",
     title:"La señal de Area2D se dispara",
     top:"body_entered se dispara.",
-    text:"El jugador entró en la zona Area2D de la moneda. Eso hace que la señal integrada body_entered se dispare, como una campana de alarma que suena." },
-  // 25 connect points to recipe
+    text:"El jugador entró en la zona Area2D de la moneda, así que Godot dispara la señal integrada body_entered. Este disparo ocurre en el motor de Godot, no en ninguna línea de coin.gd — el código que escribiste ya hizo su trabajo antes al conectar la señal en _ready(). Lo único que pasa ahora es que Godot usa esa conexión guardada para llamar a _on_body_entered, y el control salta a esa función." },
+  // 27 connect points to recipe
   { mode:"SEÑAL DISPARADA",
     title:"connect() apunta a la receta",
     top:"Godot revisa la función conectada.",
     text:"Como a connect() se le pasó _on_body_entered dentro de sus paréntesis, Godot sabe qué función llamar. El nombre de la función es el argumento que le pasamos a connect()." },
-  // 26 Function runs
+  // 28 Function runs
   { mode:"SE EJECUTA LA FUNCIÓN",
     title:"La función ejecuta su única instrucción",
     top:"_on_body_entered ejecuta queue_free().",
     text:"Ahora la receta se ejecuta. Contiene una instrucción: queue_free(). Esa instrucción elimina la moneda de la escena." },
-  // 27 Coin gone
+  // 29 Coin gone
   { mode:"MONEDA ELIMINADA",
     title:"La moneda desaparece",
     top:"queue_free eliminó la moneda.",
     text:"Ese es el bucle completo: el Area2D detecta al jugador, la señal body_entered se dispara, connect() apunta a la función, y la función ejecuta queue_free(). El script completo en pantalla es el script que puedes usar en Godot." },
-  // 28 Test checkpoint
+  // 30 Test checkpoint
   { mode:"PUNTO DE CONTROL",
     title:"Punto de control: ¡La recogida funciona!",
     top:"Probaste la interacción.",
@@ -3054,6 +3968,8 @@ const codeHelp_es = {
   "signal":           { title: "Señal",            text: "Un anuncio que un nodo puede transmitir cuando algo sucede. Otro código puede escuchar una señal y ejecutarse cuando se dispara. Los nodos vienen con muchas señales integradas para eventos comunes, y también puedes crear las tuyas. body_entered es un ejemplo de señal integrada." },
   "hitbox":           { title: "Hitbox",           text: "La forma invisible que decide qué cuenta como tocar o chocar con algo. Las hitboxes aparecen por todas partes en el diseño de juegos: recogidas, áreas de daño, cuerpos de personajes, proyectiles, botones que reaccionan al ser pisados y más." },
   "hitbox boundary":  { title: "Límite de hitbox", text: "El contorno invisible que decide qué cuenta como tocar un objeto. Cuando algo cruza ese contorno, el objeto al que pertenece puede reaccionar. Se usa para recogidas, zonas de daño, botones, áreas de disparador y muchas cosas más." },
+  "collision layer":  { title: "Capa de colisión", text: "Una etiqueta que un cuerpo físico se pone a sí mismo: 'Estoy en la capa X'. Todo cuerpo físico tiene una. Las capas son solo números (del 1 al 32) — no significan nada por sí solas, pero te permiten agrupar cuerpos para que otros cuerpos los detecten de forma selectiva. En esta guía, el Player está en la Capa 1." },
+  "collision mask":   { title: "Máscara de colisión", text: "El conjunto de capas que un cuerpo físico (o Area2D) está observando. Si un cuerpo entra en el área y su capa está marcada en esta máscara, el Area2D dispara señales como body_entered para él. Si la máscara no incluye la capa del cuerpo, no se dispara nada. La máscara de la Coin debe incluir la capa del Player para que la recogida funcione." },
   "node":             { title: "Nodo",             text: "El bloque básico de construcción de cualquier escena de Godot. Todo en un juego de Godot —un jugador, una moneda, un botón, una cámara, un elemento de UI— es un nodo. Los nodos se organizan en un árbol." },
   "scene":            { title: "Escena",           text: "Un grupo guardado de nodos que actúa como una sola cosa reutilizable. Una escena Coin es una moneda que puedes soltar en cualquier nivel. Una escena Level puede contener muchas escenas Coin más una escena Player. Casi cualquier cosa reutilizable en un juego de Godot se construye como una escena." },
   "GDScript":         { title: "GDScript",         text: "El lenguaje de programación integrado de Godot. Se parece mucho a Python y está diseñado para funcionar naturalmente con nodos y señales." },
