@@ -1,0 +1,1620 @@
+<!DOCTYPE html>
+<html lang="en" data-lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How game objects communicate in Godot · The collectible coin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================================
+   A deliberately simple, single-scroll guide. Light page, dark figures
+   (figures depict Godot's dark editor, so dark panels are accurate there).
+   Each figure teaches ONE idea, plays once on scroll-in, holds its end state,
+   and offers Replay. Only the final pickup loop repeats.
+
+   i18n: every piece of text exists as a .en / .es span pair, toggled by CSS
+   via html[data-lang]. Editing a step = editing one spot in the markup.
+   ============================================================================ */
+
+:root{
+  --paper:#f7f4ee;
+  --paper-deep:#efeae0;
+  --ink:#2b2733;
+  --ink-soft:#5f5a6b;
+  --ink-faint:#8b8595;
+  --hairline:#e0dacd;
+  --coin:#e8963a;          /* amber, deepened for light background */
+  --coin-soft:#f6e3c8;
+  --teal:#2e8c74;
+  --teal-soft:#dcebe5;
+  --editor:#201f28;        /* dark figure panels = Godot's own UI palette */
+  --editor-line:#38343f;
+  --editor-ink:#e8e4da;
+  --editor-dim:#9b96a4;
+  --fig-amber:#ffb454;     /* brighter amber reads better ON dark panels */
+  --fig-teal:#5ec3a8;
+  --code-key:#b39ddb;
+  --code-com:#8a9e8a;
+  --radius:12px;
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font:400 17px/1.65 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* Language toggle mechanics — one rule pair does all localization */
+[data-lang="en"] .es{display:none}
+[data-lang="es"] .en{display:none}
+
+h1,h2,h3{
+  font-family:Fraunces,Georgia,serif;
+  font-variation-settings:"SOFT" 0,"WONK" 0;
+  line-height:1.15;
+  margin:0;
+}
+
+/* ---------- sticky header ---------- */
+.topbar{
+  position:sticky;top:0;z-index:50;
+  background:rgba(247,244,238,.92);
+  backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--hairline);
+}
+.topbar-inner{
+  max-width:760px;margin:0 auto;
+  padding:10px 20px;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+}
+.topbar .brand{
+  font:600 13px/1.2 Inter,sans-serif;
+  letter-spacing:.02em;
+  color:var(--ink-soft);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.topbar .brand b{color:var(--ink);font-weight:700}
+.progress{
+  position:absolute;left:0;top:0;height:2px;width:0;
+  background:var(--coin);
+  transition:width .12s linear;
+}
+.lang{
+  display:inline-flex;border:1px solid var(--hairline);border-radius:20px;overflow:hidden;
+  background:#fff;
+  flex:none;
+}
+.lang button{
+  border:0;background:transparent;
+  font:600 12px Inter,sans-serif;color:var(--ink-faint);
+  padding:5px 13px;cursor:pointer;
+}
+.lang button.on{background:var(--ink);color:var(--paper)}
+.lang button:focus-visible{outline:2px solid var(--coin);outline-offset:-2px}
+
+/* ---------- layout ---------- */
+main{max-width:760px;margin:0 auto;padding:0 20px 90px}
+.hero{padding:64px 0 8px}
+.eyebrow{
+  font:700 12px/1.4 ui-monospace,SFMono-Regular,Consolas,monospace;
+  letter-spacing:.14em;text-transform:uppercase;
+  color:var(--coin);
+  margin:0 0 14px;
+}
+.hero h1{font-size:clamp(34px,6vw,52px);font-weight:700;letter-spacing:-.01em}
+.hero h1 .ac{color:var(--coin)}
+.lede{font-size:18.5px;color:var(--ink-soft);max-width:640px;margin:22px 0 0}
+.lede strong{color:var(--ink)}
+
+/* table of contents */
+.toc{
+  margin:36px 0 0;
+  padding:18px 22px;
+  border:1px solid var(--hairline);
+  border-radius:var(--radius);
+  background:#fffdf9;
+}
+.toc .toc-label{
+  font:700 11px/1 ui-monospace,monospace;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-faint);margin:0 0 10px;
+}
+.toc ol{margin:0;padding:0 0 0 20px}
+.toc li{margin:4px 0;font-size:15.5px}
+.toc a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--hairline)}
+.toc a:hover{color:var(--coin);border-color:var(--coin)}
+
+/* ---------- chapters ---------- */
+.chapter{margin-top:84px}
+.ch-head{display:flex;align-items:baseline;gap:16px;border-bottom:2px solid var(--ink);padding-bottom:12px}
+.ch-num{
+  font-family:Fraunces,serif;font-variation-settings:"SOFT" 0,"WONK" 0;
+  font-size:44px;font-weight:700;color:var(--coin);line-height:1;
+}
+.ch-head h2{font-size:clamp(24px,4vw,32px);font-weight:700}
+.ch-goal{margin:12px 0 0;color:var(--ink-soft);font-size:16px}
+.ch-intro{margin:18px 0 0;font-size:17px}
+
+/* label that marks each chapter's step list, with a self-demonstrating legend:
+   a mini step-circle loops the click interaction (1 → fills → ✓) so the UI shows
+   what to do instead of spelling it out */
+.steps-label{
+  font:700 11px ui-monospace,monospace;
+  letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-faint);
+  margin:38px 0 0;
+  display:flex;align-items:center;justify-content:space-between;
+  gap:14px;flex-wrap:wrap;
+}
+.steps-label + .steps{margin-top:16px}
+.steps .done-legend{
+  position:relative;
+  margin:0;
+  padding:2px 0 26px 58px;
+  font:600 12.5px Inter,sans-serif;
+  letter-spacing:0;text-transform:none;
+  color:var(--ink-faint);
+}
+.steps .done-legend .demo-num{position:absolute;left:6px;top:-1px}
+.demo-num{
+  position:relative;flex:none;
+  width:24px;height:24px;border-radius:50%;
+  border:2px solid var(--coin);
+  animation:demoFill 3.4s ease-in-out infinite;
+}
+.demo-num::before,
+.demo-num::after{
+  position:absolute;inset:0;
+  display:grid;place-items:center;
+}
+.demo-num::before{
+  content:"1";
+  font:700 12px ui-monospace,monospace;color:var(--coin);
+  animation:demoNum 3.4s ease-in-out infinite;
+}
+.demo-num::after{
+  content:"✓";
+  font:700 13px ui-monospace,monospace;color:#fff;
+  opacity:0;
+  animation:demoCheck 3.4s ease-in-out infinite;
+}
+@keyframes demoFill{0%,45%{background:var(--paper)}60%,88%{background:var(--coin)}100%{background:var(--paper)}}
+@keyframes demoNum{0%,45%{opacity:1}60%,88%{opacity:0}100%{opacity:1}}
+@keyframes demoCheck{0%,45%{opacity:0}60%,88%{opacity:1}100%{opacity:0}}
+
+/* ---------- the signal wire: steps threaded on a vertical line ---------- */
+.steps{position:relative;margin-top:34px;counter-reset:none}
+.steps::before{
+  content:"";position:absolute;left:17px;top:14px;bottom:14px;
+  width:2px;background:var(--hairline);
+}
+main{counter-reset:step}
+.step{
+  position:relative;
+  padding:0 0 34px 58px;
+  counter-increment:step;
+}
+.step:last-child{padding-bottom:6px}
+.step .num{
+  position:absolute;left:0;top:-2px;
+  width:36px;height:36px;border-radius:50%;
+  background:var(--paper);
+  border:2px solid var(--coin);
+  color:var(--coin);
+  font:700 15px/32px ui-monospace,monospace;
+  text-align:center;
+  cursor:pointer;
+  user-select:none;
+  transition:background .15s,color .15s;
+}
+.step .num:hover{background:var(--coin-soft)}
+.step .num:hover::before{content:"✓"}
+.step .num:focus-visible{outline:2px solid var(--coin);outline-offset:3px}
+.step.done .num{background:var(--coin);color:#fff}
+.step.done .num::before{content:"✓"}
+.step .num::before{content:counter(step)}
+/* Marking a step done collapses its body down to the (dimmed) title — done work
+   recedes, so the first expanded step reads as "you are here". Click to reopen. */
+.step-body{
+  display:grid;grid-template-rows:1fr;
+  transition:grid-template-rows .35s ease;
+}
+.step-body .sbi{min-height:0;overflow:hidden}
+.step.done .step-body{grid-template-rows:0fr}
+.step.done h3{color:var(--ink-faint)}
+.step:has(.step-body) h3{cursor:pointer}
+.step h3{font-size:19.5px;font-weight:700;margin:4px 0 8px}
+.step p{margin:0 0 10px;color:var(--ink);font-size:16.5px}
+.step p:last-child{margin-bottom:0}
+.tip{
+  margin:10px 0 0;font-size:14.5px;color:var(--ink-soft);
+  padding-left:12px;border-left:3px solid var(--hairline);
+}
+
+/* ---------- concept notes (unnumbered) ---------- */
+.note{
+  margin:44px 0;
+  padding:22px 24px;
+  background:var(--coin-soft);
+  border-radius:var(--radius);
+}
+.note .note-kicker{
+  font:700 11px/1 ui-monospace,monospace;letter-spacing:.14em;text-transform:uppercase;
+  color:#a5641c;margin:0 0 10px;
+}
+.note h3{font-size:19px;margin:0 0 8px}
+.note p{margin:0 0 10px;font-size:16px}
+.note p:last-child{margin-bottom:0}
+
+/* ---------- checkpoint cards ---------- */
+.checkpoint{
+  margin:44px 0;
+  padding:22px 24px;
+  background:var(--teal-soft);
+  border-radius:var(--radius);
+}
+.checkpoint .note-kicker{
+  font:700 11px/1 ui-monospace,monospace;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--teal);margin:0 0 10px;
+}
+.checkpoint h3{font-size:19px;margin:0 0 12px}
+.checkpoint label{
+  display:flex;align-items:flex-start;gap:10px;
+  margin:8px 0;font-size:15.5px;cursor:pointer;
+}
+.checkpoint input[type=checkbox]{
+  appearance:none;flex:none;
+  width:19px;height:19px;margin-top:2px;
+  border:2px solid var(--teal);border-radius:5px;background:#fff;
+  cursor:pointer;position:relative;
+}
+.checkpoint input[type=checkbox]:checked{background:var(--teal)}
+.checkpoint input[type=checkbox]:checked::after{
+  content:"";position:absolute;left:5px;top:1px;
+  width:4px;height:9px;border:solid #fff;border-width:0 2.5px 2.5px 0;
+  transform:rotate(43deg);
+}
+.checkpoint input[type=checkbox]:focus-visible{outline:2px solid var(--coin);outline-offset:2px}
+.checkpoint label input:checked ~ span{color:var(--ink-faint);text-decoration:line-through}
+
+/* ---------- jargon terms ---------- */
+.term{
+  font-weight:600;color:var(--ink);
+  border-bottom:2px dotted var(--coin);
+  cursor:pointer;background:none;border-top:0;border-left:0;border-right:0;
+  font-size:inherit;font-family:inherit;padding:0;line-height:inherit;
+}
+.term:hover{color:var(--coin)}
+.term:focus-visible{outline:2px solid var(--coin);outline-offset:2px;border-radius:2px}
+.defbox{
+  margin:12px 0 4px;
+  padding:13px 16px;
+  background:#fffdf9;
+  border:1px solid var(--coin);
+  border-radius:10px;
+  font-size:14.5px;
+  color:var(--ink);
+  position:relative;
+}
+.defbox b{display:block;margin-bottom:3px;font-family:ui-monospace,monospace;font-size:13.5px;color:#a5641c}
+.defbox .close{
+  position:absolute;top:6px;right:10px;
+  border:0;background:none;color:var(--ink-faint);
+  font:700 15px Inter,sans-serif;cursor:pointer;padding:2px 6px;
+}
+.defbox .close:hover{color:var(--ink)}
+
+/* ---------- code panels ---------- */
+.code{
+  margin:14px 0 4px;
+  background:var(--editor);
+  border-radius:10px;
+  padding:14px 0;
+  overflow-x:auto;
+}
+.code pre{
+  margin:0;
+  font:13.5px/1.75 ui-monospace,SFMono-Regular,Consolas,monospace;
+  color:var(--editor-ink);
+}
+.code .ln{display:block;padding:0 18px;white-space:pre}
+.code .ln.new{
+  background:rgba(255,180,84,.13);
+  box-shadow:inset 3px 0 0 var(--fig-amber);
+}
+.code .k{color:var(--code-key)}
+.code .c{color:var(--code-com);font-style:italic}
+.code .fn{color:var(--fig-amber)}
+.code .cur{
+  display:inline-block;width:8px;height:15px;vertical-align:-2px;
+  background:var(--fig-amber);
+  animation:blink 1.15s steps(1) infinite;
+}
+@keyframes blink{50%{opacity:0}}
+
+/* ---------- accordion ---------- */
+details.qa{
+  margin:18px 0 0;
+  border:1px solid var(--hairline);
+  border-radius:10px;
+  background:#fffdf9;
+  padding:0;
+}
+details.qa summary{
+  cursor:pointer;list-style:none;
+  padding:13px 18px;
+  font-weight:600;font-size:15.5px;color:var(--ink);
+}
+details.qa summary::-webkit-details-marker{display:none}
+details.qa summary::before{content:"▸  ";color:var(--coin)}
+details.qa[open] summary::before{content:"▾  "}
+details.qa .qa-body{padding:0 18px 15px;font-size:15px;color:var(--ink);margin:0}
+
+/* ============================================================================
+   FIGURES — dark panels, one idea each. `.play` starts the sequence.
+   Every animated element uses `forwards` fill so the end state holds.
+   ============================================================================ */
+figure.fig{
+  margin:26px 0 8px;
+  position:relative;
+}
+.fig-panel{
+  background:var(--editor);
+  border-radius:var(--radius);
+  padding:22px;
+  position:relative;
+  overflow:hidden;
+  min-height:120px;
+}
+figcaption{
+  margin-top:10px;
+  font-size:13.5px;color:var(--ink-faint);
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+}
+.replay{
+  flex:none;
+  border:1px solid var(--hairline);border-radius:16px;background:#fff;
+  color:var(--ink-soft);
+  font:600 12px Inter,sans-serif;
+  padding:4px 12px;cursor:pointer;
+}
+.replay:hover{border-color:var(--coin);color:var(--coin)}
+.replay:focus-visible{outline:2px solid var(--coin);outline-offset:2px}
+
+/* -- shared figure atoms -- */
+.f-label{
+  font:700 12px ui-monospace,monospace;
+  color:var(--editor-dim);
+  letter-spacing:.08em;text-transform:uppercase;
+  margin:0 0 12px;
+}
+.f-row{
+  display:flex;align-items:center;gap:8px;
+  font:600 14px ui-monospace,monospace;
+  color:var(--editor-ink);
+  padding:5px 0;
+  opacity:0;transform:translateX(-8px);
+}
+.f-row .ic{color:#7fb3e0;font-size:15px;flex:none}
+/* Sprite2D's icon in Godot is a rounded SQUARE with a face, not a circle */
+.ic-sprite{
+  width:15px;height:15px;flex:none;
+  background:#7fb3e0;border-radius:4.5px;
+  position:relative;display:inline-block;
+}
+.ic-sprite::before{
+  content:"";position:absolute;left:3.5px;top:5px;
+  width:2.5px;height:2.5px;border-radius:50%;
+  background:var(--editor);
+  box-shadow:6px 0 0 var(--editor);
+}
+.f-row .sub{font-weight:400;font-size:11.5px;color:var(--editor-dim);margin-left:4px}
+.f-row.indent{padding-left:26px}
+.f-amber{color:var(--fig-amber)}
+.f-teal{color:var(--fig-teal)}
+.f-purple{color:#c39bd3}
+.play .f-row{animation:rowIn .55s ease forwards}
+@keyframes rowIn{to{opacity:1;transform:none}}
+
+/* FIG: scene tree grows (3 rows staggered) */
+.fig-tree .f-row:nth-child(2){animation-delay:.3s}
+.fig-tree .f-row:nth-child(3){animation-delay:1.5s}
+.fig-tree .f-row:nth-child(4){animation-delay:2.7s}
+
+/* FIG: Area2D detection ring */
+.fig-ring .stage{position:relative;height:150px}
+.fig-ring .coin,
+.fig-lvl .coin,
+.fig-pick .coin{
+  width:30px;height:30px;border-radius:50%;
+  background:var(--fig-amber);
+  position:absolute;
+}
+.fig-ring .coin{right:24%;top:58px}
+.fig-ring .ring{
+  position:absolute;right:calc(24% - 21px);top:37px;
+  width:72px;height:72px;border-radius:50%;
+  border:2px dashed rgba(255,180,84,.55);
+}
+.fig-ring .p,
+.fig-lvl .p,
+.fig-pick .p{
+  width:26px;height:38px;border-radius:5px;
+  background:var(--fig-teal);
+  position:absolute;
+}
+.fig-ring .p::before,
+.fig-lvl .p::before,
+.fig-pick .p::before{
+  content:"";position:absolute;left:5px;top:8px;
+  width:4px;height:4px;background:var(--editor);
+  box-shadow:12px 0 0 var(--editor);
+}
+.fig-ring .p{left:14%;top:54px}
+.play.fig-ring .p{animation:ringApproach 2.2s ease forwards .4s}
+@keyframes ringApproach{to{left:calc(76% - 72px)}}
+.play.fig-ring .ring{animation:ringPulse 1s ease forwards 2.5s}
+@keyframes ringPulse{
+  0%{transform:scale(1);border-color:rgba(255,180,84,.55)}
+  45%{transform:scale(1.22);border-color:rgba(255,180,84,1);box-shadow:0 0 22px rgba(255,180,84,.35)}
+  100%{transform:scale(1.06);border-color:rgba(255,180,84,.9)}
+}
+.f-chip{
+  position:absolute;
+  background:rgba(255,180,84,.14);
+  border:1px solid var(--fig-amber);
+  color:var(--fig-amber);
+  font:700 12px ui-monospace,monospace;
+  border-radius:14px;padding:3px 10px;
+  opacity:0;transform:translateY(5px);
+}
+.fig-ring .f-chip{top:8px;transform:translateX(-50%) translateY(5px)}
+.play.fig-ring .f-chip{animation:chipInC .5s ease forwards 2.9s}
+@keyframes chipIn{to{opacity:1;transform:none}}
+@keyframes chipInC{to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+/* FIG: UI locators — slim strips of mock Godot chrome that show WHERE a control
+   lives. The target control keeps a persistent amber outline; on .play it emits
+   two gentle pulses to draw the eye, then rests. One control per figure. */
+.fig-panel.fig-locate{min-height:0;padding:16px 18px 18px}
+.uimenu{
+  font:600 11px ui-monospace,monospace;color:#8d8896;
+  letter-spacing:.06em;margin:0 0 10px;
+}
+.tabstrip{
+  display:flex;align-items:flex-end;gap:5px;
+  border-bottom:1px solid var(--editor-line);
+  padding:0 4px;
+}
+.tab{
+  font:600 12.5px ui-monospace,monospace;color:var(--editor-dim);
+  background:#2a2833;padding:6px 14px;border-radius:7px 7px 0 0;
+}
+.tab.active{background:#3a3644;color:var(--editor-ink)}
+.tab.plus{padding:6px 12px;color:var(--fig-amber);font-weight:800}
+.target{
+  position:relative;
+  outline:2px solid var(--fig-amber);outline-offset:2px;
+  border-radius:7px;
+}
+.play .target::after{
+  content:"";position:absolute;inset:-3px;
+  border:2px solid var(--fig-amber);border-radius:9px;
+  animation:locpulse 1.3s ease-out 2;
+  opacity:0;
+}
+@keyframes locpulse{0%{transform:scale(1);opacity:1}100%{transform:scale(1.6);opacity:0}}
+.pointlabel{
+  font:700 12px ui-monospace,monospace;color:var(--fig-amber);
+  margin-left:12px;align-self:center;
+}
+.dockhead{
+  font:700 13px ui-monospace,monospace;color:var(--editor-ink);
+  background:#2a2833;border-radius:6px 6px 0 0;
+  padding:6px 12px;display:inline-block;min-width:80px;
+}
+.docktools{
+  display:flex;gap:6px;align-items:center;
+  border-top:1px solid var(--editor-line);
+  padding-top:8px;margin-top:0;
+}
+.toolbtn{
+  flex:none;width:27px;height:25px;
+  border:1px solid var(--editor-line);border-radius:5px;
+  background:#2a2833;color:var(--editor-ink);
+  font:700 14px/23px ui-monospace,monospace;text-align:center;
+}
+.searchbox{
+  flex:1;max-width:170px;
+  border:1px solid var(--editor-line);border-radius:5px;
+  color:#6d6878;font:400 11.5px ui-monospace,monospace;
+  padding:4px 9px;
+}
+
+.docktab{
+  font:600 12px ui-monospace,monospace;color:var(--editor-ink);
+  background:#3a3644;padding:6px 12px;border-radius:7px 7px 0 0;
+}
+.docktab.dim{background:#2a2833;color:var(--editor-dim)}
+.dockgap{width:26px;flex:none;border-bottom:1px solid var(--editor-line);align-self:stretch}
+.nodehead{
+  display:inline-block;
+  font:700 13px ui-monospace,monospace;color:#7fb3e0;
+  background:#2a2833;border-radius:6px;
+  padding:5px 12px;margin:0 0 10px;
+}
+.texrow{
+  display:flex;align-items:center;gap:8px;
+  font:600 13px ui-monospace,monospace;color:var(--editor-dim);
+  margin:4px 0 10px;
+}
+.texfield{
+  flex:1;max-width:200px;
+  border:1px solid var(--editor-line);border-radius:5px;
+  padding:4px 9px;color:#6d6878;
+  font:400 12px ui-monospace,monospace;
+}
+.minimenu{
+  display:inline-block;
+  background:#2a2833;border:1px solid var(--editor-line);border-radius:8px;
+  padding:6px;min-width:170px;
+  opacity:0;transform:translateY(-4px);
+}
+.play .minimenu{animation:chipIn .5s ease forwards .9s}
+.minimenu .mi{
+  font:600 12.5px ui-monospace,monospace;color:var(--editor-dim);
+  padding:5px 10px;border-radius:5px;
+}
+.minimenu .mi.hot{background:rgba(255,180,84,.15);color:var(--fig-amber)}
+.minimenu .mi.faint{color:#5a5563;font-weight:400}
+
+/* small name labels inside concept figures */
+.f-name{
+  position:absolute;
+  font:700 12px ui-monospace,monospace;
+}
+
+/* FIG: attach script — button pulses first, then icon pops next to node */
+.fig-attach .f-row{opacity:1;transform:none}
+.fig-attach .scripticon{
+  display:inline-block;margin-left:10px;
+  font-size:15px;
+  opacity:0;transform:scale(.4);
+}
+.play.fig-attach .scripticon{animation:iconPop .55s cubic-bezier(.34,1.56,.64,1) forwards 1.7s}
+@keyframes iconPop{to{opacity:1;transform:scale(1)}}
+.fig-attach .clickring{
+  display:inline-block;margin-left:8px;
+  font:600 12px ui-monospace,monospace;color:var(--fig-amber);
+  opacity:0;
+}
+.play.fig-attach .clickring{animation:chipIn .5s ease forwards 2.5s}
+
+/* FIG: test level assembly — tree + ministage side by side */
+.fig-lvl .cols{display:flex;gap:26px;align-items:stretch}
+.fig-lvl .cols .tree{flex:1;min-width:190px}
+.fig-lvl .stage{
+  flex:1.2;position:relative;min-height:150px;
+  border-left:1px solid var(--editor-line);
+  padding-left:22px;
+}
+.fig-lvl .f-row:nth-child(2){animation-delay:.2s}
+.fig-lvl .f-row:nth-child(3){animation-delay:1.2s}
+.fig-lvl .f-row:nth-child(4){animation-delay:2.2s}
+.fig-lvl .f-row:nth-child(5){animation-delay:3.2s}
+.fig-lvl .floor{
+  position:absolute;left:22px;right:6px;bottom:26px;height:10px;
+  background:#4a4554;border-radius:3px;
+  opacity:0;
+}
+.play.fig-lvl .floor{animation:fadeIn .5s ease forwards 1.3s}
+.fig-lvl .p{left:34px;bottom:36px;opacity:0}
+.play.fig-lvl .p{animation:dropIn .55s ease forwards 2.3s}
+.fig-lvl .coin{right:16%;bottom:40px;opacity:0}
+.play.fig-lvl .coin{animation:dropIn .55s ease forwards 3.3s}
+@keyframes fadeIn{to{opacity:1}}
+@keyframes dropIn{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:none}}
+
+/* FIG: layers / masks — figure + inspector fragment */
+.fig-lm .cols{display:flex;gap:26px;flex-wrap:wrap}
+.fig-lm .who{flex:1;min-width:200px;position:relative;min-height:150px}
+.fig-lm .insp{
+  flex:1.1;min-width:220px;
+  border-left:1px solid var(--editor-line);
+  padding-left:22px;
+}
+.fig-lm .p{position:absolute;left:calc(50% - 13px);top:22px;
+  width:26px;height:38px;border-radius:5px;background:var(--fig-teal)}
+.fig-lm .p::before{content:"";position:absolute;left:5px;top:8px;
+  width:4px;height:4px;background:var(--editor);box-shadow:12px 0 0 var(--editor)}
+.fig-lm .coin2{position:absolute;width:30px;height:30px;border-radius:50%;
+  background:var(--fig-amber)}
+.fig-lm .badge{
+  position:absolute;
+  font:700 12px ui-monospace,monospace;
+  border-radius:5px;padding:3px 9px;
+  opacity:0;transform:translateY(4px);
+  white-space:nowrap;
+}
+.badge.teal{background:rgba(94,195,168,.13);border:1px solid var(--fig-teal);color:var(--fig-teal)}
+.badge.amber{background:rgba(255,180,84,.13);border:1px solid var(--fig-amber);color:var(--fig-amber)}
+.play .badge{animation:chipIn .5s ease forwards .9s}
+.fig-lm .name{
+  position:absolute;font:700 13px ui-monospace,monospace;
+}
+.insp .irow{
+  display:flex;align-items:center;gap:8px;
+  font:600 13px ui-monospace,monospace;color:var(--editor-dim);
+  margin:9px 0;
+}
+.insp .ihead{color:var(--fig-teal);font-weight:700;margin-top:2px}
+.insp .cbs{display:inline-flex;gap:3px}
+.insp .cbs .g{display:inline-flex;gap:3px;margin-right:7px}
+.insp .cb{
+  width:16px;height:16px;border:1px solid #5a5563;border-radius:3px;
+  font:600 9px/15px ui-monospace,monospace;color:#5a5563;text-align:center;
+}
+.insp .cb.on{
+  background:var(--fig-amber);border-color:var(--fig-amber);color:var(--editor);
+  font-weight:800;font-size:11px;
+}
+.play .cb.on{animation:cbPulse 1.1s ease 1.4s}
+@keyframes cbPulse{
+  0%,100%{box-shadow:none}
+  40%{box-shadow:0 0 0 5px rgba(255,180,84,.35)}
+}
+.insp .ihint{font:400 11.5px ui-monospace,monospace;color:#6d6878;margin:2px 0 0}
+/* dashed watch arrow (mask figure) */
+.fig-lm .watch{
+  position:absolute;top:38px;
+  border-top:2px dashed var(--fig-amber);
+  opacity:0;
+}
+.fig-lm .watch::before{
+  content:"";position:absolute;left:-2px;top:-6px;
+  border:5px solid transparent;border-right:8px solid var(--fig-amber);
+}
+.play .watch{animation:fadeIn .6s ease forwards 1.7s}
+.fig-lm .watchlabel{
+  position:absolute;
+  font:700 12px ui-monospace,monospace;color:var(--fig-amber);
+  opacity:0;
+}
+.play .watchlabel{animation:fadeIn .6s ease forwards 1.7s}
+
+/* FIG: the payoff pickup — loops forever, gently */
+.fig-pick .stage{position:relative;height:190px}
+.fig-pick .ground{
+  position:absolute;left:8px;right:8px;bottom:30px;height:10px;
+  background:#4a4554;border-radius:3px;
+}
+.fig-pick .p{left:8%;bottom:40px;animation:pickWalk 7s ease-in-out infinite}
+@keyframes pickWalk{
+  0%{left:8%;opacity:1}
+  32%{left:calc(62% - 34px);opacity:1}
+  74%{left:calc(62% - 34px);opacity:1}
+  82%{left:calc(62% - 34px);opacity:0}
+  100%{left:8%;opacity:0}
+}
+.fig-pick .coin{left:62%;bottom:42px;animation:pickCoin 7s ease infinite}
+@keyframes pickCoin{
+  0%,33%{transform:scale(1);opacity:1}
+  40%,82%{transform:scale(0);opacity:0}
+  90%,100%{transform:scale(1);opacity:1}
+}
+.fig-pick .flash{
+  position:absolute;left:calc(62% - 15px);bottom:27px;
+  width:60px;height:60px;border-radius:50%;
+  border:2px solid var(--fig-amber);
+  opacity:0;
+  animation:pickFlash 7s ease infinite;
+}
+@keyframes pickFlash{
+  0%,32%{transform:scale(.5);opacity:0}
+  36%{transform:scale(1);opacity:1}
+  44%{transform:scale(1.5);opacity:0}
+  100%{opacity:0}
+}
+.fig-pick .f-chip{left:50%;transform:translateX(-50%);top:16px;
+  animation:pickChip 7s ease infinite}
+@keyframes pickChip{
+  0%,33%{opacity:0;transform:translateX(-50%) translateY(5px)}
+  38%,72%{opacity:1;transform:translateX(-50%) translateY(0)}
+  80%,100%{opacity:0}
+}
+
+/* pattern chips (alarm → link → recipe) */
+.pattern{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  margin:16px 0 4px;
+}
+.pattern .pc{
+  border-radius:10px;padding:9px 14px;
+  font:700 13px ui-monospace,monospace;
+  text-align:center;
+}
+.pattern .pc small{display:block;font-weight:400;font-size:11px;margin-top:2px;opacity:.75}
+.pattern .pc.a{background:var(--coin-soft);color:#a5641c;border:1px solid var(--coin)}
+.pattern .pc.b{background:#fffdf9;color:var(--ink-soft);border:1px dashed var(--ink-faint)}
+.pattern .pc.c{background:var(--teal-soft);color:var(--teal);border:1px solid var(--teal)}
+.pattern .arrow{color:var(--ink-faint);font-size:17px}
+
+/* ---------- reference ---------- */
+.reference{margin-top:84px}
+.reference ol{padding-left:22px;font-size:16px}
+.reference li{margin:7px 0}
+
+footer{
+  max-width:760px;margin:70px auto 0;padding:22px 20px;
+  border-top:1px solid var(--hairline);
+  font-size:13px;color:var(--ink-faint);
+}
+
+/* ---------- responsive ---------- */
+@media(max-width:640px){
+  body{font-size:16px}
+  .hero{padding-top:44px}
+  .step{padding-left:48px}
+  .step .num{width:32px;height:32px;font-size:13.5px;line-height:28px}
+  .steps::before{left:15px}
+  .steps .done-legend{padding-left:48px}
+  .steps .done-legend .demo-num{left:4px}
+  .fig-panel{padding:16px}
+  .fig-lvl .cols,.fig-lm .cols{flex-direction:column;gap:14px}
+  .fig-lvl .stage,.fig-lm .insp{border-left:0;padding-left:0;border-top:1px solid var(--editor-line);padding-top:16px}
+}
+
+/* ---------- reduced motion: jump to end states ---------- */
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .step-body{transition:none}
+  .demo-num{animation:none;background:var(--coin)}
+  .demo-num::before{animation:none;opacity:0}
+  .demo-num::after{animation:none;opacity:1}
+  .f-row,.badge,.watch,.watchlabel,.fig-lvl .floor,.fig-lvl .p,.fig-lvl .coin,
+  .fig-attach .scripticon,.fig-attach .clickring,.fig-ring .f-chip{
+    opacity:1!important;transform:none!important;animation:none!important;
+  }
+  .play.fig-ring .p{animation:none;left:calc(76% - 92px)}
+  .fig-pick .p,.fig-pick .coin,.fig-pick .flash,.fig-pick .f-chip{animation:none}
+  .fig-pick .f-chip{opacity:1;transform:translateX(-50%)}
+  .fig-pick .flash{opacity:.6;transform:scale(1)}
+  .code .cur{animation:none}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="progress" id="progress"></div>
+  <div class="topbar-inner">
+    <div class="brand">
+      <span class="en"><b>Godot signals</b> · the collectible coin</span><span class="es"><b>Señales de Godot</b> · la moneda coleccionable</span>
+    </div>
+    <div class="lang" role="group" aria-label="Language">
+      <button id="langEn" class="on" aria-pressed="true">EN</button>
+      <button id="langEs" aria-pressed="false">ES</button>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<!-- ======================================================= HERO -->
+<section class="hero">
+  <p class="eyebrow">
+    <span class="en">A Godot tutorial · Game object interaction</span><span class="es">Un tutorial de Godot · Interacción entre objetos del juego</span>
+  </p>
+  <h1>
+    <span class="en">How game objects <span class="ac">communicate</span> in Godot</span><span class="es">Cómo se <span class="ac">comunican</span> los objetos del juego en Godot</span>
+  </h1>
+  <p class="lede">
+    <span class="en">In this guide, you'll build a collectible coin in Godot. Making it is a small project on its own — but it's also a first look at how game objects can notice each other and react. In Godot, that kind of communication happens through a <strong>signal</strong>.</span><span class="es">En esta guía vas a construir una moneda coleccionable en Godot. Hacerla es un proyecto pequeño en sí mismo, pero también es una primera mirada a cómo los objetos del juego pueden notarse y reaccionar entre sí. En Godot, ese tipo de comunicación pasa a través de una <strong>señal</strong>.</span>
+  </p>
+  <p class="lede">
+    <span class="en">This is one of the simplest uses of signals. There's a lot more you can do with them, but building the coin gives you enough of the shape to start exploring on your own.</span><span class="es">Este es uno de los usos más simples de las señales. Hay mucho más que puedes hacer con ellas, pero construir la moneda te da suficiente forma para empezar a explorar por tu cuenta.</span>
+  </p>
+
+  <nav class="toc" aria-label="Contents">
+    <p class="toc-label"><span class="en">Contents</span><span class="es">Contenido</span></p>
+    <ol>
+      <li><a href="#ch1"><span class="en">Build the Coin scene</span><span class="es">Construye la escena Coin</span></a></li>
+      <li><a href="#ch2"><span class="en">Write the signal code</span><span class="es">Escribe el código de la señal</span></a></li>
+      <li><a href="#ch3"><span class="en">Build a test scene</span><span class="es">Construye una escena de prueba</span></a></li>
+      <li><a href="#ch4"><span class="en">See the signal in action</span><span class="es">Ve la señal en acción</span></a></li>
+      <li><a href="#ref"><span class="en">Quick reference</span><span class="es">Referencia rápida</span></a></li>
+    </ol>
+  </nav>
+</section>
+
+<!-- ======================================================= CHAPTER 1 -->
+<section class="chapter" id="ch1">
+  <div class="ch-head">
+    <span class="ch-num">1</span>
+    <h2><span class="en">Build the Coin scene</span><span class="es">Construye la escena Coin</span></h2>
+  </div>
+  <p class="ch-goal">
+    <span class="en">Build a reusable Coin from three nodes, then attach its script.</span><span class="es">Construye una Coin reutilizable con tres nodos y adjunta su script.</span>
+  </p>
+  <p class="ch-intro">
+    <span class="en">Before writing any logic, build the object itself. The Coin is a small, reusable <button class="term" data-t="scene">scene</button> made from <button class="term" data-t="node">nodes</button> — and <button class="term" data-t="Area2D">Area2D</button> is its main node, because Area2D can detect when something enters it.</span><span class="es">Antes de escribir lógica, construye el objeto en sí. La Coin es una <button class="term" data-t="scene">escena</button> pequeña y reutilizable hecha de <button class="term" data-t="node">nodos</button> — y <button class="term" data-t="Area2D">Area2D</button> es su nodo principal, porque Area2D puede detectar cuando algo entra en ella.</span>
+  </p>
+
+  <figure class="fig">
+    <div class="fig-panel fig-ring">
+      <p class="f-label"><span class="en">What Area2D does</span><span class="es">Qué hace Area2D</span></p>
+      <div class="stage">
+        <div class="f-name f-teal" style="left:11%;top:34px">Player</div>
+        <div class="p"></div>
+        <div class="ring"></div>
+        <div class="coin"></div>
+        <div class="f-name f-amber" style="right:20%;top:122px">Area2D</div>
+        <div class="f-chip" style="left:50%"><span class="en">something entered!</span><span class="es">¡algo entró!</span></div>
+      </div>
+    </div>
+    <figcaption>
+      <span><span class="en">Area2D notices when a body enters its space.</span><span class="es">Area2D nota cuando un cuerpo entra en su espacio.</span></span>
+      <button class="replay"><span class="en">↻ Replay</span><span class="es">↻ Repetir</span></button>
+    </figcaption>
+  </figure>
+
+  <p class="steps-label"><span class="lbl"><span class="en">Chapter 1 · steps 1–6</span><span class="es">Capítulo 1 · pasos 1–6</span></span></p>
+  <div class="steps">
+    <p class="done-legend"><span class="demo-num" aria-hidden="true"></span><span class="en">click when done</span><span class="es">clic al terminar</span></p>
+
+
+    <div class="step">
+      <span class="num" data-check="c1a"></span>
+      <h3><span class="en">Open a new blank scene</span><span class="es">Abre una escena nueva en blanco</span></h3>
+      <div class="step-body"><div class="sbi">
+      <p><span class="en">You may already have another scene open. To build the Coin, start fresh: look at the tabs just above the viewport and click the <b>+</b> tab, or use <b>Scene&nbsp;&gt;&nbsp;New&nbsp;Scene</b> from the menu.</span><span class="es">Puede que ya tengas otra escena abierta. Para construir la Coin, empieza de cero: mira las pestañas justo arriba del viewport y haz clic en la pestaña <b>+</b>, o usa <b>Escena&nbsp;&gt;&nbsp;Nueva&nbsp;Escena</b> desde el menú.</span></p>
+
+      <figure class="fig">
+        <div class="fig-panel fig-locate">
+          <p class="f-label"><span class="en">Godot · top of the viewport</span><span class="es">Godot · arriba del viewport</span></p>
+          <div class="uimenu">Scene&nbsp;&nbsp;Project&nbsp;&nbsp;Debug&nbsp;&nbsp;Editor&nbsp;&nbsp;Help</div>
+          <div class="tabstrip">
+            <span class="docktab">Scene</span>
+            <span class="docktab dim">Import</span>
+            <span class="dockgap"></span>
+            <span class="tab active">○ main</span>
+            <span class="tab plus target">＋</span>
+            <span class="pointlabel"><span class="en">← click here for a new scene</span><span class="es">← clic aquí para una escena nueva</span></span>
+          </div>
+        </div>
+        <figcaption>
+          <span><span class="en">The scene tabs sit above the viewport, just right of the Scene / Import panel — + opens a blank one.</span><span class="es">Las pestañas de escena están arriba del viewport, a la derecha del panel Scene / Import — + abre una en blanco.</span></span>
+          <button class="replay"><span class="en">↻ Replay</span><span class="es">↻ Repetir</span></button>
+        </figcaption>
+      </figure>
+      </div></div>
+    </div>
+
+    <div class="step">
+      <span class="num" data-check="c1b"></span>
+      <h3><span class="en">Create the Coin as an Area2D</span><span class="es">Crea la Coin como un Area2D</span></h3>
+      <div class="step-body"><div class="sbi">
+      <p><span class="en">Use the <b>+</b> button in the Scene panel to add an <button class="term" data-t="Area2D">Area2D</button>, and name it <b>Coin</b>. Area2D is the right <button class="term" data-t="parent node">parent node</button> for a collectible because it can detect when another body enters its space — it owns the <button class="term" data-t="body_entered">body_entered</button> <button class="term" data-t="signal">signal</button> we'll connect later.</span><span class="es">Usa el botón <b>+</b> en el panel de Escena para añadir un <button class="term" data-t="Area2D">Area2D</button> y llámalo <b>Coin</b>. Area2D es el <button class="term" data-t="parent node">nodo padre</button> adecuado para un coleccionable porque puede detectar cuando otro cuerpo entra en su espacio — es dueño de la <button class="term" data-t="signal">señal</button> <button class="term" data-t="body_entered">body_entered</button> que conectaremos después.</span></p>
+
+      <figure class="fig">
+        <div class="fig-panel fig-locate">
+          <p class="f-label"><span class="en">Godot · Scene panel, top-left corner</span><span class="es">Godot · panel de Escena, esquina superior izquierda</span></p>
+          <div class="dockhead">Scene</div>
+          <div class="docktools">
+            <span class="toolbtn target">＋</span>
+            <span class="toolbtn">🔗</span>
+            <span class="searchbox"><span class="en">Filter Nodes</span><span class="es">Filtrar nodos</span></span>
+            <span class="pointlabel"><span class="en">← the + button adds a node</span><span class="es">← el botón + añade un nodo</span></span>
+          </div>
+        </div>
+        <figcaption>
+          <span><span class="en">The + button in the Scene panel adds a child node.</span><span class="es">El botón + del panel de Escena añade un nodo hijo.</span></span>
+          <button class="replay"><span class="en">↻ Replay</span><span class="es">↻ Repetir</span></button>
+        </figcaption>
+      </figure>
+      </div></div>
+    </div>
+
+    <div class="step">
+      <span class="num" data-check="c1c"></span>
+      <h3><span class="en">Add a Sprite2D</span><span class="es">Añade un Sprite2D</span></h3>
+      <div class="step-body"><div class="sbi">
+      <p><span class="en">Select <b>Coin</b> first, then click <b>+</b> — new nodes are added as children of whatever node is selected. Add a <button class="term" data-t="Sprite2D">Sprite2D</button>. It's only the picture — it makes the coin visible, but it does not detect the player by itself.</span><span class="es">Selecciona <b>Coin</b> primero y luego haz clic en <b>+</b> — los nodos nuevos se añaden como hijos del nodo que esté seleccionado. Añade un <button class="term" data-t="Sprite2D">Sprite2D</button>. Es solo la imagen — hace visible a la moneda, pero no detecta al jugador por sí solo.</span></p>
+      <p class="tip"><span class="en">If a node lands in the wrong place, you can drag it onto Coin in the Scene panel to make it Coin's child. Dragging nodes around is how you rearrange who belongs to whom.</span><span class="es">Si un nodo cae en el lugar equivocado, puedes arrastrarlo sobre Coin en el panel de Escena para hacerlo hijo de Coin. Arrastrar nodos es la forma de reorganizar quién pertenece a quién.</span></p>
+      </div></div>
+    </div>
+
+    <div class="step">
+      <span class="num" data-check="c1d"></span>
+      <h3><span class="en">Give the Sprite2D an image</span><span class="es">Dale una imagen al Sprite2D</span></h3>
+      <div class="step-body"><div class="sbi">
+      <p><span class="en">Select the Sprite2D and look at the Inspector on the right. The <b>Texture</b> field is where the coin's picture goes — any image works. Click the <b>▾</b> arrow next to the field and choose <b>Quick&nbsp;Load…</b> to pick one, or drag an image from the FileSystem panel straight onto the field.</span><span class="es">Selecciona el Sprite2D y mira el Inspector a la derecha. El campo <b>Texture</b> es donde va la imagen de la moneda — cualquier imagen sirve. Haz clic en la flecha <b>▾</b> junto al campo y elige <b>Quick&nbsp;Load…</b> para escoger una, o arrastra una imagen desde el panel FileSystem directo al campo.</span></p>
+
+      <figure class="fig">
+        <div class="fig-panel fig-locate">
+          <p class="f-label"><span class="en">Godot · Inspector (right side)</span><span class="es">Godot · Inspector (lado derecho)</span></p>
+          <div class="nodehead">◉ Sprite2D</div>
+          <div class="texrow">
+            <span>Texture</span>
+            <span class="texfield">&lt;empty&gt;</span>
+            <span class="toolbtn target">▾</span>
+            <span class="pointlabel"><span class="en">← click the arrow</span><span class="es">← clic en la flecha</span></span>
+          </div>
+          <div class="minimenu">
+            <div class="mi faint">— New —</div>
+            <div class="mi hot">⚡ Quick Load…</div>
+            <div class="mi">📁 Load…</div>
+          </div>
+        </div>
+        <figcaption>
+          <span><span class="en">The Texture field's ▾ menu — Quick Load… picks any image in the project.</span><span class="es">El menú ▾ del campo Texture — Quick Load… elige cualquier imagen del proyecto.</span></span>
+          <button class="replay"><span class="en">↻ Replay</span><span class="es">↻ Repetir</span></button>
+        </figcaption>
+      </figure>
+      </div></div>
+    </div>
+
+    <div class="step">
+      <span class="num" data-check="c1e"></span>
+      <h3><span class="en">Add a CollisionShape2D</span><span class="es">Añade un CollisionShape2D</span></h3>
+      <div class="step-body"><div class="sbi">
+      <p><span class="en">Select Coin again, then add a <button class="term" data-t="CollisionShape2D">CollisionShape2D</button> and pick a shape for it in the Inspector — a circle works. Here's the key idea: the <button class="term" data-t="Area2D">Area2D</button> has no shape of its own. Without this node, it has no idea how big its touch zone is. The CollisionShape2D gives it that shape — this is the exact region the Area2D watches for overlaps.</span><span class="es">Selecciona Coin otra vez, luego añade un <button class="term" data-t="CollisionShape2D">CollisionShape2D</button> y elige una forma en el Inspector — un círculo funciona. La idea clave: el <button class="term" data-t="Area2D">Area2D</button> no tiene forma propia. Sin este nodo, no tiene idea de qué tan grande es su zona de contacto. El CollisionShape2D le da esa forma — es la región exacta que el Area2D observa.</span></p>
+      <p class="tip"><span class="en">The Area2D never looks at the image — it only knows the shape you give it here. That also means the touch zone can be bigger, smaller, or a different shape than the art.</span><span class="es">El Area2D nunca mira la imagen — solo conoce la forma que le das aquí. Eso también significa que la zona de contacto puede ser más grande, más pequeña o distinta al dibujo.</span></p>
+
+      <figure class="fig">
+        <div class="fig-panel fig-tree">
+          <p class="f-label"><span class="en">Scene panel</span><span class="es">Panel de escena</span></p>
+          <div class="f-row"><span class="ic">⛶</span> Coin <span class="sub">Area2D</span></div>
+          <div class="f-row indent"><span class="ic ic-sprite"></span> Sprite2D <span class="sub"><span class="en">the picture</span><span class="es">la imagen</span></span></div>
+          <div class="f-row indent"><span class="ic">□</span> CollisionShape2D <span class="sub"><span class="en">the touch zone</span><span class="es">la zona de contacto</span></span></div>
+        </div>
+        <figcaption>
+          <span><span class="en">The Coin scene: three nodes, one job each.</span><span class="es">La escena Coin: tres nodos, un trabajo cada uno.</span></span>
+          <button class="replay"><span class="en">↻ Replay</span><span class="es">↻ Repetir</span></button>
+        </figcaption>
+      </figure>
+      </div></div>
+    </div>
+
+    <div class="step">
+      <span class="num" data-check="c1f"></span>
+      <h3><span class="en">Attach a script, then click it open</span><span class="es">Adjunta un script y ábrelo</span></h3>
+      <div class="step-body"><div class="sbi">
+      <p><span class="en">Select the Coin <button class="term" data-t="node">node</button> and click the attach-script button. Choose <button class="term" data-t="GDScript">GDScript</button> as the language. A small script icon appears next to Coin in the Scene panel — click that icon to open the script in the Script editor.</span><span class="es">Selecciona el <button class="term" data-t="node">nodo</button> Coin y haz clic en el botón de adjuntar script. Elige <button class="term" data-t="GDScript">GDScript</button> como lenguaje. Aparece un pequeño ícono de script junto a Coin en el panel de Escena — haz clic en ese ícono para abrir el script en el Editor de Scripts.</span></p>
+      <p class="tip"><span class="en">You can switch between the level view and the Script editor at any time with the 2D / Script tabs at the top of the editor.</span><span class="es">Puedes cambiar entre la vista de nivel y el Editor de Scripts en cualquier momento con las pestañas 2D / Script arriba del editor.</span></p>
+
+      <figure class="fig">
+        <div class="fig-panel fig-attach">
+          <p class="f-label"><span class="en">Godot · Scene panel</span><span class="es">Godot · panel de Escena</span></p>
+          <div class="docktools" style="border-top:0;padding-top:0;margin-bottom:12px">
+            <span class="toolbtn">＋</span>
+            <span class="toolbtn">🔗</span>
+            <span class="toolbtn target">📜</span>
+            <span class="pointlabel"><span class="en">← attach script</span><span class="es">← adjuntar script</span></span>
+          </div>
+          <div class="f-row"><span class="ic">⛶</span> Coin
+            <span class="scripticon">📜</span>
+            <span class="clickring"><span class="en">← click to open coin.gd</span><span class="es">← clic para abrir coin.gd</span></span>
+          </div>
+        </div>
+        <figcaption>
+          <span><span class="en">Attach from the Scene panel's toolbar — the icon then appears next to Coin.</span><span class="es">Adjunta desde la barra del panel de Escena — el ícono aparece luego junto a Coin.</span></span>
+          <button class="replay"><span class="en">↻ Replay</span><span class="es">↻ Repetir</span></button>
+        </figcaption>
+      </figure>
+      </div></div>
+    </div>
+
+  </div>
+
+  <div class="checkpoint">
+    <p class="note-kicker"><span class="en">Checkpoint</span><span class="es">Punto de control</span></p>
+    <h3><span class="en">Coin scene ready!</span><span class="es">¡Escena Coin lista!</span></h3>
+    <label><input type="checkbox" id="c1a"><span><span class="en">Opened a new blank scene</span><span class="es">Abriste una escena nueva en blanco</span></span></label>
+    <label><input type="checkbox" id="c1b"><span><span class="en">Added an Area2D as the root node, named Coin</span><span class="es">Añadiste un Area2D como nodo raíz, llamado Coin</span></span></label>
+    <label><input type="checkbox" id="c1c"><span><span class="en">Added a Sprite2D as a child of Coin</span><span class="es">Añadiste un Sprite2D como hijo de Coin</span></span></label>
+    <label><input type="checkbox" id="c1d"><span><span class="en">Added an image to the Sprite2D's Texture field</span><span class="es">Añadiste una imagen al campo Texture del Sprite2D</span></span></label>
+    <label><input type="checkbox" id="c1e"><span><span class="en">Added a CollisionShape2D and gave it a shape</span><span class="es">Añadiste un CollisionShape2D y le diste una forma</span></span></label>
+    <label><input type="checkbox" id="c1f"><span><span class="en">Attached a blank script to the Coin</span><span class="es">Adjuntaste un script en blanco a la Coin</span></span></label>
+  </div>
+</section>
+
+<!-- ======================================================= CHAPTER 2 -->
+<section class="chapter" id="ch2">
+  <div class="ch-head">
+    <span class="ch-num">2</span>
+    <h2><span class="en">Write the signal code</span><span class="es">Escribe el código de la señal</span></h2>
+  </div>
+  <p class="ch-goal">
+    <span class="en">Write eight short lines that connect a signal to a function.</span><span class="es">Escribe ocho líneas cortas que conectan una señal con una función.</span>
+  </p>
+  <p class="ch-intro">
+    <span class="en">You're in the Script editor now, working on <b>coin.gd</b>. Each step below adds a little more to the script — the highlighted line is the new part.</span><span class="es">Ya estás en el Editor de Scripts, trabajando en <b>coin.gd</b>. Cada paso de abajo añade un poco más al script — la línea resaltada es la parte nueva.</span>
+  </p>
+
+  <p class="steps-label"><span class="lbl"><span class="en">Chapter 2 · steps 7–15</span><span class="es">Capítulo 2 · pasos 7–15</span></span></p>
+  <div class="steps">
+    <p class="done-legend"><span class="demo-num" aria-hidden="true"></span><span class="en">click when done</span><span class="es">clic al terminar</span></p>
+
+
+    <div class="step">
+      <span class="num"></span>
+      <h3><span class="en">Line 1: a note to yourself</span><span class="es">Línea 1: una nota para ti</span></h3>
+      <div class="step-body"><div class="sbi">
+      <p><span class="en">This first line starts with <b>#</b>, which makes it a comment. Godot ignores comments — they're notes for humans. A comment like this helps you remember which file you're looking at.</span><span class="es">Esta primera línea empieza con <b>#</b>, lo que la hace un comentario. Godot ignora los comentarios: son notas para humanos. Un comentario como este te ayuda a recordar qué archivo estás viendo.</span></p>
+      <div class="code"><pre><span class="ln new"><span class="c"># coin.gd</span></span></pre></div>
+      </div></div>
+    </div>
+
+    <div class="step">
+      <span class="num"></span>
+      <h3><span class="en">Keep this: extends Area2D</span><span class="es">Mantén esto: extends Area2D</span></h3>
+      <div class="step-body"><div class="sbi">
+      <p><span class="en">Godot may already write <b>extends Area2D</b> for you. Keep it. It means this script belongs to an Area2D, so it can use Area2D features like <button class="term" data-t="body_entered">body_entered</button>.</span><span class="es">Godot puede haber escrito <b>extends Area2D</b> por ti. Mantenlo. Significa que este script pertenece a un Area2D, así que puede usar características de Area2D como <button class="term" data-t="body_entered">body_entered</button>.</span></p>
+      <div class="code"><pre><span class="ln"><span class="c"># coin.gd</span></span><span class="ln new"><span class="k">extends</span> Area2D</span></pre></div>
+      </div></div>
+    </div>
+
+    <div class="step">
+      <span class="num"></span>
+      <h3><span class="en">Add or use func _ready()</span><span class="es">Añade o usa func _ready()</span></h3>
+      <div class="step-body"><div class="sbi">
+      <p><span class="en">Some templates already include <button class="term" data-t="func _ready()">_ready()</button>. If it's there, use it. If not, add it. It runs once, when this coin enters the scene.</span><span class="es">Algunas plantillas ya incluyen <button class="term" data-t="func _ready()">_ready()</button>. Si ya está ahí, úsala. Si no, añádela. Se ejecuta una vez, cuando esta moneda entra en la escena.</span></p>
+      <div class="code"><pre><span class="ln"><span class="c"># coin.gd</span></span><span class="ln"><span class="k">extends</span> Area2D</span><span class="ln"> </span><span class="ln new"><span class="k">func</span> <span class="fn">_ready</span>():</span></pre></div>
+      </div></div>
+    </div>
+
+    <div class="step">
+      <span class="num"></span>
+      <h3><span class="en">Type this: body_entered</span><span class="es">Escribe esto: body_entered</span></h3>
+      <div class="step-body"><div class="sbi">
+      <p><span class="en"><button class="term" data-t="body_entered">body_entered</button> is a built-in signal on Area2D. Think of it like an alarm bell: it rings when another <button class="term" data-t="physics body">physics body</button>, like the player, enters the coin's hitbox boundary.</span><span class="es"><button class="term" data-t="body_entered">body_entered</button> es una señal integrada en Area2D. Piénsala como una campana de alarma: suena cuando otro <button class="term" data-t="physics body">cuerpo físico</button>, como el jugador, entra en el límite de la hitbox de la moneda.</span></p>
+      <div class="code"><pre><span class="ln"><span class="k">func</span> <span class="fn">_ready</span>():</span><span class="ln new">    body_entered<span class="cur"></span></span></pre></div>
+      </div></div>
+    </div>
+
+    <div class="step">
+      <span class="num"></span>
+      <h3><span class="en">Add this: .connect</span><span class="es">Añade esto: .connect</span></h3>
+      <div class="step-body"><div class="sbi">
+      <p><span class="en">The dot after body_entered means: what comes next is an action to take with that signal. Here that action is <button class="term" data-t="connect">connect</button> — it links the signal to a function you'll name. Other actions use the same dot pattern; for example, <b>body_entered.disconnect</b> would stop listening instead.</span><span class="es">El punto después de body_entered significa: lo que viene después es una acción para hacer con esa señal. Aquí esa acción es <button class="term" data-t="connect">connect</button> — enlaza la señal con una función que vas a nombrar. Otras acciones usan el mismo patrón con el punto; por ejemplo, <b>body_entered.disconnect</b> dejaría de escuchar.</span></p>
+      <div class="code"><pre><span class="ln"><span class="k">func</span> <span class="fn">_ready</span>():</span><span class="ln new">    body_entered.<span class="fn">connect</span><span class="cur"></span></span></pre></div>
+      </div></div>
+    </div>
+
+    <div class="step">
+      <span class="num"></span>
+      <h3><span class="en">Add the parentheses</span><span class="es">Añade los paréntesis</span></h3>
+      <div class="step-body"><div class="sbi">
+      <p><span class="en">Parentheses are where we give information to the method. That information is called an argument. connect() needs one important argument: the function name it should call later.</span><span class="es">Los paréntesis son donde le damos información al método. Esa información se llama argumento. connect() necesita un argumento importante: el nombre de la función que debe llamar después.</span></p>
+      <div class="code"><pre><span class="ln"><span class="k">func</span> <span class="fn">_ready</span>():</span><span class="ln new">    body_entered.<span class="fn">connect</span>(<span class="cur"></span></span></pre></div>
+      </div></div>
+    </div>
+
+    <div class="step">
+      <span class="num" data-check="c2a"></span>
+      <h3><span class="en">Put _on_body_entered inside connect()</span><span class="es">Pon _on_body_entered dentro de connect()</span></h3>
+      <div class="step-body"><div class="sbi">
+      <p><span class="en">This part is easy to mix up. We are not running <button class="term" data-t="_on_body_entered">_on_body_entered</button> yet — we are dropping the function name into connect() so Godot knows which recipe to use when body_entered fires.</span><span class="es">Esta parte es fácil de confundir. Todavía no estamos ejecutando <button class="term" data-t="_on_body_entered">_on_body_entered</button> — estamos poniendo el nombre de la función dentro de connect() para que Godot sepa qué receta usar cuando body_entered se dispare.</span></p>
+      <div class="code"><pre><span class="ln"><span class="k">func</span> <span class="fn">_ready</span>():</span><span class="ln new">    body_entered.<span class="fn">connect</span>(_on_body_entered)</span></pre></div>
+      </div></div>
+    </div>
+
+    <div class="step">
+      <span class="num" data-check="c2b"></span>
+      <h3><span class="en">Write the function header</span><span class="es">Escribe el encabezado de la función</span></h3>
+      <div class="step-body"><div class="sbi">
+      <p><span class="en">Now we write the recipe itself. The name <b>_on_body_entered</b> is chosen because good function names explain their job. You could technically name it something else, but this name tells us: this function runs when a body enters.</span><span class="es">Ahora escribimos la receta. El nombre <b>_on_body_entered</b> se eligió porque los buenos nombres de función explican su trabajo. Técnicamente podrías nombrarla diferente, pero este nombre nos dice: esta función se ejecuta cuando un cuerpo entra.</span></p>
+      <div class="code"><pre><span class="ln">    body_entered.<span class="fn">connect</span>(_on_body_entered)</span><span class="ln"> </span><span class="ln new"><span class="k">func</span> <span class="fn">_on_body_entered</span>(body):</span></pre></div>
+      </div></div>
+    </div>
+
+    <div class="step">
+      <span class="num" data-check="c2c"></span>
+      <h3><span class="en">Type this: queue_free()</span><span class="es">Escribe esto: queue_free()</span></h3>
+      <div class="step-body"><div class="sbi">
+      <p><span class="en"><button class="term" data-t="queue_free">queue_free()</button> is the one instruction inside this recipe. When the connected function finally runs, it tells Godot to remove this coin from the scene.</span><span class="es"><button class="term" data-t="queue_free">queue_free()</button> es la única instrucción dentro de esta receta. Cuando la función conectada finalmente se ejecute, le dice a Godot que elimine esta moneda de la escena.</span></p>
+      <div class="code"><pre><span class="ln"><span class="k">func</span> <span class="fn">_on_body_entered</span>(body):</span><span class="ln new">    <span class="fn">queue_free</span>()</span></pre></div>
+      </div></div>
+    </div>
+
+  </div>
+
+  <div class="note">
+    <p class="note-kicker"><span class="en">Pause and read the whole pattern</span><span class="es">Pausa y lee el patrón completo</span></p>
+    <h3><span class="en">The signal and the function are two separate things</span><span class="es">La señal y la función son dos cosas separadas</span></h3>
+    <p><span class="en"><b>body_entered</b> is the alarm. <b>_on_body_entered</b> is the recipe. <b>connect()</b> is the link that tells the alarm which recipe to run.</span><span class="es"><b>body_entered</b> es la alarma. <b>_on_body_entered</b> es la receta. <b>connect()</b> es el enlace que le dice a la alarma qué receta debe ejecutar.</span></p>
+    <div class="pattern" aria-hidden="true">
+      <span class="pc a">body_entered<small><span class="en">the alarm</span><span class="es">la alarma</span></small></span>
+      <span class="arrow">→</span>
+      <span class="pc b">connect()<small><span class="en">the link</span><span class="es">el enlace</span></small></span>
+      <span class="arrow">→</span>
+      <span class="pc c">_on_body_entered<small><span class="en">the recipe</span><span class="es">la receta</span></small></span>
+    </div>
+    <div class="code"><pre><span class="ln"><span class="c"># coin.gd</span></span><span class="ln"><span class="k">extends</span> Area2D</span><span class="ln"> </span><span class="ln"><span class="k">func</span> <span class="fn">_ready</span>():</span><span class="ln">    body_entered.<span class="fn">connect</span>(_on_body_entered)</span><span class="ln"> </span><span class="ln"><span class="k">func</span> <span class="fn">_on_body_entered</span>(body):</span><span class="ln">    <span class="fn">queue_free</span>()</span></pre></div>
+  </div>
+
+  <div class="checkpoint">
+    <p class="note-kicker"><span class="en">Checkpoint</span><span class="es">Punto de control</span></p>
+    <h3><span class="en">Signal script ready!</span><span class="es">¡Script de señal listo!</span></h3>
+    <label><input type="checkbox" id="c2a"><span><span class="en">Connected body_entered to _on_body_entered inside _ready()</span><span class="es">Conectaste body_entered a _on_body_entered dentro de _ready()</span></span></label>
+    <label><input type="checkbox" id="c2b"><span><span class="en">Wrote func _on_body_entered(body): below it</span><span class="es">Escribiste func _on_body_entered(body): debajo</span></span></label>
+    <label><input type="checkbox" id="c2c"><span><span class="en">Added queue_free() inside the function</span><span class="es">Añadiste queue_free() dentro de la función</span></span></label>
+  </div>
+</section>
+
+<!-- ======================================================= CHAPTER 3 -->
+<section class="chapter" id="ch3">
+  <div class="ch-head">
+    <span class="ch-num">3</span>
+    <h2><span class="en">Build a test scene</span><span class="es">Construye una escena de prueba</span></h2>
+  </div>
+  <p class="ch-goal">
+    <span class="en">Assemble a small level where the pickup can be tested.</span><span class="es">Arma un nivel pequeño donde probar la recogida.</span>
+  </p>
+
+  <p class="steps-label"><span class="lbl"><span class="en">Chapter 3 · steps 16–20</span><span class="es">Capítulo 3 · pasos 16–20</span></span></p>
+  <div class="steps">
+    <p class="done-legend"><span class="demo-num" aria-hidden="true"></span><span class="en">click when done</span><span class="es">clic al terminar</span></p>
+
+
+    <div class="step">
+      <span class="num"></span>
+      <h3><span class="en">Open a new blank scene for the test</span><span class="es">Abre una escena nueva en blanco para la prueba</span></h3>
+      <div class="step-body"><div class="sbi">
+      <p><span class="en">Just like the Coin, the test level lives in its own <button class="term" data-t="scene">scene</button>. Click the <b>+</b> tab above the viewport to open a fresh, blank scene. You'll add the floor, the Player, and the Coin into it in the next steps.</span><span class="es">Igual que la Coin, el nivel de prueba vive en su propia <button class="term" data-t="scene">escena</button>. Haz clic en la pestaña <b>+</b> arriba del viewport para abrir una escena fresca y en blanco. En los próximos pasos añadirás el piso, el Player y la Coin.</span></p>
+      <p class="tip"><span class="en">Same + tab as in Chapter 1, step 1 — top of the viewport.</span><span class="es">La misma pestaña + del Capítulo 1, paso 1 — arriba del viewport.</span></p>
+      </div></div>
+    </div>
+
+    <div class="step">
+      <span class="num"></span>
+      <h3><span class="en">Add a TestLevel root node</span><span class="es">Añade un nodo raíz TestLevel</span></h3>
+      <div class="step-body"><div class="sbi">
+      <p><span class="en">In the empty Scene panel, add a <b>Node2D</b> and name it <b>TestLevel</b>. This is the <button class="term" data-t="parent node">parent node</button> that will hold the floor, the Player, and the Coin.</span><span class="es">En el panel de Escena vacío, añade un <b>Node2D</b> y llámalo <b>TestLevel</b>. Este es el <button class="term" data-t="parent node">nodo padre</button> que contendrá el piso, el Player y la Coin.</span></p>
+      </div></div>
+    </div>
+
+    <div class="step">
+      <span class="num" data-check="c4b"></span>
+      <h3><span class="en">Add a floor</span><span class="es">Añade un piso</span></h3>
+      <div class="step-body"><div class="sbi">
+      <p><span class="en">Under TestLevel, add a TileMapLayer or any simple floor / collision setup your project already uses. The player needs somewhere to stand and run before we drop them in.</span><span class="es">Bajo TestLevel, añade un TileMapLayer o cualquier configuración simple de piso / colisión que tu proyecto ya use. El jugador necesita un lugar para pararse y correr antes de que lo pongamos ahí.</span></p>
+      </div></div>
+    </div>
+
+    <div class="step">
+      <span class="num" data-check="c4a"></span>
+      <h3><span class="en">Add the existing Player</span><span class="es">Añade el Player existente</span></h3>
+      <div class="step-body"><div class="sbi">
+      <p><span class="en">Add your existing Player <button class="term" data-t="scene">scene</button> as a child of TestLevel. This guide is about the coin <button class="term" data-t="signal">signal</button>, not building player movement from scratch — reuse whatever Player you already have.</span><span class="es">Añade tu <button class="term" data-t="scene">escena</button> Player existente como hijo de TestLevel. Esta guía es sobre la <button class="term" data-t="signal">señal</button> de la moneda, no sobre construir el movimiento del jugador desde cero — reutiliza el Player que ya tengas.</span></p>
+      </div></div>
+    </div>
+
+    <div class="step">
+      <span class="num" data-check="c4c"></span>
+      <h3><span class="en">Add the Coin scene</span><span class="es">Añade la escena Coin</span></h3>
+      <div class="step-body"><div class="sbi">
+      <p><span class="en">Add the Coin scene as a child of TestLevel. Place one or more Coins where the Player can reach them. Now the signal script has something to test.</span><span class="es">Añade la escena Coin como hija de TestLevel. Coloca una o más Coins donde el Player pueda alcanzarlas. Ahora el script de la señal tiene algo que probar.</span></p>
+
+      <figure class="fig">
+        <div class="fig-panel fig-lvl">
+          <div class="cols">
+            <div class="tree">
+              <p class="f-label"><span class="en">Scene panel</span><span class="es">Panel de escena</span></p>
+              <div class="f-row" style="color:#c8c3cf">◉ TestLevel <span class="sub">Node2D</span></div>
+              <div class="f-row indent" style="color:#8f8a99">▦ <span class="en">Floor</span><span class="es">Piso</span></div>
+              <div class="f-row indent f-teal">▲ Player</div>
+              <div class="f-row indent f-amber">● Coin</div>
+            </div>
+            <div class="stage">
+              <div class="floor"></div>
+              <div class="p"></div>
+              <div class="coin"></div>
+            </div>
+          </div>
+        </div>
+        <figcaption>
+          <span><span class="en">The test level: floor, Player, Coin.</span><span class="es">El nivel de prueba: piso, Player, Coin.</span></span>
+          <button class="replay"><span class="en">↻ Replay</span><span class="es">↻ Repetir</span></button>
+        </figcaption>
+      </figure>
+      </div></div>
+    </div>
+
+  </div>
+
+  <!-- ---------- Before you test: layers & masks ---------- -->
+  <div class="note">
+    <p class="note-kicker"><span class="en">Before you test · 1 of 2</span><span class="es">Antes de probar · 1 de 2</span></p>
+    <h3><span class="en">Layers: where the Player lives</span><span class="es">Capas: dónde vive el Player</span></h3>
+    <p><span class="en">Before pressing play, take a moment to see how Godot organizes physics objects. Layers are like slices of the physics world — every physics body lives on one. It's a <button class="term" data-t="collision layer">collision layer</button>, and the Player in this guide lives on <b>Layer&nbsp;1</b>. You can see it in the Inspector when you select the Player node.</span><span class="es">Antes de presionar play, tómate un momento para ver cómo Godot organiza los objetos físicos. Las capas son como rebanadas del mundo físico — cada cuerpo físico vive en una. Es una <button class="term" data-t="collision layer">capa de colisión</button>, y el Player en esta guía vive en la <b>Capa&nbsp;1</b>. Puedes verla en el Inspector cuando seleccionas el nodo Player.</span></p>
+
+    <figure class="fig">
+      <div class="fig-panel fig-lm">
+        <div class="cols">
+          <div class="who">
+            <div class="name f-teal" style="left:calc(50% - 24px);top:0">Player</div>
+            <div class="p"></div>
+            <div class="badge teal" style="left:calc(50% - 34px);top:70px"><span class="en">Layer: 1</span><span class="es">Capa: 1</span></div>
+          </div>
+          <div class="insp">
+            <p class="f-label">Inspector · Player</p>
+            <div class="irow ihead">▼ Collision</div>
+            <div class="irow"><span class="en">Layer</span><span class="es">Capa</span>
+              <span class="cbs"><span class="g"><span class="cb on">✓</span><span class="cb">2</span><span class="cb">3</span><span class="cb">4</span></span><span class="g"><span class="cb">5</span><span class="cb">6</span><span class="cb">7</span><span class="cb">8</span></span></span>
+            </div>
+            <div class="irow"><span class="en">Mask</span><span class="es">Másc.</span>
+              <span class="cbs"><span class="g"><span class="cb">1</span><span class="cb">2</span><span class="cb">3</span><span class="cb">4</span></span><span class="g"><span class="cb">5</span><span class="cb">6</span><span class="cb">7</span><span class="cb">8</span></span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption>
+        <span><span class="en">The Player lives on Layer 1.</span><span class="es">El Player vive en la Capa 1.</span></span>
+        <button class="replay"><span class="en">↻ Replay</span><span class="es">↻ Repetir</span></button>
+      </figcaption>
+    </figure>
+  </div>
+
+  <div class="note">
+    <p class="note-kicker"><span class="en">Before you test · 2 of 2</span><span class="es">Antes de probar · 2 de 2</span></p>
+    <h3><span class="en">Masks: what the Coin watches for</span><span class="es">Máscaras: qué observa la Coin</span></h3>
+    <p><span class="en">The Coin also has a Layer, but that's not what makes the pickup work. What matters is the Coin's <button class="term" data-t="collision mask">Mask</button> — the layers it watches for. Since the Player lives on Layer 1, the Coin's Mask row must have <b>Layer&nbsp;1</b> checked. It's a one-way check: the Coin watches the Player, not the other way around.</span><span class="es">La Coin también tiene una Capa, pero eso no es lo que hace que funcione la recogida. Lo que importa es la <button class="term" data-t="collision mask">Máscara</button> de la Coin — las capas que observa. Como el Player vive en la Capa 1, la fila de Máscara de la Coin debe tener la <b>Capa&nbsp;1</b> marcada. Es una verificación de un solo sentido: la Coin observa al Player, no al revés.</span></p>
+    <p><span class="en">Godot's defaults already have Mask Layer 1 checked, so this is mostly a chance to know why it matters.</span><span class="es">Los valores por defecto de Godot ya tienen la Capa 1 marcada en la Máscara, así que esto es sobre todo una oportunidad para saber por qué importa.</span></p>
+
+    <figure class="fig">
+      <div class="fig-panel fig-lm">
+        <div class="cols">
+          <div class="who">
+            <div class="name f-teal" style="left:12%;top:0">Player</div>
+            <div class="p" style="left:14%"></div>
+            <div class="badge teal" style="left:6%;top:70px"><span class="en">Layer: 1</span><span class="es">Capa: 1</span></div>
+            <div class="coin2" style="right:12%;top:26px"></div>
+            <div class="name f-amber" style="right:5%;top:0">Coin</div>
+            <div class="watch" style="left:calc(14% + 34px);right:calc(12% + 38px)"></div>
+            <div class="watchlabel" style="left:34%;top:16px"><span class="en">watches Layer 1</span><span class="es">observa la Capa 1</span></div>
+            <div class="badge amber" style="right:2%;top:70px"><span class="en">Mask: Layer 1 ✓</span><span class="es">Máscara: Capa 1 ✓</span></div>
+          </div>
+          <div class="insp">
+            <p class="f-label">Inspector · Coin</p>
+            <div class="irow ihead">▼ Collision</div>
+            <div class="irow"><span class="en">Layer</span><span class="es">Capa</span>
+              <span class="cbs"><span class="g"><span class="cb">1</span><span class="cb">2</span><span class="cb">3</span><span class="cb">4</span></span><span class="g"><span class="cb">5</span><span class="cb">6</span><span class="cb">7</span><span class="cb">8</span></span></span>
+            </div>
+            <p class="ihint"><span class="en">(any value works)</span><span class="es">(cualquier valor sirve)</span></p>
+            <div class="irow"><span class="en">Mask</span><span class="es">Másc.</span>
+              <span class="cbs"><span class="g"><span class="cb on">✓</span><span class="cb">2</span><span class="cb">3</span><span class="cb">4</span></span><span class="g"><span class="cb">5</span><span class="cb">6</span><span class="cb">7</span><span class="cb">8</span></span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption>
+        <span><span class="en">The Coin's Mask watches Layer 1 — one direction.</span><span class="es">La Máscara de la Coin observa la Capa 1 — una sola dirección.</span></span>
+        <button class="replay"><span class="en">↻ Replay</span><span class="es">↻ Repetir</span></button>
+      </figcaption>
+    </figure>
+
+    <p class="tip"><span class="en">In the Inspector, Collision sits partway down the list — don't confuse it with CanvasItem's Visibility Layer near the bottom, which controls what's drawn, not what collides.</span><span class="es">En el Inspector, Colisión está a media lista — no la confundas con la Visibility Layer de CanvasItem al final, que controla lo que se dibuja, no lo que colisiona.</span></p>
+
+    <details class="qa">
+      <summary><span class="en">Why does the Coin look for the Player, not the other way?</span><span class="es">¿Por qué la Coin busca al Player y no al revés?</span></summary>
+      <p class="qa-body"><span class="en">Think about what happens when the Coin is picked up — a chime, the coin disappears, the score goes up. Those all belong to the Coin. If the Player had to handle them, its script would need to know about coins. Add a health pack later? Now it needs to know about those too. Then keys, then powerups. When each pickup handles its own reaction, the Player script stays focused on just Player behavior — and adding new pickups later doesn't mean editing the Player script.</span><span class="es">Piensa en lo que pasa cuando la Coin se recoge — una campanita, la moneda desaparece, la puntuación sube. Todo eso es cosa de la Coin. Si el Player tuviera que manejarlo, su script necesitaría saber de monedas. ¿Añades un botiquín después? Ahora también necesita saber de eso. Luego llaves, luego potenciadores. Cuando cada recogida maneja su propia reacción, el script del Player se queda enfocado solo en el comportamiento del Player — y añadir recogidas nuevas después no significa editar el script del Player.</span></p>
+    </details>
+  </div>
+</section>
+
+<!-- ======================================================= CHAPTER 4 -->
+<section class="chapter" id="ch4">
+  <div class="ch-head">
+    <span class="ch-num">4</span>
+    <h2><span class="en">See the signal in action</span><span class="es">Ve la señal en acción</span></h2>
+  </div>
+  <p class="ch-goal">
+    <span class="en">Run it, then follow the signal from touch to disappearance.</span><span class="es">Ejecútalo y sigue la señal desde el toque hasta la desaparición.</span>
+  </p>
+
+  <p class="steps-label"><span class="lbl"><span class="en">Chapter 4 · step 21</span><span class="es">Capítulo 4 · paso 21</span></span></p>
+  <div class="steps">
+    <p class="done-legend"><span class="demo-num" aria-hidden="true"></span><span class="en">click when done</span><span class="es">clic al terminar</span></p>
+
+    <div class="step">
+      <span class="num" data-check="c4d"></span>
+      <h3><span class="en">Run the scene and test the pickup</span><span class="es">Ejecuta la escena y prueba la recogida</span></h3>
+      <div class="step-body"><div class="sbi">
+      <p><span class="en">Run the test scene and move the player into the coin — arrow keys, WASD, or whatever controls your Player uses. The moment the player touches the coin, the coin disappears.</span><span class="es">Ejecuta la escena de prueba y mueve al jugador hacia la moneda — flechas, WASD, o los controles que use tu Player. En el momento en que el jugador toca la moneda, la moneda desaparece.</span></p>
+      <p class="tip"><span class="en">The ▶ Play button lives in Godot's top-right corner. "Run Current Scene" (or F6) runs just this test scene.</span><span class="es">El botón ▶ de Play está en la esquina superior derecha de Godot. "Ejecutar escena actual" (o F6) ejecuta solo esta escena de prueba.</span></p>
+
+      <figure class="fig">
+        <div class="fig-panel fig-pick">
+          <div class="stage">
+            <div class="ground"></div>
+            <div class="coin"></div>
+            <div class="flash"></div>
+            <div class="p"></div>
+            <div class="f-chip">body_entered</div>
+          </div>
+        </div>
+        <figcaption>
+          <span><span class="en">The whole loop: touch → signal → function → gone.</span><span class="es">El bucle completo: toque → señal → función → desaparece.</span></span>
+        </figcaption>
+      </figure>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="note">
+    <p class="note-kicker"><span class="en">What just happened</span><span class="es">Qué acaba de pasar</span></p>
+    <h3><span class="en">Follow the signal, beat by beat</span><span class="es">Sigue la señal, paso a paso</span></h3>
+
+    <p><span class="en"><b>1 · The signal fires.</b> The player entered the coin's Area2D zone, so Godot fires the built-in body_entered signal. This firing happens in Godot's engine, not on any line of coin.gd — the code you wrote already did its job earlier by connecting the signal in _ready().</span><span class="es"><b>1 · La señal se dispara.</b> El jugador entró en la zona Area2D de la moneda, así que Godot dispara la señal integrada body_entered. Este disparo ocurre en el motor de Godot, no en ninguna línea de coin.gd — el código que escribiste ya hizo su trabajo antes al conectar la señal en _ready().</span></p>
+
+    <p><span class="en"><b>2 · connect() points to the recipe.</b> Because connect() was given _on_body_entered inside its parentheses, Godot knows which function to call.</span><span class="es"><b>2 · connect() apunta a la receta.</b> Como a connect() se le pasó _on_body_entered dentro de sus paréntesis, Godot sabe qué función llamar.</span></p>
+
+    <p><span class="en"><b>3 · The function runs its one instruction.</b> _on_body_entered runs, and it contains one instruction: queue_free(). That instruction removes the coin from the scene.</span><span class="es"><b>3 · La función ejecuta su única instrucción.</b> _on_body_entered se ejecuta, y contiene una instrucción: queue_free(). Esa instrucción elimina la moneda de la escena.</span></p>
+
+    <p><span class="en"><b>4 · The coin disappears.</b> That's the whole loop: the Area2D detects the player, the signal fires, connect() points to the function, and the function runs queue_free().</span><span class="es"><b>4 · La moneda desaparece.</b> Ese es el bucle completo: el Area2D detecta al jugador, la señal se dispara, connect() apunta a la función, y la función ejecuta queue_free().</span></p>
+
+    <div class="code"><pre><span class="ln"><span class="k">func</span> <span class="fn">_ready</span>():</span><span class="ln new">    body_entered.<span class="fn">connect</span>(_on_body_entered)   <span class="c"># 2</span></span><span class="ln"> </span><span class="ln new"><span class="k">func</span> <span class="fn">_on_body_entered</span>(body):              <span class="c"># 2→3</span></span><span class="ln new">    <span class="fn">queue_free</span>()                           <span class="c"># 3→4</span></span></pre></div>
+  </div>
+
+  <div class="checkpoint">
+    <p class="note-kicker"><span class="en">Checkpoint</span><span class="es">Punto de control</span></p>
+    <h3><span class="en">Pickup works!</span><span class="es">¡La recogida funciona!</span></h3>
+    <label><input type="checkbox" id="c4a"><span><span class="en">Added a Player to the test level</span><span class="es">Añadiste un Player al nivel de prueba</span></span></label>
+    <label><input type="checkbox" id="c4b"><span><span class="en">Gave the level a floor to stand on</span><span class="es">Le diste al nivel un piso donde pararse</span></span></label>
+    <label><input type="checkbox" id="c4c"><span><span class="en">Placed at least one Coin the Player can reach</span><span class="es">Colocaste al menos una Coin que el Player pueda alcanzar</span></span></label>
+    <label><input type="checkbox" id="c4d"><span><span class="en">Watched the Coin disappear when the Player touched it</span><span class="es">Viste la Coin desaparecer cuando el Player la tocó</span></span></label>
+  </div>
+</section>
+
+<!-- ======================================================= REFERENCE -->
+<section class="chapter reference" id="ref">
+  <div class="ch-head">
+    <span class="ch-num">✦</span>
+    <h2><span class="en">Quick reference</span><span class="es">Referencia rápida</span></h2>
+  </div>
+
+  <h3 style="margin-top:30px;font-size:20px"><span class="en">Rebuild checklist</span><span class="es">Lista para reconstruir</span></h3>
+  <ol>
+    <li><span class="en">Create <b>Coin</b> as an <b>Area2D</b>.</span><span class="es">Crea <b>Coin</b> como un <b>Area2D</b>.</span></li>
+    <li><span class="en">Add <b>Sprite2D</b> for the coin image.</span><span class="es">Añade <b>Sprite2D</b> para la imagen de la moneda.</span></li>
+    <li><span class="en">Add <b>CollisionShape2D</b> for the coin hitbox boundary.</span><span class="es">Añade <b>CollisionShape2D</b> para el límite de la hitbox.</span></li>
+    <li><span class="en">Attach <b>coin.gd</b> to the <b>Coin Area2D</b>.</span><span class="es">Adjunta <b>coin.gd</b> al <b>Coin Area2D</b>.</span></li>
+    <li><span class="en">Use the final script below.</span><span class="es">Usa el script final de abajo.</span></li>
+    <li><span class="en">Create or open a test level.</span><span class="es">Crea o abre un nivel de prueba.</span></li>
+    <li><span class="en">Add the existing <b>Player</b> scene.</span><span class="es">Añade la escena <b>Player</b> existente.</span></li>
+    <li><span class="en">Paint or place a simple floor with collision.</span><span class="es">Pinta o coloca un piso simple con colisión.</span></li>
+    <li><span class="en">Add one or more <b>Coin</b> instances to the level.</span><span class="es">Añade una o más instancias de <b>Coin</b> al nivel.</span></li>
+    <li><span class="en">Run the game and move the player into the coin.</span><span class="es">Ejecuta el juego y mueve al jugador hacia la moneda.</span></li>
+  </ol>
+
+  <h3 style="margin-top:34px;font-size:20px"><span class="en">Final coin script</span><span class="es">Script final de la moneda</span></h3>
+  <p style="font-size:15.5px;color:var(--ink-soft)"><span class="en">Attach this script to the <b>Coin Area2D</b> node. If your template creates extra unused lines, your final coin script can be this simple.</span><span class="es">Adjunta este script al nodo <b>Coin Area2D</b>. Si tu plantilla crea líneas extra sin usar, tu script final de la moneda puede ser así de simple.</span></p>
+  <div class="code"><pre><span class="ln"><span class="c"># coin.gd</span></span><span class="ln"><span class="k">extends</span> Area2D</span><span class="ln"> </span><span class="ln"><span class="k">func</span> <span class="fn">_ready</span>():</span><span class="ln">    body_entered.<span class="fn">connect</span>(_on_body_entered)</span><span class="ln"> </span><span class="ln"><span class="k">func</span> <span class="fn">_on_body_entered</span>(body):</span><span class="ln">    <span class="fn">queue_free</span>()</span></pre></div>
+</section>
+
+</main>
+
+<footer>
+  <span class="en">Part of the Godot platformer guide series.</span><span class="es">Parte de la serie de guías del plataformero de Godot.</span>
+</footer>
+
+<script>
+/* ============================================================================
+   Small, boring JavaScript on purpose. Three jobs:
+   1. Language toggle (persisted, shared key with the sibling guide)
+   2. Step completion (number circles sync with checkpoint boxes)
+   3. Figures play once when scrolled into view + Replay buttons
+   4. Jargon term definitions (click a dotted term → definition card below)
+   ============================================================================ */
+
+/* ---------- 1. language ---------- */
+const LANG_KEY = "godot-guide-lang";
+const root = document.documentElement;
+const btnEn = document.getElementById("langEn");
+const btnEs = document.getElementById("langEs");
+
+function setLang(lang){
+  root.dataset.lang = lang;
+  root.lang = lang;
+  document.title = lang === "es"
+    ? "Cómo se comunican los objetos del juego en Godot · La moneda coleccionable"
+    : "How game objects communicate in Godot · The collectible coin";
+  btnEn.classList.toggle("on", lang === "en");
+  btnEs.classList.toggle("on", lang === "es");
+  btnEn.setAttribute("aria-pressed", lang === "en");
+  btnEs.setAttribute("aria-pressed", lang === "es");
+  try{ localStorage.setItem(LANG_KEY, lang); }catch(e){}
+  if(typeof labelStepButtons === "function") labelStepButtons(lang);
+  // Any open definition boxes were rendered in the old language — refresh them.
+  document.querySelectorAll(".defbox").forEach(box => {
+    const key = box.dataset.t;
+    const def = TERMS[key];
+    if(def) fillDefbox(box, key, def);
+  });
+}
+btnEn.addEventListener("click", () => setLang("en"));
+btnEs.addEventListener("click", () => setLang("es"));
+let saved = "en";
+try{ saved = localStorage.getItem(LANG_KEY) || "en"; }catch(e){}
+if(saved === "es") setLang("es");
+
+/* ---------- 2. step completion ---------- */
+/* Click a step's number to mark it done: the circle fills, and if the step
+   completes a checkpoint item (data-check), that checkbox ticks itself too.
+   Clicking again undoes both. Session-only — nothing is stored. */
+document.querySelectorAll(".step").forEach(step => {
+  const num = step.querySelector(".num");
+  if(!num) return;
+  const body = step.querySelector(".step-body");
+  num.setAttribute("role", "button");
+  num.tabIndex = 0;
+  num.setAttribute("aria-pressed", "false");
+  if(body) num.setAttribute("aria-expanded", "true");
+  const toggle = () => {
+    const done = step.classList.toggle("done");
+    num.setAttribute("aria-pressed", String(done));
+    if(body) num.setAttribute("aria-expanded", String(!done));
+    const cb = num.dataset.check && document.getElementById(num.dataset.check);
+    if(cb) cb.checked = done;
+  };
+  num.addEventListener("click", toggle);
+  num.addEventListener("keydown", e => {
+    if(e.key === "Enter" || e.key === " "){ e.preventDefault(); toggle(); }
+  });
+  // On collapsible steps, the title toggles too — handy for reopening a tucked-away step.
+  if(body){
+    const h3 = step.querySelector("h3");
+    if(h3) h3.addEventListener("click", e => {
+      if(e.target.closest(".term")) return;   // jargon terms keep their own click job
+      toggle();
+    });
+  }
+});
+
+function labelStepButtons(lang){
+  const label = lang === "es" ? "Marcar paso como hecho" : "Mark step as done";
+  document.querySelectorAll(".step .num").forEach(n => n.setAttribute("aria-label", label));
+}
+labelStepButtons(root.dataset.lang);
+
+/* ---------- 3. figures ---------- */
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if(e.isIntersecting){
+      e.target.classList.add("play");
+      io.unobserve(e.target);
+    }
+  });
+}, { threshold: .4 });
+document.querySelectorAll(".fig-panel").forEach(p => io.observe(p));
+
+document.querySelectorAll(".replay").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const panel = btn.closest("figure").querySelector(".fig-panel");
+    panel.classList.remove("play");
+    void panel.offsetWidth;   // force reflow so animations restart
+    panel.classList.add("play");
+  });
+});
+
+/* ---------- 4. jargon terms ---------- */
+/* Definitions live here, both languages side by side, so editing one term
+   means editing one spot. Keys match the data-t attribute on .term buttons. */
+const TERMS = {
+  "Area2D": {
+    en: { t: "Area2D", d: "A node that defines an invisible 2D area of space and notices when other things enter or leave it. It has many uses — collectible pickups, damage zones, trigger areas, hazards like lava, camera zones, and more. In this guide we happen to use it for the coin, but Area2D isn't specific to coins." },
+    es: { t: "Area2D", d: "Un nodo que define un área invisible de espacio en 2D y nota cuando otras cosas entran o salen. Tiene muchos usos: recogidas de coleccionables, zonas de daño, áreas de disparador, peligros como lava, zonas de cámara y más. En esta guía la usamos para la moneda, pero Area2D no es específica para monedas." }
+  },
+  "Sprite2D": {
+    en: { t: "Sprite2D", d: "A node that displays a 2D image. Most things you see on screen in a 2D Godot game — players, enemies, coins, props, backgrounds — are drawn with a Sprite2D (or a similar drawing node). It just shows a picture at a spot in the scene; it doesn't detect anything on its own." },
+    es: { t: "Sprite2D", d: "Un nodo que muestra una imagen 2D. La mayoría de las cosas que ves en pantalla en un juego 2D de Godot —jugadores, enemigos, monedas, decoraciones, fondos— se dibujan con un Sprite2D (o un nodo de dibujo similar). Solo muestra una imagen en un lugar de la escena; no detecta nada por sí solo." }
+  },
+  "CollisionShape2D": {
+    en: { t: "CollisionShape2D", d: "A node that defines a 2D shape used for collision or overlap detection. It sits under a parent like an Area2D or a physics body and tells that parent the exact outline to use. Used all over a game — player hitboxes, enemy attacks, trigger zones, walls, doorways, and more." },
+    es: { t: "CollisionShape2D", d: "Un nodo que define una forma 2D usada para detectar colisiones o superposiciones. Se coloca bajo un padre como un Area2D o un cuerpo físico y le dice a ese padre el contorno exacto que debe usar. Se usa por todo el juego: hitboxes de jugadores, ataques de enemigos, zonas de disparador, paredes, puertas y más." }
+  },
+  "parent node": {
+    en: { t: "Parent node", d: "A node that has other nodes attached beneath it. The attached nodes are called its children. Scenes are built as trees of parent-child relationships. In this guide, the Coin Area2D is the parent of Sprite2D and CollisionShape2D." },
+    es: { t: "Nodo padre", d: "Un nodo que tiene otros nodos adjuntos debajo de él. Los nodos adjuntos se llaman sus hijos. Las escenas se construyen como árboles de relaciones padre-hijo. En esta guía, el Coin Area2D es el padre de Sprite2D y CollisionShape2D." }
+  },
+  "signal": {
+    en: { t: "Signal", d: "An announcement a node can broadcast when something happens. Other code can listen for a signal and run when it fires. Nodes come with many built-in signals for common events, and you can also make your own custom ones. body_entered is one example of a built-in signal." },
+    es: { t: "Señal", d: "Un anuncio que un nodo puede transmitir cuando algo sucede. Otro código puede escuchar una señal y ejecutarse cuando se dispara. Los nodos vienen con muchas señales integradas para eventos comunes, y también puedes crear las tuyas. body_entered es un ejemplo de señal integrada." }
+  },
+  "body_entered": {
+    en: { t: "body_entered", d: "A built-in signal on Area2D. It fires whenever a physics body — a player, an enemy, a bullet, any moving object — enters the area. Any code connected to it can react at that moment. Used for pickups, damage, triggers, checkpoints, and much more." },
+    es: { t: "body_entered", d: "Una señal integrada en Area2D. Se dispara cuando un cuerpo físico —un jugador, un enemigo, una bala, cualquier objeto en movimiento— entra en el área. Cualquier código conectado a ella puede reaccionar en ese momento. Se usa para recogidas, daño, disparadores, puntos de control y mucho más." }
+  },
+  "connect": {
+    en: { t: "connect()", d: "connect() links the signal to your function. It tells Godot what code to run when the signal fires." },
+    es: { t: "connect()", d: "connect() enlaza la señal con tu función. Le dice a Godot qué código ejecutar cuando la señal se dispara." }
+  },
+  "_on_body_entered": {
+    en: { t: "_on_body_entered", d: "This is the function we want Godot to run later. Writing the name inside connect() does not run it right away." },
+    es: { t: "_on_body_entered", d: "Esta es la función que queremos que Godot ejecute más tarde. Escribir el nombre dentro de connect() no la ejecuta ahora mismo." }
+  },
+  "queue_free": {
+    en: { t: "queue_free()", d: "queue_free() removes this coin from the scene. In this guide, that is the action we chose for the pickup." },
+    es: { t: "queue_free()", d: "queue_free() elimina esta moneda de la escena. En esta guía, esa es la acción que elegimos para la recogida." }
+  },
+  "func _ready()": {
+    en: { t: "func _ready()", d: "_ready() runs once when the coin is added to the scene. This is a good place to connect the signal." },
+    es: { t: "func _ready()", d: "_ready() se ejecuta una vez cuando la moneda se añade a la escena. Es un buen lugar para conectar la señal." }
+  },
+  "hitbox boundary": {
+    en: { t: "Hitbox boundary", d: "The invisible outline that decides what counts as touching an object. When something crosses that outline, the object it belongs to can react. Used for pickups, damage zones, buttons, trigger areas, and many other things." },
+    es: { t: "Límite de hitbox", d: "El contorno invisible que decide qué cuenta como tocar un objeto. Cuando algo cruza ese contorno, el objeto al que pertenece puede reaccionar. Se usa para recogidas, zonas de daño, botones, áreas de disparador y muchas cosas más." }
+  },
+  "collision layer": {
+    en: { t: "Collision layer", d: "A tag a physics body puts on itself: 'I'm on layer X.' Every physics body has one. Layers are just numbers (1 through 32) — they don't mean anything on their own, but they let you group bodies so that other bodies can detect them selectively. In this guide, the Player is on Layer 1." },
+    es: { t: "Capa de colisión", d: "Una etiqueta que un cuerpo físico se pone a sí mismo: 'Estoy en la capa X'. Todo cuerpo físico tiene una. Las capas son solo números (del 1 al 32): no significan nada por sí solas, pero te permiten agrupar cuerpos para que otros cuerpos los detecten de forma selectiva. En esta guía, el Player está en la Capa 1." }
+  },
+  "collision mask": {
+    en: { t: "Collision mask", d: "The set of layers a physics body (or Area2D) is watching for. If a body enters the area and its layer is checked in this mask, the Area2D fires signals like body_entered for it. If the mask doesn't include the body's layer, nothing fires. The Coin's mask must include the Player's layer for the pickup to work." },
+    es: { t: "Máscara de colisión", d: "El conjunto de capas que un cuerpo físico (o Area2D) está observando. Si un cuerpo entra en el área y su capa está marcada en esta máscara, el Area2D dispara señales como body_entered para él. Si la máscara no incluye la capa del cuerpo, no se dispara nada. La máscara de la Coin debe incluir la capa del Player para que la recogida funcione." }
+  },
+  "node": {
+    en: { t: "Node", d: "The basic building block of any Godot scene. Everything in a Godot game — a player, a coin, a button, a camera, a piece of UI — is a node. Nodes are arranged in a tree." },
+    es: { t: "Nodo", d: "El bloque básico de construcción de cualquier escena de Godot. Todo en un juego de Godot —un jugador, una moneda, un botón, una cámara, un elemento de UI— es un nodo. Los nodos se organizan en un árbol." }
+  },
+  "scene": {
+    en: { t: "Scene", d: "A saved group of nodes that acts as one reusable thing. A Coin scene is one coin you can drop into any level. A Level scene might contain many Coin scenes plus a Player scene. Almost anything reusable in a Godot game is built as a scene." },
+    es: { t: "Escena", d: "Un grupo guardado de nodos que actúa como una sola cosa reutilizable. Una escena Coin es una moneda que puedes soltar en cualquier nivel. Una escena Level puede contener muchas escenas Coin más una escena Player. Casi cualquier cosa reutilizable en un juego de Godot se construye como una escena." }
+  },
+  "GDScript": {
+    en: { t: "GDScript", d: "Godot's built-in programming language. It looks a lot like Python and is designed to work naturally with nodes and signals." },
+    es: { t: "GDScript", d: "El lenguaje de programación integrado de Godot. Se parece mucho a Python y está diseñado para funcionar naturalmente con nodos y señales." }
+  },
+  "physics body": {
+    en: { t: "Physics body", d: "A node that acts like a solid object in the game world — it can move, bump into things, and be pushed around. Players, enemies, bullets, boxes, and vehicles are commonly built as physics bodies. When one enters an Area2D, that's what fires the body_entered signal." },
+    es: { t: "Cuerpo físico", d: "Un nodo que actúa como un objeto sólido en el mundo del juego: puede moverse, chocar contra cosas y ser empujado. Los jugadores, enemigos, balas, cajas y vehículos suelen construirse como cuerpos físicos. Cuando uno entra en un Area2D, eso es lo que dispara la señal body_entered." }
+  }
+};
+
+function fillDefbox(box, key, def){
+  const lang = root.dataset.lang === "es" ? "es" : "en";
+  const v = def[lang];
+  box.dataset.t = key;
+  box.innerHTML = "<b></b><span></span><button class='close' aria-label='Close'>×</button>";
+  box.querySelector("b").textContent = v.t;
+  box.querySelector("span").textContent = v.d;
+  box.querySelector(".close").addEventListener("click", () => box.remove());
+}
+
+document.addEventListener("click", e => {
+  const term = e.target.closest(".term");
+  if(!term) return;
+  const key = term.dataset.t;
+  const def = TERMS[key];
+  if(!def) return;
+  // The definition card slots in right after the paragraph containing the term.
+  const host = term.closest("p") || term.closest("h3") || term.parentElement;
+  const existing = host.nextElementSibling;
+  if(existing && existing.classList && existing.classList.contains("defbox")){
+    if(existing.dataset.t === key){ existing.remove(); return; }  // same term → toggle off
+    fillDefbox(existing, key, def);                                // different term → swap
+    return;
+  }
+  const box = document.createElement("div");
+  box.className = "defbox";
+  fillDefbox(box, key, def);
+  host.insertAdjacentElement("afterend", box);
+});
+
+/* ---------- scroll progress bar ---------- */
+const progress = document.getElementById("progress");
+addEventListener("scroll", () => {
+  const doc = document.documentElement;
+  const max = doc.scrollHeight - doc.clientHeight;
+  progress.style.width = (max > 0 ? (doc.scrollTop / max) * 100 : 0) + "%";
+}, { passive: true });
+</script>
+</body>
+</html>
